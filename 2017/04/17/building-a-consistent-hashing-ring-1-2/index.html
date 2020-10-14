@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="本篇是Building a Consistent Hashing Ring的翻译，原文一步步描述了一个一致性哈希环的构建过程，对于OpenStack Swift存储，对应的Ring文件，其实就是一个一致性哈希环。这篇文章讲述了OpenStack Swift Ring文件的构建原理。目前翻译了第一部分和第二部分，包含了最原始的算法，并最终引入虚拟节点，减少扩容时的数据移动">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2)">
+<meta property="og:url" content="https://www.ichenfu.com/2017/04/17/building-a-consistent-hashing-ring-1-2/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="本篇是Building a Consistent Hashing Ring的翻译，原文一步步描述了一个一致性哈希环的构建过程，对于OpenStack Swift存储，对应的Ring文件，其实就是一个一致性哈希环。这篇文章讲述了OpenStack Swift Ring文件的构建原理。目前翻译了第一部分和第二部分，包含了最原始的算法，并最终引入虚拟节点，减少扩容时的数据移动">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-04-17T05:53:01.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.280Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="Consistent Hashing">
+<meta property="article:tag" content="Swift Ring">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://www.ichenfu.com/2017/04/17/building-a-consistent-hashing-ring-1-2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2) | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-47062085-1');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">C0reFast记事本</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/04/17/building-a-consistent-hashing-ring-1-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017年4月17日 13:53 13:53:01" itemprop="dateCreated datePublished" datetime="2017-04-17T13:53:01+08:00">2017年4月17日 13:53</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/OpenStack-Swift/" itemprop="url" rel="index"><span itemprop="name">OpenStack Swift</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本篇是<a href="https://docs.openstack.org/swift/latest/ring_background.html" target="_blank" rel="noopener">Building a Consistent Hashing Ring</a>的翻译，原文一步步描述了一个一致性哈希环的构建过程，对于OpenStack Swift存储，对应的Ring文件，其实就是一个一致性哈希环。<br>这篇文章讲述了OpenStack Swift Ring文件的构建原理。目前翻译了第一部分和第二部分，包含了最原始的算法，并最终引入虚拟节点，减少扩容时的数据移动<a id="more"></a></p>
+<h2 id="Part-1"><a href="#Part-1" class="headerlink" title="Part 1"></a>Part 1</h2><p>“一致性哈希”是用于描述使用散列算法分布数据以确定其位置的过程的术语。只需要知道数据id的哈系值，就可以确切地确定数据应该在哪里。哈希与位置的映射关系通常被称为“环”。</p>
+<p>也许最简单的哈希只是id的模数。例如，如果所有数据的id都是数字，希望分散数据到两台机器上，可以将所有id为奇数的数据放在一台机器上，id为偶数的数据放在另一台。假设奇数id和偶数id的数据数量大致平衡，并且每个数据的大小也大致平衡，那么数据在两台计算机之间也是大致平衡的。</p>
+<p>由于数据通常具有文本名称而不是数字，例如文件或URL的路径，因此实际使用中会先通过散列算法将名称转换成一个数字。例如，使用MD5，名称“mom.png”的散列是’4559a12e3e8da7c2186250c2f292e3af’，’dad.png’的散列是’096edcc4107e9e18d6a03a43b3853bea’。然后，使用模数，我们可以将“mom.jpg”放在奇数机器上，把“dad.png”放在偶数机器上。使用像MD5这样的哈希算法的另一个好处就是生成的哈希值是可以保证均匀分布的，这意味着任意名称最终将均匀分布，不用担心数据id分布的均匀性。</p>
+<p>例子：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> hashlib <span class="keyword">import</span> md5</span><br><span class="line"><span class="keyword">from</span> struct <span class="keyword">import</span> unpack_from</span><br><span class="line"></span><br><span class="line"><span class="comment"># 100个节点，10000000个文件</span></span><br><span class="line">NODE_COUNT = <span class="number">100</span></span><br><span class="line">DATA_ID_COUNT = <span class="number">10000000</span></span><br><span class="line"></span><br><span class="line">node_counts = [<span class="number">0</span>] * NODE_COUNT</span><br><span class="line"><span class="keyword">for</span> data_id <span class="keyword">in</span> xrange(DATA_ID_COUNT):</span><br><span class="line">    data_id = str(data_id)</span><br><span class="line">    <span class="comment"># 根据数据id计算md5，并将md5的前4个字节作为一个int</span></span><br><span class="line">    hsh = unpack_from(<span class="string">'&gt;I'</span>, md5(data_id).digest())[<span class="number">0</span>]</span><br><span class="line">    <span class="comment"># 取模，计算node_id</span></span><br><span class="line">    node_id = hsh % NODE_COUNT</span><br><span class="line">    <span class="comment"># 统计节点的数据个数</span></span><br><span class="line">    node_counts[node_id] += <span class="number">1</span></span><br><span class="line"><span class="comment"># 每个节点数据个数的期望值</span></span><br><span class="line">desired_count = DATA_ID_COUNT / NODE_COUNT</span><br><span class="line"><span class="keyword">print</span> <span class="string">'%d: Desired data ids per node'</span> % desired_count</span><br><span class="line"><span class="comment"># 数据最多的节点的数据个数</span></span><br><span class="line">max_count = max(node_counts)</span><br><span class="line">over = <span class="number">100.0</span> * (max_count - desired_count) / desired_count</span><br><span class="line"><span class="keyword">print</span> <span class="string">'%d: Most data ids on one node, %.02f%% over'</span> % (max_count, over)</span><br><span class="line"><span class="comment"># 数据最少的节点的数据个数</span></span><br><span class="line">min_count = min(node_counts)</span><br><span class="line">under = <span class="number">100.0</span> * (desired_count - min_count) / desired_count</span><br><span class="line"><span class="keyword">print</span> <span class="string">'%d: Least data ids on one node, %.02f%% under'</span> % (min_count, under)</span><br></pre></td></tr></table></figure>
+<p>执行结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">100000: Desired data ids per node</span><br><span class="line">100695: Most data ids on one node, 0.69% over</span><br><span class="line">99073: Least data ids on one node, 0.93% under</span><br></pre></td></tr></table></figure>
+<p>结果很不错，对于单个节点，分配的数据差距小于1%。</p>
+<h2 id="Part-2"><a href="#Part-2" class="headerlink" title="Part 2"></a>Part 2</h2><p>在本系列的第1部分中，我们使用哈希的模数来定位数据进行了简单地测试。可以看到数据分布地很好，但这只是故事的一部分。分布式系统不仅需要分配负载，而且随着数据量的增长，它们也经常需要扩容。</p>
+<p>所以让我们想象一下，我们使用我们以前的算法来运行一个100节点的系统，但是它的资源逐渐被耗尽，所以我们要添加另一个节点。当我们将第101个节点添加到我们的系统中时，会注意到许多id将映射到与之前不同的节点。我们将不得不在我们的系统上清理一大堆数据，以便将其全部重新安置到位。</p>
+<p>我们在一个最小规模的系统中举个简单的例子：开始只有2个节点，节点0存储偶数id的数据，节点1存储奇数id的数据。因此，数据id为100的将映射到节点0，数据id为101的将映射到节点1，数据id为102的将映射到节点0，依次类推，很简单的，node = id ％ 2。现在我们添加第三个节点（节点2）以获得更多的空间，所以我们想要node = id ％ 3。所以现在数据id为100的将映射到节点1，数据id为101的将映射到节点2，数据id为102的将映射到节点0。所以我们必须移动3个数据中的其中2个，使他们都存在正确的位置。</p>
+<p>举个更大规模的例子：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">from hashlib import md5</span><br><span class="line">from struct import unpack_from</span><br><span class="line"></span><br><span class="line">NODE_COUNT = 100</span><br><span class="line">NEW_NODE_COUNT = 101</span><br><span class="line">DATA_ID_COUNT = 10000000</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 用于统计移动的数据个数</span></span><br><span class="line">moved_ids = 0</span><br><span class="line">for data_id in xrange(DATA_ID_COUNT):</span><br><span class="line">    data_id = str(data_id)</span><br><span class="line">    hsh = unpack_from('&gt;I', md5(str(data_id)).digest())[0]</span><br><span class="line">    node_id = hsh % NODE_COUNT</span><br><span class="line">    new_node_id = hsh % NEW_NODE_COUNT</span><br><span class="line">    # 很显然，当新旧节点id不同时，需要移动该数据</span><br><span class="line">    if node_id != new_node_id:</span><br><span class="line">        moved_ids += 1</span><br><span class="line">percent_moved = 100.0 * moved_ids / DATA_ID_COUNT</span><br><span class="line">print '%d ids moved, %.02f%%' % (moved_ids, percent_moved)</span><br></pre></td></tr></table></figure>
+<p>执行结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">9900989 ids moved, 99.01%</span><br></pre></td></tr></table></figure>
+<p>结果很严峻，为了提升1%的容量，我们需要移动差不多99%的数据！因此，必须使用一个新的算法，来避免这种情况。</p>
+<p>所以在这里我们需要引入“环”的概念，我们可以将一定哈希值范围的数据直接分配给每个节点，然后通过一定的算法减少这些范围的变化。<br>还是看一个小规模例子，数据id从0到999，两个节点，将0到499的数据分配给节点0，500到999的数据分配给节点1，当新加了节点2时，节点2的数据各有一半来自于节点0和1，这样最小化需要移动的数据量。</p>
+<p>大规模的例子：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> bisect <span class="keyword">import</span> bisect_left</span><br><span class="line"><span class="keyword">from</span> hashlib <span class="keyword">import</span> md5</span><br><span class="line"><span class="keyword">from</span> struct <span class="keyword">import</span> unpack_from</span><br><span class="line"></span><br><span class="line">NODE_COUNT = <span class="number">100</span></span><br><span class="line">NEW_NODE_COUNT = <span class="number">101</span></span><br><span class="line">DATA_ID_COUNT = <span class="number">10000000</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 原来每个节点的哈希值区间</span></span><br><span class="line">node_range_starts = []</span><br><span class="line"><span class="keyword">for</span> node_id <span class="keyword">in</span> xrange(NODE_COUNT):</span><br><span class="line">    node_range_starts.append(DATA_ID_COUNT /</span><br><span class="line">                             NODE_COUNT * node_id)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 新加节点后每个节点的哈希值区间</span></span><br><span class="line">new_node_range_starts = []</span><br><span class="line"><span class="keyword">for</span> new_node_id <span class="keyword">in</span> xrange(NEW_NODE_COUNT):</span><br><span class="line">    new_node_range_starts.append(DATA_ID_COUNT /</span><br><span class="line">                              NEW_NODE_COUNT * new_node_id)</span><br><span class="line">moved_ids = <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> data_id <span class="keyword">in</span> xrange(DATA_ID_COUNT):</span><br><span class="line">    data_id = str(data_id)</span><br><span class="line">    hsh = unpack_from(<span class="string">'&gt;I'</span>, md5(str(data_id)).digest())[<span class="number">0</span>]</span><br><span class="line">    <span class="comment"># 获取原来的节点id</span></span><br><span class="line">    node_id = bisect_left(node_range_starts,</span><br><span class="line">                          hsh % DATA_ID_COUNT) % NODE_COUNT</span><br><span class="line">    <span class="comment"># 获取新的节点id</span></span><br><span class="line">    new_node_id = bisect_left(new_node_range_starts,</span><br><span class="line">                          hsh % DATA_ID_COUNT) % NEW_NODE_COUNT</span><br><span class="line">    <span class="keyword">if</span> node_id != new_node_id:</span><br><span class="line">        moved_ids += <span class="number">1</span></span><br><span class="line">percent_moved = <span class="number">100.0</span> * moved_ids / DATA_ID_COUNT</span><br><span class="line"><span class="keyword">print</span> <span class="string">'%d ids moved, %.02f%%'</span> % (moved_ids, percent_moved)</span><br></pre></td></tr></table></figure>
+<p>执行结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">4901707 ids moved, 49.02%</span><br></pre></td></tr></table></figure>
+<p>结果好了不少，但是在总容量增加1%的情况下，移动50%的数据仍然不容乐观。如果我们仔细研究一下发生了什么，就会明白其实这就是“手风琴效应”，当我们将节点0的范围缩小一点，以赋予新节点，但是将所有其他节点的范围也跟着移位了相同的量。<br>为了最小化对节点分配范围的更改，可以给节点分配几个较小的区间而不是单个很大的区间。 这可以通过为每个节点创建“虚拟节点”来实现。 所以100个节点可能有1000个虚拟节点。 来看看是如何实现的：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> bisect <span class="keyword">import</span> bisect_left</span><br><span class="line"><span class="keyword">from</span> hashlib <span class="keyword">import</span> md5</span><br><span class="line"><span class="keyword">from</span> struct <span class="keyword">import</span> unpack_from</span><br><span class="line"></span><br><span class="line">NODE_COUNT = <span class="number">100</span></span><br><span class="line">DATA_ID_COUNT = <span class="number">10000000</span></span><br><span class="line">VNODE_COUNT = <span class="number">1000</span></span><br><span class="line"></span><br><span class="line">vnode_range_starts = []</span><br><span class="line">vnode2node = []</span><br><span class="line"><span class="comment"># 初始化两个表，vnode_range_starts是每个vnode对应的哈希区间，</span></span><br><span class="line"><span class="comment"># vnode2node是每个vnode实际对应的node_id，</span></span><br><span class="line"><span class="comment"># 这里vnode和node之间对应关系是取vnode_id % NODE_COUNT</span></span><br><span class="line"><span class="keyword">for</span> vnode_id <span class="keyword">in</span> xrange(VNODE_COUNT):</span><br><span class="line">    vnode_range_starts.append(DATA_ID_COUNT /</span><br><span class="line">                              VNODE_COUNT * vnode_id)</span><br><span class="line">    vnode2node.append(vnode_id % NODE_COUNT)</span><br><span class="line">new_vnode2node = list(vnode2node)</span><br><span class="line">new_node_id = NODE_COUNT</span><br><span class="line">NEW_NODE_COUNT = NODE_COUNT + <span class="number">1</span></span><br><span class="line"><span class="comment"># 计算需要修改指向的vnode数量</span></span><br><span class="line">vnodes_to_reassign = VNODE_COUNT / NEW_NODE_COUNT</span><br><span class="line"><span class="keyword">while</span> vnodes_to_reassign &gt; <span class="number">0</span>:</span><br><span class="line">    <span class="keyword">for</span> node_to_take_from <span class="keyword">in</span> xrange(NODE_COUNT):</span><br><span class="line">        <span class="keyword">for</span> vnode_id, node_id <span class="keyword">in</span> enumerate(new_vnode2node):</span><br><span class="line">            <span class="keyword">if</span> node_id == node_to_take_from:</span><br><span class="line">                new_vnode2node[vnode_id] = new_node_id</span><br><span class="line">                vnodes_to_reassign -= <span class="number">1</span></span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">if</span> vnodes_to_reassign &lt;= <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">moved_ids = <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> data_id <span class="keyword">in</span> xrange(DATA_ID_COUNT):</span><br><span class="line">    data_id = str(data_id)</span><br><span class="line">    hsh = unpack_from(<span class="string">'&gt;I'</span>, md5(str(data_id)).digest())[<span class="number">0</span>]</span><br><span class="line">    vnode_id = bisect_left(vnode_range_starts,</span><br><span class="line">                         hsh % DATA_ID_COUNT) % VNODE_COUNT</span><br><span class="line">    node_id = vnode2node[vnode_id]</span><br><span class="line">    new_node_id = new_vnode2node[vnode_id]</span><br><span class="line">    <span class="keyword">if</span> node_id != new_node_id:</span><br><span class="line">        moved_ids += <span class="number">1</span></span><br><span class="line">percent_moved = <span class="number">100.0</span> * moved_ids / DATA_ID_COUNT</span><br><span class="line"><span class="keyword">print</span> <span class="string">'%d ids moved, %.02f%%'</span> % (moved_ids, percent_moved)</span><br></pre></td></tr></table></figure>
+<p>执行结果:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">90423 ids moved, 0.90%</span><br></pre></td></tr></table></figure>
+<p>这就对了，在添加1%容量的情况下，只需要移动0.9%的数据。上面的代码，看起来vnode_range_starts有点多余了，因为在整个生命周期中只被计算了一次，而且从来没变过，所以可以优化一下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> bisect <span class="keyword">import</span> bisect_left</span><br><span class="line"><span class="keyword">from</span> hashlib <span class="keyword">import</span> md5</span><br><span class="line"><span class="keyword">from</span> struct <span class="keyword">import</span> unpack_from</span><br><span class="line"></span><br><span class="line">NODE_COUNT = <span class="number">100</span></span><br><span class="line">DATA_ID_COUNT = <span class="number">10000000</span></span><br><span class="line">VNODE_COUNT = <span class="number">1000</span></span><br><span class="line"></span><br><span class="line">vnode2node = []</span><br><span class="line"><span class="keyword">for</span> vnode_id <span class="keyword">in</span> xrange(VNODE_COUNT):</span><br><span class="line">    vnode2node.append(vnode_id % NODE_COUNT)</span><br><span class="line">new_vnode2node = list(vnode2node)</span><br><span class="line">new_node_id = NODE_COUNT</span><br><span class="line">vnodes_to_reassign = VNODE_COUNT / (NODE_COUNT + <span class="number">1</span>)</span><br><span class="line"><span class="keyword">while</span> vnodes_to_reassign &gt; <span class="number">0</span>:</span><br><span class="line">    <span class="keyword">for</span> node_to_take_from <span class="keyword">in</span> xrange(NODE_COUNT):</span><br><span class="line">        <span class="keyword">for</span> vnode_id, node_id <span class="keyword">in</span> enumerate(vnode2node):</span><br><span class="line">            <span class="keyword">if</span> node_id == node_to_take_from:</span><br><span class="line">                vnode2node[vnode_id] = new_node_id</span><br><span class="line">                vnodes_to_reassign -= <span class="number">1</span></span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">if</span> vnodes_to_reassign &lt;= <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">moved_ids = <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> data_id <span class="keyword">in</span> xrange(DATA_ID_COUNT):</span><br><span class="line">    data_id = str(data_id)</span><br><span class="line">    hsh = unpack_from(<span class="string">'&gt;I'</span>, md5(str(data_id)).digest())[<span class="number">0</span>]</span><br><span class="line">    vnode_id = hsh % VNODE_COUNT</span><br><span class="line">    node_id = vnode2node[vnode_id]</span><br><span class="line">    new_node_id = new_vnode2node[vnode_id]</span><br><span class="line">    <span class="keyword">if</span> node_id != new_node_id:</span><br><span class="line">        moved_ids += <span class="number">1</span></span><br><span class="line">percent_moved = <span class="number">100.0</span> * moved_ids / DATA_ID_COUNT</span><br><span class="line"><span class="keyword">print</span> <span class="string">'%d ids moved, %.02f%%'</span> % (moved_ids, percent_moved)</span><br></pre></td></tr></table></figure>
+<p>结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">89841 ids moved, 0.90%</span><br></pre></td></tr></table></figure>
+<p>很好，在下面的系列中，会继续说明算法的局限性，并相应的进行优化。</p>
+
+    </div>
+
+    
+    
+    <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Consistent-Hashing/" rel="tag"># Consistent Hashing</a>
+              <a href="/tags/Swift-Ring/" rel="tag"># Swift Ring</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2017/04/17/netease-cloud-music-archlinux-whitescreen/" rel="prev" title="ArchLinux下网易云音乐白屏问题">
+      <i class="fa fa-chevron-left"></i> ArchLinux下网易云音乐白屏问题
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2017/04/23/building-a-consistent-hashing-ring-3-5/" rel="next" title="Building a Consistent Hashing Ring Part3-Part5(构建一个一致性哈希环 Part3-Part5)">
+      Building a Consistent Hashing Ring Part3-Part5(构建一个一致性哈希环 Part3-Part5) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Part-1"><span class="nav-number">1.</span> <span class="nav-text">Part 1</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Part-2"><span class="nav-number">2.</span> <span class="nav-text">Part 2</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">76</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">166</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'd69b2454aff0c42e46ed',
+      clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',
+      repo        : 'c0refast.github.io',
+      owner       : 'C0reFast',
+      admin       : ['C0reFast'],
+      id          : '6f11c46d56621d78d7abdda2e35576cb',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

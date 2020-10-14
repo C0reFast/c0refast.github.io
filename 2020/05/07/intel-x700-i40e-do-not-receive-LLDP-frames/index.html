@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在我们的机房服务器上，启用了LLDPD服务，通过LLDP协议实现网络层的自动发现，从而根据收到的消息绘制网络拓扑关系。 之前的大部分机器一直工作正常，也没有多关注，然而今天突然发现有一批机器工作不太正常，因为后期的工作依赖这个拓扑关系，如果关系不正确，后面的工作就没办法进行，所以遇到不正常的机器还是需要具体分析一下为什么。 正常情况下，启动lldpd服务，并调用lldpctl可以看到网卡连接到的交">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Intel X700系列网卡（i40e驱动）收不到LLDP包问题">
+<meta property="og:url" content="https://www.ichenfu.com/2020/05/07/intel-x700-i40e-do-not-receive-LLDP-frames/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="在我们的机房服务器上，启用了LLDPD服务，通过LLDP协议实现网络层的自动发现，从而根据收到的消息绘制网络拓扑关系。 之前的大部分机器一直工作正常，也没有多关注，然而今天突然发现有一批机器工作不太正常，因为后期的工作依赖这个拓扑关系，如果关系不正确，后面的工作就没办法进行，所以遇到不正常的机器还是需要具体分析一下为什么。 正常情况下，启动lldpd服务，并调用lldpctl可以看到网卡连接到的交">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-07T13:32:54.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.290Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="X722">
+<meta property="article:tag" content="i40e">
+<meta property="article:tag" content="LLDP">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://www.ichenfu.com/2020/05/07/intel-x700-i40e-do-not-receive-LLDP-frames/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Intel X700系列网卡（i40e驱动）收不到LLDP包问题 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-47062085-1');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">C0reFast记事本</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/05/07/intel-x700-i40e-do-not-receive-LLDP-frames/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Intel X700系列网卡（i40e驱动）收不到LLDP包问题
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020年5月7日 21:32 21:32:54" itemprop="dateCreated datePublished" datetime="2020-05-07T21:32:54+08:00">2020年5月7日 21:32</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Linux-Kernel/" itemprop="url" rel="index"><span itemprop="name">Linux Kernel</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在我们的机房服务器上，启用了LLDPD服务，通过LLDP协议实现网络层的自动发现，从而根据收到的消息绘制网络拓扑关系。</p>
+<p>之前的大部分机器一直工作正常，也没有多关注，然而今天突然发现有一批机器工作不太正常，因为后期的工作依赖这个拓扑关系，如果关系不正确，后面的工作就没办法进行，所以遇到不正常的机器还是需要具体分析一下为什么。</p>
+<p>正常情况下，启动<code>lldpd</code>服务，并调用<code>lldpctl</code>可以看到网卡连接到的交换机信息：</p>
+<a id="more"></a>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">]<span class="comment"># lldpctl </span></span><br><span class="line">-------------------------------------------------------------------------------</span><br><span class="line">LLDP neighbors:</span><br><span class="line">-------------------------------------------------------------------------------</span><br><span class="line">Interface:    eth0, via: LLDP, RID: 1, Time: 27 days, 04:05:23</span><br><span class="line">  Chassis:     </span><br><span class="line">    ChassisID:    mac ff:ff:ff:ff:ff:ff</span><br><span class="line">    SysName:      sw1.ichenfu.com</span><br><span class="line">    SysDescr:     H3C Comware Platform Software...</span><br><span class="line">                  H3C S6850-56HF</span><br><span class="line">                  Copyright (c) 2004-2019 New H3C Technologies Co., Ltd. All rights reserved.</span><br><span class="line">    Capability:   Bridge, on</span><br><span class="line">    Capability:   Router, on</span><br><span class="line">  Port:        </span><br><span class="line">    PortID:       ifname Twenty-FiveGigE1/0/10</span><br><span class="line">    PortDescr:    Twenty-FiveGigE1/0/10 Interface</span><br><span class="line">    TTL:          121</span><br><span class="line">    MFS:          9416</span><br><span class="line">    PMD autoneg:  supported: yes, enabled: yes</span><br><span class="line">      MAU oper <span class="built_in">type</span>: unknown</span><br><span class="line">    MDI Power:    supported: no, enabled: no, pair control: no</span><br><span class="line">      Device <span class="built_in">type</span>:  PD</span><br><span class="line">      Power pairs:  signal</span><br><span class="line">      Class:        class 0</span><br><span class="line">  VLAN:         1, pvid: yes</span><br></pre></td></tr></table></figure>
+<p>可以看到机器的<code>eth0</code>网口连接到了<code>sw1.ichenfu.com</code>这个交换机的<code>Twenty-FiveGigE1/0/10</code>这个口。</p>
+<p>但是在出问题的机器上，执行<code>lldpctl</code>却什么也不会显示，第一反应，先重启试试，于是重启了<code>lldpd</code>进程，发现也不行，又尝试重启机器，还是不行。更奇怪的是，让网络组看了一下这台交换机底下其他的机器，都是正常的，这就很奇怪了。既然不知道怎么回事，那就抓个包试试：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">]<span class="comment"># tcpdump -ieth0 ether proto 0x88cc                                                                                             </span></span><br><span class="line">tcpdump: verbose output suppressed, use -v or -vv <span class="keyword">for</span> full protocol decode</span><br><span class="line">listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes</span><br><span class="line">17:26:35.251321 LLDP, length 133: node1-ichenfu-com</span><br><span class="line">17:27:05.252325 LLDP, length 133: node1-ichenfu-com</span><br><span class="line">17:27:35.254324 LLDP, length 133: node1-ichenfu-com</span><br><span class="line">17:28:05.254863 LLDP, length 133: node1-ichenfu-com</span><br></pre></td></tr></table></figure>
+<p>出问题的机器，发现抓包只能看到本机发出去的LLDP包，看不到交换机发出的LLDP包。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">]<span class="comment"># tcpdump -ieth0 ether proto 0x88cc                                                                                             </span></span><br><span class="line">tcpdump: verbose output suppressed, use -v or -vv <span class="keyword">for</span> full protocol decode</span><br><span class="line">listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes</span><br><span class="line">17:26:35.251321 LLDP, length 133: node2-ichenfu-com</span><br><span class="line">17:26:40.693320 LLDP, length 337: sw1.ichenfu.com</span><br><span class="line">17:27:05.252325 LLDP, length 133: node2-ichenfu-com</span><br><span class="line">17:27:10.692902 LLDP, length 337: sw1.ichenfu.com</span><br><span class="line">17:27:35.254324 LLDP, length 133: node2-ichenfu-com</span><br><span class="line">17:27:40.693446 LLDP, length 337: sw1.ichenfu.com</span><br><span class="line">17:28:05.254863 LLDP, length 133: node2-ichenfu-com</span><br></pre></td></tr></table></figure>
+<p>正常的机器上，可以看到本机发出去的和交换机发出来的LLDP包。</p>
+<p>难不成交换机发的包被丢了？在这个时候，注意到了一个细节，出问题的机器，网卡是<code>Intel Corporation Ethernet Connection X722</code>，而没有问题的网卡是<code>Intel Corporation 82599ES 10-Gigabit</code>，难道是网卡问题？</p>
+<p>于是打开Google，先用<code>X722 LLDP</code>类似关键词搜索了一下，好像没有搜到什么有用的信息，想了想，是不是和驱动有关呢？因为Intel在X700系列使用的驱动是<code>i40e</code>，所以尝试用关键词<code>i40e LLDP</code>再搜索，搜到了关键的信息，来自Redhat的知识库<a href="https://access.redhat.com/solutions/3446721" target="_blank" rel="noopener">Intel X710 series NICs (i40e) do not receive LLDP frames</a>。看了一下其中的内容：</p>
+<blockquote><p>Intel 700 series NICs run an LLDP agent in firmware that will process and “absorb” any LLDPDU frames received from the switch. The frames are therefore never visible to the OS.<br>Intel 700 系列网卡在固件中会运行一个LLDP agent，这个agent会处理所有从交换发出的LLDP报文，这样在操作系统层面就再也看不到这个报文了。</p>
+</blockquote>
+<p>好吧，这个特性确实有点坑啊。不过，Redhat也提供了相应的解决方案：</p>
+<p>当Kernel版本大于等于<code>kernel-3.10.0-957.el7</code>，也就是CentOS 7.6版本的默认内核时，可以调用<code>ethtool --set-priv-flags eth0 disable-fw-lldp on</code>通知网卡驱动关闭内置的LLDP agent。<br>如果内核小于这个版本，那就需要tricky一点的做法了：<code>echo &quot;lldp stop&quot; &gt; /sys/kernel/debug/i40e/&lt;pci bus address&gt;/command</code>。</p>
+<p>由于我们的系统版本刚好是CentOS 7.6，所以直接执行<code>ethtool --set-priv-flags eth0 disable-fw-lldp on</code>，再执行<code>ethtool --show-priv-flags eth0|grep disable-fw-lldp</code>确认生效。</p>
+<p>执行完成，发现恢复了：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">]<span class="comment"># lldpctl </span></span><br><span class="line">-------------------------------------------------------------------------------</span><br><span class="line">LLDP neighbors:</span><br><span class="line">-------------------------------------------------------------------------------</span><br><span class="line">Interface:    eth0, via: LLDP, RID: 1, Time: 27 days, 04:05:23</span><br><span class="line">  Chassis:     </span><br><span class="line">    ChassisID:    mac ff:ff:ff:ff:ff:ff</span><br><span class="line">    SysName:      sw1.ichenfu.com</span><br><span class="line">    SysDescr:     H3C Comware Platform Software...</span><br><span class="line">                  H3C S6850-56HF</span><br><span class="line">                  Copyright (c) 2004-2019 New H3C Technologies Co., Ltd. All rights reserved.</span><br><span class="line">    Capability:   Bridge, on</span><br><span class="line">    Capability:   Router, on</span><br><span class="line">  Port:        </span><br><span class="line">    PortID:       ifname Twenty-FiveGigE1/0/11</span><br><span class="line">    PortDescr:    Twenty-FiveGigE1/0/10 Interface</span><br><span class="line">    TTL:          121</span><br><span class="line">    MFS:          9416</span><br><span class="line">    PMD autoneg:  supported: yes, enabled: yes</span><br><span class="line">      MAU oper <span class="built_in">type</span>: unknown</span><br><span class="line">    MDI Power:    supported: no, enabled: no, pair control: no</span><br><span class="line">      Device <span class="built_in">type</span>:  PD</span><br><span class="line">      Power pairs:  signal</span><br><span class="line">      Class:        class 0</span><br><span class="line">  VLAN:         1, pvid: yes</span><br></pre></td></tr></table></figure>
+
+<p>这么一看，Intel还是挺坑的啊，为啥要在网卡搞个这玩意。。即使都是以太网卡，不同的厂商以及芯片之间，行为上还是会有一些区别的。</p>
+
+    </div>
+
+    
+    
+    <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/X722/" rel="tag"># X722</a>
+              <a href="/tags/i40e/" rel="tag"># i40e</a>
+              <a href="/tags/LLDP/" rel="tag"># LLDP</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/02/26/cpu-power-management/" rel="prev" title="服务器的能耗控制以及高性能模式配置（Dell）">
+      <i class="fa fa-chevron-left"></i> 服务器的能耗控制以及高性能模式配置（Dell）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/08/rename-nic-names/" rel="next" title="使用udev重命名网卡">
+      使用udev重命名网卡 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">76</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">166</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'd69b2454aff0c42e46ed',
+      clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',
+      repo        : 'c0refast.github.io',
+      owner       : 'C0reFast',
+      admin       : ['C0reFast'],
+      id          : '8b44b863d1bf5bd8743b954b751c3c6d',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

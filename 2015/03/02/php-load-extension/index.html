@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在PHP的配置文件中，添加一行extension&#x3D;xxxx.so，就可以使PHP加载xxx这个扩展，那么这个扩展具体是怎么被加载到PHP中的？可以看一下。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP扩展加载过程">
+<meta property="og:url" content="https://www.ichenfu.com/2015/03/02/php-load-extension/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="在PHP的配置文件中，添加一行extension&#x3D;xxxx.so，就可以使PHP加载xxx这个扩展，那么这个扩展具体是怎么被加载到PHP中的？可以看一下。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2015-03-02T07:56:52.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.300Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="PHP">
+<meta property="article:tag" content="PHP扩展加载">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://www.ichenfu.com/2015/03/02/php-load-extension/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>PHP扩展加载过程 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-47062085-1');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">C0reFast记事本</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2015/03/02/php-load-extension/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PHP扩展加载过程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2015年3月2日 15:56 15:56:52" itemprop="dateCreated datePublished" datetime="2015-03-02T15:56:52+08:00">2015年3月2日 15:56</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">源码分析</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在PHP的配置文件中，添加一行extension=xxxx.so，就可以使PHP加载xxx这个扩展，那么这个扩展具体是怎么被加载到PHP中的？可以看一下。</p>
+<a id="more"></a>
+<p>鸟哥之前写了一篇Blog，介绍了PHP扩展的载入过程：<a href="http://www.laruence.com/2009/06/14/945.html" target="_blank" rel="noopener">深入理解PHP原理之扩展载入过程</a>。篇中使用了apache1的例子。</p>
+<p>再看看apache2，在apache2handler/mod_php5.c中:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">AP_MODULE_DECLARE_DATA <span class="keyword">module</span> php5_module = &#123;</span><br><span class="line">    STANDARD20_MODULE_STUFF,</span><br><span class="line">    create_php_config,      <span class="comment">/* create per-directory config structure */</span></span><br><span class="line">    merge_php_config,       <span class="comment">/* merge per-directory config structures */</span></span><br><span class="line">    <span class="literal">NULL</span>,                   <span class="comment">/* create per-server config structure */</span></span><br><span class="line">    <span class="literal">NULL</span>,                   <span class="comment">/* merge per-server config structures */</span></span><br><span class="line">    php_dir_cmds,           <span class="comment">/* command apr_table_t */</span></span><br><span class="line">    php_ap2_register_hook   <span class="comment">/* register hooks */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>这中通过php_ap2_register_hook这个函数进行Apache的注入。<br>看一下php_ap2_register_hook这个函数：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">php_ap2_register_hook</span><span class="params">(<span class="keyword">apr_pool_t</span> *p)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ap_hook_pre_config(php_pre_config, <span class="literal">NULL</span>, <span class="literal">NULL</span>, APR_HOOK_MIDDLE);</span><br><span class="line">    ap_hook_post_config(php_apache_server_startup, <span class="literal">NULL</span>, <span class="literal">NULL</span>, APR_HOOK_MIDDLE);</span><br><span class="line">    ap_hook_handler(php_handler, <span class="literal">NULL</span>, <span class="literal">NULL</span>, APR_HOOK_MIDDLE);</span><br><span class="line">    ap_hook_child_init(php_apache_child_init, <span class="literal">NULL</span>, <span class="literal">NULL</span>, APR_HOOK_MIDDLE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在post_config阶段会调用php_apache_server_startup：<br>而在php_apache_server_startup中，依次调用了sapi_startup和apache2_sapi_module.startup：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">int</span></span><br><span class="line">php_apache_server_startup(<span class="keyword">apr_pool_t</span> *pconf, <span class="keyword">apr_pool_t</span> *plog, <span class="keyword">apr_pool_t</span> *ptemp, server_rec *s)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">    sapi_startup(&amp;apache2_sapi_module);</span><br><span class="line">    apache2_sapi_module.startup(&amp;apache2_sapi_module);</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code>而apache2_sapi_module.startup指向的函数是：</code></pre><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">php_apache2_startup</span><span class="params">(sapi_module_struct *sapi_module)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (php_module_startup(sapi_module, &amp;php_apache_module, <span class="number">1</span>)==FAILURE) &#123;</span><br><span class="line">        <span class="keyword">return</span> FAILURE;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> SUCCESS;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> sapi_module_struct apache2_sapi_module = &#123;</span><br><span class="line">    <span class="string">"apache2handler"</span>,</span><br><span class="line">    <span class="string">"Apache 2.0 Handler"</span>,</span><br><span class="line"></span><br><span class="line">    php_apache2_startup,                <span class="comment">/* startup */</span></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在php_apache2_startup中，调用了php_module_start函数，下面的逻辑就和鸟哥的博文一样了。</p>
+<p>再看看最后的php_dl里做了些啥：(php_dl函数中调用了php_load_extension，所以就直接看php_load_extension这个函数，这个函数和鸟哥中的php_dl的实现是一样的)位置在 {PHP_SRC}/ext/standard/dl.c</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">PHPAPI <span class="keyword">int</span> <span class="title">php_load_extension</span><span class="params">(<span class="keyword">char</span> *filename, <span class="keyword">int</span> type, <span class="keyword">int</span> start_now TSRMLS_DC)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">void</span> *handle;</span><br><span class="line">    <span class="keyword">char</span> *libpath;</span><br><span class="line">    zend_module_entry *module_entry;</span><br><span class="line">    zend_module_entry *(*get_module)(<span class="keyword">void</span>);</span><br><span class="line">    <span class="keyword">int</span> error_type;</span><br><span class="line">    <span class="keyword">char</span> *extension_dir;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//省略一大段代码,就是计算出最终扩展文件的路径</span></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">    </span><br><span class="line"></span><br><span class="line">    <span class="comment">//这里打开这个动态库，DL_LOAD是一个宏，在Linux下就是dlopen，在Windows下就是LoadLibrary.</span></span><br><span class="line">    <span class="comment">/* load dynamic symbol */</span></span><br><span class="line">    handle = DL_LOAD(libpath);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//一些错误处理</span></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">//从动态库中获取get_module函数的入口</span></span><br><span class="line">    get_module = (zend_module_entry *(*)(<span class="keyword">void</span>)) DL_FETCH_SYMBOL(handle, <span class="string">"get_module"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Some OS prepend _ to symbol names while their dynamic linker</span></span><br><span class="line"><span class="comment">     * does not do that automatically. Thus we check manually for</span></span><br><span class="line"><span class="comment">     * _get_module. */</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!get_module) &#123;</span><br><span class="line">        get_module = (zend_module_entry *(*)(<span class="keyword">void</span>)) DL_FETCH_SYMBOL(handle, <span class="string">"_get_module"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!get_module) &#123;</span><br><span class="line">        <span class="keyword">if</span> (DL_FETCH_SYMBOL(handle, <span class="string">"zend_extension_entry"</span>) || DL_FETCH_SYMBOL(handle, <span class="string">"_zend_extension_entry"</span>)) &#123;</span><br><span class="line">            DL_UNLOAD(handle);</span><br><span class="line">            php_error_docref(<span class="literal">NULL</span> TSRMLS_CC, error_type, <span class="string">"Invalid library (appears to be a Zend Extension, try loading using zend_extension=%s from php.ini)"</span>, filename);</span><br><span class="line">            <span class="keyword">return</span> FAILURE;</span><br><span class="line">        &#125;</span><br><span class="line">        DL_UNLOAD(handle);</span><br><span class="line">        php_error_docref(<span class="literal">NULL</span> TSRMLS_CC, error_type, <span class="string">"Invalid library (maybe not a PHP library) '%s'"</span>, filename);</span><br><span class="line">        <span class="keyword">return</span> FAILURE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//调用目标动态库的get_module()函数，获取module_entry</span></span><br><span class="line">    module_entry = get_module();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//进行一些判断和转换，主要是版本的比对</span></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">    </span><br><span class="line">    module_entry-&gt;type = type;</span><br><span class="line">    module_entry-&gt;module_number = zend_next_free_module();</span><br><span class="line">    module_entry-&gt;handle = handle;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//调用zend_register_module_ex进行注册</span></span><br><span class="line">    <span class="keyword">if</span> ((module_entry = zend_register_module_ex(module_entry TSRMLS_CC)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        DL_UNLOAD(handle);</span><br><span class="line">        <span class="keyword">return</span> FAILURE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((type == MODULE_TEMPORARY || start_now) &amp;&amp; zend_startup_module_ex(module_entry TSRMLS_CC) == FAILURE) &#123;</span><br><span class="line">        DL_UNLOAD(handle);</span><br><span class="line">        <span class="keyword">return</span> FAILURE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((type == MODULE_TEMPORARY || start_now) &amp;&amp; module_entry-&gt;request_startup_func) &#123;</span><br><span class="line">        <span class="keyword">if</span> (module_entry-&gt;request_startup_func(type, module_entry-&gt;module_number TSRMLS_CC) == FAILURE) &#123;</span><br><span class="line">            php_error_docref(<span class="literal">NULL</span> TSRMLS_CC, error_type, <span class="string">"Unable to initialize module '%s'"</span>, module_entry-&gt;name);</span><br><span class="line">            DL_UNLOAD(handle);</span><br><span class="line">            <span class="keyword">return</span> FAILURE;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> SUCCESS;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在zend_register_module_ex中，再有一些具体的工作，包括把扩展中定义的函数都复制到全局的funtcion_table中等等。</p>
+<p>这样，一个扩展就被加载到PHP中了。</p>
+
+    </div>
+
+    
+    
+    <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PHP/" rel="tag"># PHP</a>
+              <a href="/tags/PHP%E6%89%A9%E5%B1%95%E5%8A%A0%E8%BD%BD/" rel="tag"># PHP扩展加载</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2015/03/01/override-php-function/" rel="prev" title="替换PHP底层函数实现">
+      <i class="fa fa-chevron-left"></i> 替换PHP底层函数实现
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2015/03/09/ext-skel-like-php/" rel="next" title="仿照PHP的实现简单的扩展动态加载">
+      仿照PHP的实现简单的扩展动态加载 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">76</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">166</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'd69b2454aff0c42e46ed',
+      clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',
+      repo        : 'c0refast.github.io',
+      owner       : 'C0reFast',
+      admin       : ['C0reFast'],
+      id          : '3dc5d43063a8775b2acc27b3b136f790',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

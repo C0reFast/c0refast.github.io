@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta property="og:type" content="website">
+<meta property="og:title" content="C0reFast记事本">
+<meta property="og:url" content="https://www.ichenfu.com/page/4/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:author" content="Chen Fu">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://www.ichenfu.com/page/4/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : true,
+    isPost : false,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-47062085-1');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">C0reFast记事本</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content index posts-expand">
+            
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/07/06/ceph-pg-states-concepts/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2018/07/06/ceph-pg-states-concepts/" class="post-title-link" itemprop="url">Ceph中一些PG相关的状态说明和基本概念说明</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018年7月6日 10:23 10:23:50" itemprop="dateCreated datePublished" datetime="2018-07-06T10:23:50+08:00">2018年7月6日 10:23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>最近公司有个Ceph集群出了点问题，于是也参与了修复的过程，过程中最让人头疼的就是一堆不明所以的状态了，所以看了看文档，也找了一些参考，<br>整理了一下Ceph PG的一些状态以及相关的概念说明，做了一个中英文的对照版本：</p>
+<h2 id="Placement-Group-States（PG状态）"><a href="#Placement-Group-States（PG状态）" class="headerlink" title="Placement Group States（PG状态）"></a>Placement Group States（PG状态）</h2><p>当检查一个集群的状态时（执行<code>ceph -w</code>或者<code>ceph -s</code>），Ceph会汇报当前PG的状态，每个PG会有一个或多个状态，最优的PG状态是<code>active + clean</code>。<br>下面是所有PG状态的具体解释：</p>
+<h4 id="creating"><a href="#creating" class="headerlink" title="creating"></a><em>creating</em></h4><pre><code>Ceph is still creating the placement group.
+Ceph 仍在创建PG。</code></pre><h4 id="activating"><a href="#activating" class="headerlink" title="activating"></a><em>activating</em></h4><pre><code>The placement group is peered but not yet active.
+PG已经互联，但是还没有active。</code></pre><h4 id="active"><a href="#active" class="headerlink" title="active"></a><em>active</em></h4><pre><code>Ceph will process requests to the placement group.
+Ceph 可处理到此PG的请求。</code></pre><h4 id="clean"><a href="#clean" class="headerlink" title="clean"></a><em>clean</em></h4><pre><code>Ceph replicated all objects in the placement group the correct
+number of times.
+PG内所有的对象都被正确的复制了对应的份数。</code></pre><h4 id="down"><a href="#down" class="headerlink" title="down"></a><em>down</em></h4><pre><code>A replica with necessary data is down, so the placement group is
+offline.
+一个包含必备数据的副本离线，所以PG也离线了。</code></pre><h4 id="scrubbing"><a href="#scrubbing" class="headerlink" title="scrubbing"></a><em>scrubbing</em></h4><pre><code>Ceph is checking the placement group metadata for inconsistencies.
+Ceph 正在检查PG metadata的一致性。</code></pre><h4 id="deep"><a href="#deep" class="headerlink" title="deep"></a><em>deep</em></h4><pre><code>Ceph is checking the placement group data against stored checksums.
+Ceph 正在检查PG数据和checksums的一致性。</code></pre><h4 id="degraded"><a href="#degraded" class="headerlink" title="degraded"></a><em>degraded</em></h4><pre><code>Ceph has not replicated some objects in the placement group the
+correct number of times yet.
+PG中的一些对象还没有被复制到规定的份数。</code></pre><h4 id="inconsistent"><a href="#inconsistent" class="headerlink" title="inconsistent"></a><em>inconsistent</em></h4><pre><code>Ceph detects inconsistencies in the one or more replicas of an
+object in the placement group (e.g. objects are the wrong size,
+objects are missing from one replica *after* recovery finished,
+etc.).
+Ceph检测到PG中对象的一份或多份数据不一致（比如对象大学不一直，或者恢复成功后对象依然没有等）</code></pre><h4 id="peering"><a href="#peering" class="headerlink" title="peering"></a><em>peering</em></h4><pre><code>The placement group is undergoing the peering process
+PG正在互联过程中。</code></pre>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2018/07/06/ceph-pg-states-concepts/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/05/17/kube-dns-spec/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2018/05/17/kube-dns-spec/" class="post-title-link" itemprop="url">Kubernetes DNS-Based Service Discovery 翻译</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018年5月17日 16:30 16:30:19" itemprop="dateCreated datePublished" datetime="2018-05-17T16:30:19+08:00">2018年5月17日 16:30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>本文是<a href="https://github.com/kubernetes/dns/blob/707da5e449f6000e1ce0b92f1a13b966d262dbb2/docs/specification.md" target="_blank" rel="noopener">Kubernetes DNS-Based Service Discovery</a>的翻译，也就是Kubernetes DNS specification的翻译，目前最新版本号是1.0.1。</p>
+<h2 id="0-关于此文档"><a href="#0-关于此文档" class="headerlink" title="0 - 关于此文档"></a>0 - 关于此文档</h2><p>本文档是Kubernetes基于DNS的服务发现的规范说明，尽管在Kubernetes中还有其他方式的服务发现协议和机制，但是DNS仍然是最常见而且是最推荐使用的扩展。实际的DNS服务并不一定由由默认的Kube-DNS提供。 本文档旨在为所有实现之间的通用性提供相应的基准。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2018/05/17/kube-dns-spec/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/05/15/linux-timezone/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2018/05/15/linux-timezone/" class="post-title-link" itemprop="url">Linux时间和timezone概念解释</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018年5月15日 9:29 9:29:12" itemprop="dateCreated datePublished" datetime="2018-05-15T09:29:12+08:00">2018年5月15日 9:29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在Docker环境中经常会遇到时区相关的问题，所以顺便也看了一下Linux系统下时间相关的一下配置和概念：</p>
+<h2 id="硬件时钟"><a href="#硬件时钟" class="headerlink" title="硬件时钟"></a>硬件时钟</h2><p>硬件时钟也叫RTC（Real Time Clock）或者CMOS时钟，这个是保存在BIOS中的，仅能保存：年、月、日、时、分、秒这些时间数值，无法保存当前时区以及是否使用夏令时调节。</p>
+<h2 id="系统时钟"><a href="#系统时钟" class="headerlink" title="系统时钟"></a>系统时钟</h2><p>系统时钟也叫软件时钟，在系统时钟里是有时区等概念的，在Linux内核里，是保存为自 UTC 时间 1970 年1月1日经过的秒数。系统启动时会读取硬件时钟，并根据<code>/etc/adjtime</code>的设置计算当前的时钟。系统启动之后，系统时钟与硬件时钟独立运行，Linux 通过时钟中断计数维护系统时钟。</p>
+<h2 id="etc-localtime"><a href="#etc-localtime" class="headerlink" title="/etc/localtime"></a>/etc/localtime</h2><p>这个文件一般情况下是一个软链接，链接到<code>/usr/share/zoneinfo/</code>目录下的一个对应时区的二进制文件，比如设置<code>Asia/Shanghai</code>的时区，则<code>/etc/localtime -&gt; /usr/share/zoneinfo/Asia/Shanghai</code>，调用<code>date</code>等工具获取时间时会考虑这个配置。<br>建议并强烈建议将这个文件设置为软链接，很多人会直接拷贝文件，其实是不推荐的。所有的Linux系统都会依赖这个文件。</p>
+<h2 id="etc-timezone"><a href="#etc-timezone" class="headerlink" title="/etc/timezone"></a>/etc/timezone</h2><p>这个文件一般会记录时区的直接文字表示，或者是一个时间偏移（很少见），比如如果设置时区为<code>Asia/Shanghai</code>，则这个文件的内容就会是<code>Asia/Shanghai</code>。这个文件并不是在所有Linux中都存在，比如在我的ArchLinux中就没有这个文件。这个文件一般也仅仅是一个简单的表示。</p>
+<p>最后我们基本可以得到下面的结论：</p>
+<ol>
+<li>BIOS时间即硬件时间没有时区</li>
+<li>Linux在启动时会根据<code>/etc/adjtime</code>的设置和当前的硬件时间计算出当前的UTC时间，并将其和1970 年1月1日的秒差记录在内核中，由时钟中断继续维护。</li>
+<li><code>date</code>等工具获得的时间是根据Linux内核中保存的时间和<code>/etc/localtime</code>的配置计算得来的。</li>
+</ol>
+<p>其他相关问题，比如设置时间以及和Windows时间同步等可以参考下面的ArchLinux Wiki链接</p>
+<p>参考：</p>
+<ol>
+<li><a href="https://wiki.archlinux.org/index.php/Time" target="_blank" rel="noopener">https://wiki.archlinux.org/index.php/Time</a></li>
+<li><a href="https://unix.stackexchange.com/questions/384971/whats-the-difference-between-localtime-and-timezone-files" target="_blank" rel="noopener">https://unix.stackexchange.com/questions/384971/whats-the-difference-between-localtime-and-timezone-files</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/05/10/k8s-cronjob-source-code/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2018/05/10/k8s-cronjob-source-code/" class="post-title-link" itemprop="url">Kubernetes CronJob Controller源码分析</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018年5月10日 10:21 10:21:53" itemprop="dateCreated datePublished" datetime="2018-05-10T10:21:53+08:00">2018年5月10日 10:21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>最近的一个项目需要用到Kubernetes的CronJob，主要用来定时执行一个备份任务，刚开始使用的时候发现没有按照预期的情况运行，所以决定看看<code>CronJob Controller</code>的代码，看看他是怎么实现对应的功能的，正好发现网上也没有其他人写过关于<code>CronJob Controller</code>代码的解析（可能是太简单了不用写吧）。所以也就正好记录一下。</p>
+<p><code>CronJob Controller</code>的代码在<code>kubernetes/pkg/controller/cronjob</code>路径下，主要的逻辑实现在这个目录的<code>cronjob_controller.go</code>，这里分析的是<code>v1.10.2</code>版本的代码，可以直接链接到<a href="https://github.com/kubernetes/kubernetes/blob/v1.10.2/pkg/controller/cronjob/cronjob_controller.go" target="_blank" rel="noopener">Github</a>查看。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2018/05/10/k8s-cronjob-source-code/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/03/20/ddia-note-chapter-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2018/03/20/ddia-note-chapter-1/" class="post-title-link" itemprop="url">《DDIA》读书笔记第一章</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018年3月20日 19:46 19:46:17" itemprop="dateCreated datePublished" datetime="2018-03-20T19:46:17+08:00">2018年3月20日 19:46</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>之前一直听说Designing Data-Intensive Applications (DDIA) 这本书是神书，也决定读一下，顺便做些笔记，也算巩固一下学到的东西吧。</p>
+<p>书的第一部分，主要关注于一些基础的知识，第一章的标题<code>Reliable, Scalable, and Maintainable Applications</code>就讲了三个当前应用的最主要特点：可靠性，可扩展性和可维护性。</p>
+<h2 id="可靠性"><a href="#可靠性" class="headerlink" title="可靠性"></a>可靠性</h2><p>首先是<code>Reliability</code>也就是可靠性，主要包含下面的几个预期：</p>
+<ul>
+<li>应用可以按用户所期待的功能正常运行</li>
+<li>可以容忍用户犯的错误或者不正确的使用方式</li>
+<li>在对应的系统容量下性能能满足正常的使用要求</li>
+<li>能拒绝未授权或者滥用的情况</li>
+</ul>
+<p>如果能满足上面的需求，可以说一个软件是可靠的，但是并不是所有的东西都能满足预期，当一些意料之外的东西发生了，称之为<code>faults</code>，系统正确应对这些<code>faults</code>的能力则称作<code>fault-tolerant or resilient</code>（即容错能力或者弹性），虽然容错能力很重要，但也不是意味着可以实现一个能容忍任何错误的系统（比如地球爆炸了）。<br>需要注意的是，<code>fault</code>和<code>failure</code>是不一样的，前者一般指的是系统某个部分没有按照设计正常工作，而后者一般就意味着整个系统都无法正常提供服务了。当然，我们没有办法去降低<code>fault</code>发生的概率，特别是降低到0，能做的，就是当<code>fault</code>发生时，系统不会因为这些<code>faults</code>变成<code>failure</code>状态，这也是一个容错系统的设计目标。<br>针对一个系统，我们可以人为的提升<code>faults</code>的发生概率，来验证系统的可靠性，比如kill某个进程，或者断开网络等等。一般情况下，比较严重的bug都是因为对错误的处理不完善导致的。<br>当然尽管我们可以通过设计容忍很多错误，但是预防错误的发生，远远比发生后再去修复来的好，毕竟很多错误是没办法被修复的，比如数据库被黑客入侵，这个操作无法被修复到原始的样子（数据已经泄漏）。<br>常见的错误主要有三个：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2018/03/20/ddia-note-chapter-1/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/03/19/go-http-timeouts/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2018/03/19/go-http-timeouts/" class="post-title-link" itemprop="url">两张图解释Golang http的超时机制</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018年3月19日 9:32 9:32:58" itemprop="dateCreated datePublished" datetime="2018-03-19T09:32:58+08:00">2018年3月19日 9:32</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>转自<a href="https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/" target="_blank" rel="noopener">The complete guide to Go net/http timeouts</a>。</p>
+<h3 id="服务端超时"><a href="#服务端超时" class="headerlink" title="服务端超时"></a>服务端超时</h3><p>对于<code>http.Server</code>服务端有两个超时可以设置：<code>ReadTimeout</code>和<code>WriteTimeout</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">srv := &amp;http.Server&#123;</span><br><span class="line">    ReadTimeout: <span class="number">5</span> * time.Second,</span><br><span class="line">    WriteTimeout: <span class="number">10</span> * time.Second,</span><br><span class="line">&#125;</span><br><span class="line">log.Println(srv.ListenAndServe())</span><br></pre></td></tr></table></figure>
+<p>各自的作用时间见图：</p>
+<p><img src="/images/go_http_timeout_server.png" alt="Server timeout"></p>
+<p>需要注意的是<code>WriteTimeout</code>被设置了两次，一次是在读取Http头过程中，另一次是在读取Http头结束后。</p>
+<h3 id="客户端超时"><a href="#客户端超时" class="headerlink" title="客户端超时"></a>客户端超时</h3><p>对于<code>http.Client</code>客户端，相对要复杂一点，一般的初始化代码如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">c := &amp;http.Client&#123;</span><br><span class="line">    Transport: &amp;http.Transport&#123;</span><br><span class="line">        Dial: (&amp;net.Dialer&#123;</span><br><span class="line">                Timeout:   <span class="number">30</span> * time.Second,</span><br><span class="line">                KeepAlive: <span class="number">30</span> * time.Second,</span><br><span class="line">        &#125;).Dial,</span><br><span class="line">        TLSHandshakeTimeout:   <span class="number">10</span> * time.Second,</span><br><span class="line">        ResponseHeaderTimeout: <span class="number">10</span> * time.Second,</span><br><span class="line">        ExpectContinueTimeout: <span class="number">1</span> * time.Second,</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这些Timeout各自的作用时间见：</p>
+<p><img src="/images/go_http_timeout_client.png" alt="Client timeout"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/01/23/cni-bridge-host-local/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2018/01/23/cni-bridge-host-local/" class="post-title-link" itemprop="url">CNI Plugin Bridge代码解析</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018年1月23日 10:52 10:52:30" itemprop="dateCreated datePublished" datetime="2018-01-23T10:52:30+08:00">2018年1月23日 10:52</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在CNI所以默认提供的Plugin中，<code>bridge</code>应该算是最简单的插件了，针对IPAM Plugin，最简单的应该是<code>host-local</code>，这两个插件也是Kubernetes网络<code>kubenet</code>需要的两个插件。所以这里看一下这两个插件的代码。</p>
+<p>所有官方维护的代码，都开源在<a href="https://github.com/containernetworking/plugins" target="_blank" rel="noopener">containernetworking/plugins</a>项目中了。</p>
+<p>其中<code>bridge</code>的代码在<code>plugins/main/bridge</code>目录，最重要的是<code>cmdAdd</code>和<code>cmdDel</code>两个函数，对应CNI SPEC中的ADD和DEL两个主要操作。主要来看一下<code>cmdAdd</code>的实现，精简（删除一些错误处理）后的代码如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">cmdAdd</span><span class="params">(args *skel.CmdArgs)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	n, cniVersion, err := loadNetConf(args.StdinData)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> n.IsDefaultGW &#123;</span><br><span class="line">		n.IsGW = <span class="literal">true</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	br, brInterface, err := setupBridge(n)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	netns, err := ns.GetNS(args.Netns)</span><br><span class="line">	<span class="keyword">defer</span> netns.Close()</span><br><span class="line"></span><br><span class="line">	hostInterface, containerInterface, err := setupVeth(netns, br, args.IfName, n.MTU, n.HairpinMode)</span><br><span class="line"></span><br><span class="line">	r, err := ipam.ExecAdd(n.IPAM.Type, args.StdinData)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	result, err := current.NewResultFromResult(r)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(result.IPs) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> errors.New(<span class="string">"IPAM plugin returned missing IP config"</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	result.Interfaces = []*current.Interface&#123;brInterface, hostInterface, containerInterface&#125;</span><br><span class="line"></span><br><span class="line">	gwsV4, gwsV6, err := calcGateways(result, n)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> err := netns.Do(<span class="function"><span class="keyword">func</span><span class="params">(_ ns.NetNS)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">		contVeth, err := net.InterfaceByName(args.IfName)</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> _, ipc := <span class="keyword">range</span> result.IPs &#123;</span><br><span class="line">			<span class="keyword">if</span> ipc.Version == <span class="string">"6"</span> &amp;&amp; (n.HairpinMode || n.PromiscMode) &#123;</span><br><span class="line">				<span class="keyword">if</span> err := disableIPV6DAD(args.IfName); err != <span class="literal">nil</span> &#123;</span><br><span class="line">					<span class="keyword">return</span> err</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">break</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> err := ipam.ConfigureIface(args.IfName, result); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> _, ipc := <span class="keyword">range</span> result.IPs &#123;</span><br><span class="line">			<span class="keyword">if</span> ipc.Version == <span class="string">"4"</span> &#123;</span><br><span class="line">				_ = arping.GratuitousArpOverIface(ipc.Address.IP, *contVeth)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">	&#125;); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> n.IsGW &#123;</span><br><span class="line">		<span class="keyword">var</span> firstV4Addr net.IP</span><br><span class="line">		<span class="keyword">for</span> _, gws := <span class="keyword">range</span> []*gwInfo&#123;gwsV4, gwsV6&#125; &#123;</span><br><span class="line">			<span class="keyword">for</span> _, gw := <span class="keyword">range</span> gws.gws &#123;</span><br><span class="line">				<span class="keyword">if</span> gw.IP.To4() != <span class="literal">nil</span> &amp;&amp; firstV4Addr == <span class="literal">nil</span> &#123;</span><br><span class="line">					firstV4Addr = gw.IP</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				err = ensureBridgeAddr(br, gws.family, &amp;gw, n.ForceAddress)</span><br><span class="line">				<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">					<span class="keyword">return</span> fmt.Errorf(<span class="string">"failed to set bridge addr: %v"</span>, err)</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> gws.gws != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">if</span> err = enableIPForward(gws.family); err != <span class="literal">nil</span> &#123;</span><br><span class="line">					<span class="keyword">return</span> fmt.Errorf(<span class="string">"failed to enable forwarding: %v"</span>, err)</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> n.IPMasq &#123;</span><br><span class="line">		chain := utils.FormatChainName(n.Name, args.ContainerID)</span><br><span class="line">		comment := utils.FormatComment(n.Name, args.ContainerID)</span><br><span class="line">		<span class="keyword">for</span> _, ipc := <span class="keyword">range</span> result.IPs &#123;</span><br><span class="line">			<span class="keyword">if</span> err = ip.SetupIPMasq(ip.Network(&amp;ipc.Address), chain, comment); err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> err</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	br, err = bridgeByName(n.BrName)</span><br><span class="line"></span><br><span class="line">	brInterface.Mac = br.Attrs().HardwareAddr.String()</span><br><span class="line"></span><br><span class="line">	result.DNS = n.DNS</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> types.PrintResult(result, cniVersion)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2018/01/23/cni-bridge-host-local/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/01/22/cni-spec/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2018/01/22/cni-spec/" class="post-title-link" itemprop="url">容器网络接口(CNI) Plugin SPEC介绍</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018年1月22日 9:47 9:47:22" itemprop="dateCreated datePublished" datetime="2018-01-22T09:47:22+08:00">2018年1月22日 9:47</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>本文主要介绍一下容器网络接口(CNI) 的SPEC，主要参考<a href="https://github.com/containernetworking/cni/blob/spec-v0.3.1/SPEC.md" target="_blank" rel="noopener">SPEC v0.3.1</a>，以及目前<a href="https://github.com/containernetworking/cni/blob/525880d8bc1cdb7250c59a1296c1a7427305af74/SPEC.md" target="_blank" rel="noopener">最新的SPEC</a>，目前新SPEC针对v0.3.1版本改动不是很大，特别是相关接口输入输出方面，因此可以看作是一样的。</p>
+<h2 id="总览"><a href="#总览" class="headerlink" title="总览"></a>总览</h2><p>所有的CNI Plugin，都必须实现为可以被容器管理系统（如rtk、Kubernetes等）调用的可执行文件。<br>CNI插件负责将网络接口插入容器网络命名空间（例如veth pair的其中一端），并在主机上进行任何必要的改变（例如将veth pair的另一端连接到网桥）。然后应该将IP分配给接口，并通过调用适当的IPAM插件将与“IP地址管理”部分一致的IP地址分配给该网络接口，并设置好对应的路由。</p>
+<h2 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h2><p>所有的CNI Plugin必须实现以下操作：</p>
+<ul>
+<li><p>添加一个容器到网络</p>
+<ul>
+<li>Parameters:<ul>
+<li><strong>Version</strong>. The version of CNI spec that the caller is using (container management system or the invoking plugin).</li>
+<li><strong>Container ID</strong>. A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.</li>
+<li><strong>Network namespace path</strong>. This represents the path to the network namespace to be added, i.e. /proc/[pid]/ns/net or a bind-mount/link to it.</li>
+<li><strong>Network configuration</strong>. This is a JSON document describing a network to which a container can be joined. The schema is described below.</li>
+<li><strong>Extra arguments</strong>. This provides an alternative mechanism to allow simple configuration of CNI plugins on a per-container basis.</li>
+<li><strong>Name of the interface inside the container</strong>. This is the name that should be assigned to the interface created inside the container (network namespace); consequently it must comply with the standard Linux restrictions on interface names.</li>
+</ul>
+</li>
+<li>Result:<ul>
+<li><strong>Interfaces list</strong>. Depending on the plugin, this can include the sandbox (eg, container or hypervisor) interface name and/or the host interface name, the hardware addresses of each interface, and details about the sandbox (if any) the interface is in.</li>
+<li><strong>IP configuration assigned to each interface</strong>. The IPv4 and/or IPv6 addresses, gateways, and routes assigned to sandbox and/or host interfaces.</li>
+<li><strong>DNS information</strong>. Dictionary that includes DNS information for nameservers, domain, search domains and options.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>从网络中删除一个容器</p>
+<ul>
+<li>Parameters:<ul>
+<li><strong>Version</strong>. The version of CNI spec that the caller is using (container management system or the invoking plugin).</li>
+<li><strong>Container ID</strong>, as defined above.</li>
+<li><strong>Network namespace path</strong>, as defined above.</li>
+<li><strong>Network configuration</strong>, as defined above.</li>
+<li><strong>Extra arguments</strong>, as defined above.</li>
+<li><strong>Name of the interface inside the container</strong>, as defined above.</li>
+</ul>
+</li>
+<li>All parameters should be the same as those passed to the corresponding add operation.</li>
+<li>A delete operation should release all resources held by the supplied containerid in the configured network.</li>
+</ul>
+</li>
+<li><p>报告插件支持的CNI版本</p>
+<ul>
+<li><p>Parameters: NONE.</p>
+</li>
+<li><p>Result: information about the CNI spec versions supported by the plugin</p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;cniVersion&quot;: &quot;0.3.1&quot;, &#x2F;&#x2F; the version of the CNI spec in use for this output</span><br><span class="line">  &quot;supportedVersions&quot;: [ &quot;0.1.0&quot;, &quot;0.2.0&quot;, &quot;0.3.0&quot;, &quot;0.3.1&quot; ] &#x2F;&#x2F; the list of CNI spec versions that this plugin supports</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2018/01/22/cni-spec/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/11/20/rpmbuild-not-strip/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2017/11/20/rpmbuild-not-strip/" class="post-title-link" itemprop="url">使用rpmbuild打包时不对文件进行strip操作</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017年11月20日 15:01 15:01:25" itemprop="dateCreated datePublished" datetime="2017-11-20T15:01:25+08:00">2017年11月20日 15:01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%95%88%E7%8E%87%E9%85%8D%E7%BD%AE/" itemprop="url" rel="index"><span itemprop="name">效率配置</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>默认情况下，在使用rpmbuild打包时，会对安装的所有文件进行strip操作，去除文件的一些调试信息，并将这些调试信息放到debuginfo包中，但在很多时候，我们并不需要rpmbuild帮我们执行strip，也不需要生成debuginfo包，所以我们可以修改一下spec文件，关闭这些选项。</p>
+<p>针对文件的strip操作是在<code>__os_install_post</code>这个宏中定义的，我们可以运行一下<code>rpmbuild --showrc</code>看一下原始的<code>__os_install_post</code>做了哪些操作：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">-14: __os_install_post</span><br><span class="line">    /usr/lib/rpm/redhat/brp-compress</span><br><span class="line">    %&#123;!?__debug_package:/usr/lib/rpm/redhat/brp-strip %&#123;__strip&#125;&#125;</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-static-archive %&#123;__strip&#125;</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-comment-note %&#123;__strip&#125; %&#123;__objdump&#125;</span><br><span class="line">    /usr/lib/rpm/brp-python-bytecompile</span><br><span class="line">    /usr/lib/rpm/redhat/brp-python-hardlink</span><br><span class="line">    %&#123;!?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars&#125;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>可以看到在打包时会对文件进行一系列操作，比如压缩，strip，编译Python脚本等，所以，我们只需要在spec文件中，加上<code>%define __os_install_post %{nil}</code>，将<code>__os_install_post</code>设置为空，这样在打包的时候，就不会执行上面的这些操作了，也就不会对文件进行strip操作了。同样的，如果不需要生成debuginfo包，只需要再加上<code>%define debug_package  %{nil}</code>就可以了。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/09/13/tcp-40ms-delay/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2017/09/13/tcp-40ms-delay/" class="post-title-link" itemprop="url">TCP神奇的40ms延迟</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017年9月13日 9:57 9:57:44" itemprop="dateCreated datePublished" datetime="2017-09-13T09:57:44+08:00">2017年9月13日 9:57</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">网络编程</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>这个问题是很久之前解决的，现在想起来，还是把之前的问题解决过程总结一下。<br>问题的起因是内部的一个Socket代理，用户对独享数据库的所有请求都需要经过这个Socket代理，某天一个用户反馈，切换到独享数据库之后，页面响应变得异常的慢，大概从1s左右直接到了60s左右，明显是有问题的，首先让用户开了xhprof看了一下，发现用户一个页面牵涉到了超过1000次SQL查询，这1000多次查询占据了绝大部分的时间，因为仅仅切换了数据库，所以问题的原因肯定还是数据库相关。<br>这个场景还是稍微有点特殊，一个页面里有超过1000次SQL查询的设计也不算合理，所以，我们就编写了测试用例，在PHP中，查询数据库1000次，测试直接连接数据库，和通过Socket代理连接数据库的情况：最后发现直连的速度非常快，但是过代理则慢的不可接受了，很明显是代理的问题。<br>于是我们尝试在代理机器上抓包分析一下：</p>
+<p><img src="/images/socket_proxy_tcpdump.png" alt="tcpdump"></p>
+<p>其中<code>10.67.15.102</code>是我们Web运行环境的机器IP，<code>10.67.15.212</code>是Socket代理所在的机器<code>10.13.144.139</code>是数据库所在的机器，从id为22953的数据包开始，到22957，是一个SQL查询从Web运行环境到数据库的整个过程：</p>
+<pre><code>id为22953：运行环境102发送select语句到Socket代理212。数据包长度为296byte 时间：23.877515
+id为22954：Socket代理212发送了一部分select语句128byte到数据库139。       时间：23.877611
+id为22955：Socket代理212回运行环境103的ack。                             时间：23.917294
+id为22956：数据库139回Socket代理212的ack。                               时间：23.918398
+id为22957：Socket代理212发送剩余部分select语句168byte到数据库139。       时间：23.918415</code></pre>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2017/09/13/tcp-40ms-delay/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+  </nav>
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">76</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">166</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri === 'https://www.ichenfu.com/page/4/',]
+      });
+      });
+  </script>
+
+
+</body>
+</html>

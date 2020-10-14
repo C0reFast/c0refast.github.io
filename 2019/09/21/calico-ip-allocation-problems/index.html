@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="之前线上运行的K8S集群出现了一个Pod IP无法访问问题，调查了一下，发现和CalicoIP地址的分配策略相关，具体表现为一个&#x2F;26的IP Block192.168.100.0&#x2F;26分配给了A机器之后，在另外一台B机器上又出现了该IP Block内的一个IP 192.168.100.10，同时因为A机器上有该IP Block的blackhole路由blackhole 192.168.100.0&#x2F;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Calico的IP分配策略以及存在的一些问题">
+<meta property="og:url" content="https://www.ichenfu.com/2019/09/21/calico-ip-allocation-problems/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="之前线上运行的K8S集群出现了一个Pod IP无法访问问题，调查了一下，发现和CalicoIP地址的分配策略相关，具体表现为一个&#x2F;26的IP Block192.168.100.0&#x2F;26分配给了A机器之后，在另外一台B机器上又出现了该IP Block内的一个IP 192.168.100.10，同时因为A机器上有该IP Block的blackhole路由blackhole 192.168.100.0&#x2F;">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-21T08:28:51.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.290Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="Calico">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://www.ichenfu.com/2019/09/21/calico-ip-allocation-problems/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Calico的IP分配策略以及存在的一些问题 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-47062085-1');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">C0reFast记事本</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2019/09/21/calico-ip-allocation-problems/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Calico的IP分配策略以及存在的一些问题
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019年9月21日 16:28 16:28:51" itemprop="dateCreated datePublished" datetime="2019-09-21T16:28:51+08:00">2019年9月21日 16:28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>之前线上运行的K8S集群出现了一个Pod IP无法访问问题，调查了一下，发现和CalicoIP地址的分配策略相关，具体表现为一个/26的IP Block<code>192.168.100.0/26</code>分配给了A机器之后，在另外一台B机器上又出现了该IP Block内的一个IP <code>192.168.100.10</code>，同时因为A机器上有该IP Block的blackhole路由<code>blackhole 192.168.100.0/26  proto bird</code>，所以导致A机器上所有的Pod访问<code>192.168.100.10</code>时因为黑洞路由原因直接失败。</p>
+<p>遇到这个问题之前，只是通过文档大致了解Calico的IP分配策略，没有深入源码看看实际的情况，现在出现了相关问题，还是需要阅读一下相关代码，当然在这过程中也发现了一些问题，有些问题Calico官方也没有很好的解决。</p>
+<a id="more"></a>
+
+<h2 id="Calico-IP分配策略"><a href="#Calico-IP分配策略" class="headerlink" title="Calico IP分配策略"></a>Calico IP分配策略</h2><p>这里参考Calico 3.9版本代码，其中，CNI插件的流程就省去了，实际在CNI的ipam插件中会调用<code>libcalico-go</code>的相关代码，主要代码在<a href="https://github.com/projectcalico/libcalico-go/blob/release-v3.9/lib/ipam/ipam.go" target="_blank" rel="noopener">lib/ipam/ipam.go</a>，由于我们线上是默认的配置，也就是不会定义特殊的IP分配策略，因此主要逻辑集中在<code>AutoAssign(ctx context.Context, args AutoAssignArgs)</code>这个接口，而具体实现在<code>autoAssign</code>函数中：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c ipamClient)</span> <span class="title">autoAssign</span><span class="params">(ctx context.Context, num <span class="keyword">int</span>, handleID *<span class="keyword">string</span>, attrs <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span>, requestedPools []net.IPNet, version <span class="keyword">int</span>, host <span class="keyword">string</span>, maxNumBlocks <span class="keyword">int</span>)</span> <span class="params">([]net.IPNet, error)</span></span> &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="comment">// 根据当前的节点获取可用的所有IP池</span></span><br><span class="line">	pools, allPools, err := c.determinePools(requestedPools, version, *v3n)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 没有可用的池子就直接返回了</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(pools) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">"no configured Calico pools for node %v"</span>, host)</span><br><span class="line">	&#125;</span><br><span class="line">	...</span><br><span class="line">	ips := []net.IPNet&#123;&#125;</span><br><span class="line">	newIPs := []net.IPNet&#123;&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Record how many blocks we own so we can check against the limit later.</span></span><br><span class="line">	numBlocksOwned := <span class="built_in">len</span>(affBlocks)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> <span class="built_in">len</span>(ips) &lt; num &#123;</span><br><span class="line">		<span class="comment">// 所有的可用Block已经尝试完了</span></span><br><span class="line">		<span class="keyword">if</span> <span class="built_in">len</span>(affBlocks) == <span class="number">0</span> &#123;</span><br><span class="line">			logCtx.Infof(<span class="string">"Ran out of existing affine blocks for host"</span>)</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">        &#125;</span><br><span class="line">		<span class="comment">// 选取当前Block列表第一个Block作为当前Block</span></span><br><span class="line">        cidr := affBlocks[<span class="number">0</span>]</span><br><span class="line">		<span class="comment">// 把第一个Block去除</span></span><br><span class="line">		affBlocks = affBlocks[<span class="number">1</span>:]</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; datastoreRetries; i++ &#123;</span><br><span class="line">            ...</span><br><span class="line">			<span class="comment">// 尝试从当前的Block里分配一个可用的IP</span></span><br><span class="line">			newIPs, err = c.assignFromExistingBlock(ctx, b, num, handleID, attrs, host, <span class="literal">true</span>)</span><br><span class="line">			<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">if</span> _, ok := err.(cerrors.ErrorResourceUpdateConflict); ok &#123;</span><br><span class="line">					logCtx.WithError(err).Debug(<span class="string">"CAS error assigning from affine block - retry"</span>)</span><br><span class="line">					<span class="keyword">continue</span></span><br><span class="line">				&#125;</span><br><span class="line">				logCtx.WithError(err).Warn(<span class="string">"Couldn't assign from affine block, try next one"</span>)</span><br><span class="line">				<span class="keyword">break</span></span><br><span class="line">            &#125;</span><br><span class="line">			<span class="comment">// 成功则添加到IP列表</span></span><br><span class="line">			ips = <span class="built_in">append</span>(ips, newIPs...)</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		&#125;</span><br><span class="line">		logCtx.Infof(<span class="string">"Block '%s' provided addresses: %v"</span>, cidr.String(), newIPs)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 获取 Calico IPAM 的配置</span></span><br><span class="line">	<span class="comment">// Calico IPAM 有两个全局配置项目（二者之中只能有一个为 true）：</span></span><br><span class="line">	<span class="comment">// StrictAffinity: 严格的一个 host 对应一个地址块，如果地址块耗尽不再分配新的地址</span></span><br><span class="line">	<span class="comment">// AutoAllocateBlocks: 自动分配地址块，如果基于 host affine 的地址块耗尽，将分配新的地址块</span></span><br><span class="line">	<span class="comment">// 这部分配置没有对外暴露，只能通过人工配置对应 etcd key 值或者编程调用相关接口来进行配置</span></span><br><span class="line">	<span class="comment">// 相关讨论可参考 issue： https://github.com/projectcalico/calico/issues/1577</span></span><br><span class="line">	<span class="comment">// 直接设置 etcd key：/calico/ipam/v2/config/ =&gt; "&#123;\"strict_affinity\":true&#125;"</span></span><br><span class="line">	config, err := c.GetIPAMConfig(ctx)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> ips, err</span><br><span class="line">    &#125;</span><br><span class="line">	<span class="comment">// 如果自动分配Block选项打开并且当前IP还不够</span></span><br><span class="line">	<span class="keyword">if</span> config.AutoAllocateBlocks == <span class="literal">true</span> &#123;</span><br><span class="line">		rem := num - <span class="built_in">len</span>(ips)</span><br><span class="line">		retries := datastoreRetries</span><br><span class="line">		<span class="keyword">for</span> rem &gt; <span class="number">0</span> &amp;&amp; retries &gt; <span class="number">0</span> &#123;</span><br><span class="line">			...</span><br><span class="line">			<span class="comment">// 先看看还有没有没有被绑定到节点的Block</span></span><br><span class="line">			subnet, err := c.blockReaderWriter.findUnclaimedBlock(ctx, host, version, pools, *config)</span><br><span class="line">			<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">if</span> _, ok := err.(noFreeBlocksError); ok &#123;</span><br><span class="line">					<span class="comment">// 没有就中断了</span></span><br><span class="line">					logCtx.Info(<span class="string">"No free blocks available for allocation"</span>)</span><br><span class="line">					<span class="keyword">break</span></span><br><span class="line">				&#125;</span><br><span class="line">				log.WithError(err).Error(<span class="string">"Failed to find an unclaimed block"</span>)</span><br><span class="line">				<span class="keyword">return</span> ips, err</span><br><span class="line">			&#125;</span><br><span class="line">			logCtx := log.WithFields(log.Fields&#123;<span class="string">"host"</span>: host, <span class="string">"subnet"</span>: subnet&#125;)</span><br><span class="line">			logCtx.Info(<span class="string">"Found unclaimed block"</span>)</span><br><span class="line"></span><br><span class="line">			<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; datastoreRetries; i++ &#123;</span><br><span class="line">				<span class="comment">// 有的话，就绑定到当前节点</span></span><br><span class="line">				pa, err := c.blockReaderWriter.getPendingAffinity(ctx, host, *subnet)</span><br><span class="line">				<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">					<span class="keyword">if</span> _, ok := err.(cerrors.ErrorResourceUpdateConflict); ok &#123;</span><br><span class="line">						logCtx.WithError(err).Debug(<span class="string">"CAS error claiming pending affinity, retry"</span>)</span><br><span class="line">						<span class="keyword">continue</span></span><br><span class="line">					&#125;</span><br><span class="line">					logCtx.WithError(err).Errorf(<span class="string">"Error claiming pending affinity"</span>)</span><br><span class="line">					<span class="keyword">return</span> ips, err</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				<span class="comment">// 新绑定了Block，尝试在新Block里分配IP</span></span><br><span class="line">				b, err := c.getBlockFromAffinity(ctx, pa)</span><br><span class="line">				...</span><br><span class="line">				newIPs, err := c.assignFromExistingBlock(ctx, b, rem, handleID, attrs, host, config.StrictAffinity)</span><br><span class="line">				...</span><br><span class="line">				<span class="comment">// 分配成功</span></span><br><span class="line">				ips = <span class="built_in">append</span>(ips, newIPs...)</span><br><span class="line">				rem = num - <span class="built_in">len</span>(ips)</span><br><span class="line">				<span class="keyword">break</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> retries == <span class="number">0</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> ips, errors.New(<span class="string">"Max retries hit - excessive concurrent IPAM requests"</span>)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 如果IP分配还不够（也就是说已绑定的Block里的IP都分完了，并且也没有没有可绑定的新IPBlock了）并且IP还没分完，</span></span><br><span class="line">	<span class="comment">// 并且StrictAffinity为false</span></span><br><span class="line">	rem := num - <span class="built_in">len</span>(ips)</span><br><span class="line">	<span class="keyword">if</span> config.StrictAffinity != <span class="literal">true</span> &amp;&amp; rem != <span class="number">0</span> &#123;</span><br><span class="line">		logCtx.Infof(<span class="string">"Attempting to assign %d more addresses from non-affine blocks"</span>, rem)</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Iterate over pools and assign addresses until we either run out of pools,</span></span><br><span class="line">		<span class="comment">// or the request has been satisfied.</span></span><br><span class="line">		logCtx.Info(<span class="string">"Looking for blocks with free IP addresses"</span>)</span><br><span class="line">		<span class="keyword">for</span> _, p := <span class="keyword">range</span> pools &#123;</span><br><span class="line">			<span class="comment">// 在所有的Pool里，随机选一个Block，在这个Block里找可用的IP地址</span></span><br><span class="line">			newBlock := randomBlockGenerator(p, host)</span><br><span class="line">			<span class="keyword">for</span> rem &gt; <span class="number">0</span> &#123;</span><br><span class="line">				<span class="comment">// Grab a new random block.</span></span><br><span class="line">				blockCIDR := newBlock()</span><br><span class="line">				<span class="keyword">if</span> blockCIDR == <span class="literal">nil</span> &#123;</span><br><span class="line">					logCtx.Warningf(<span class="string">"All addresses exhausted in pool %s"</span>, p.Spec.CIDR)</span><br><span class="line">					<span class="keyword">break</span></span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; datastoreRetries; i++ &#123;</span><br><span class="line">                    b, err := c.blockReaderWriter.queryBlock(ctx, *blockCIDR, <span class="string">""</span>)</span><br><span class="line">					...</span><br><span class="line">                    newIPs, err := c.assignFromExistingBlock(ctx, b, rem, handleID, attrs, host, <span class="literal">false</span>)</span><br><span class="line">					...</span><br><span class="line">					<span class="comment">// 分配成功</span></span><br><span class="line">					ips = <span class="built_in">append</span>(ips, newIPs...)</span><br><span class="line">					rem = num - <span class="built_in">len</span>(ips)</span><br><span class="line">					<span class="keyword">break</span></span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 最后，如果执行到这里，意味着根据配置，无法再分配IP或者干脆全局都没有IP可用了</span></span><br><span class="line">	logCtx.Infof(<span class="string">"Auto-assigned %d out of %d IPv%ds: %v"</span>, <span class="built_in">len</span>(ips), num, version, ips)</span><br><span class="line">	<span class="keyword">return</span> ips, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从上面的代码可以看到，Calico分配IP的逻辑为：</p>
+<ol>
+<li>如果节点有已绑定的IP Block，则从这些IP Block中分配IP</li>
+<li>如果第1步失败（没有已绑定的IP Block，或者这些绑定的Block里IP耗尽），判断AutoAllocateBlocks为true，则寻找一个没有被绑定的IP Block，并绑定到当前节点，再执行分配逻辑</li>
+<li>如果第2步失败（AutoAllocateBlocks为false或者没有空闲的IP Block），判断StrictAffinity为false，则从所有IP Blocks中寻找未使用的IP</li>
+<li>经历前1-3步依然没有分配好IP，则失败</li>
+</ol>
+<p>阅读了上面的代码，则可以知道在默认配置(<code>StrictAffinity: true, AutoAllocateBlocks: false</code>)下，当节点已有IP Block中没有空闲IP并且也没有空闲IP Block时，就会发生之前所说的情况，而恰好Calico在利用<code>BIRD</code>进行BGP路由广播时，针对每个已绑定的IP Block会设置blackhole路由，从而会导致Pod IP无法访问的问题。</p>
+<h2 id="一些问题"><a href="#一些问题" class="headerlink" title="一些问题"></a>一些问题</h2><p>根据上面的情况，目前看我们当前使用Calico还是有些问题的，特别是对当前IPPool的处理上。</p>
+<p>一方面也是Calico的实现并不是特别好，比如<a href="https://github.com/projectcalico/calico/issues/2713" target="_blank" rel="noopener">这个Issue</a>里提到的，当前针对节点的IP Block绑定，只有自动绑定的功能，但是没有自动解绑定的功能，解绑只有在删除Calico Node对象的时候才会发生，这会引发一个问题，就是说如果集群中节点有变化了，比如某台机器下线，并有新的节点上线做替换。那如果不手动操作Calico删除对应Node，就会导致之前的IP Block不被释放，也就一直无法没绑定到其他节点。</p>
+<p>另一方面也是我们的使用问题，没有及时跟进Calico的更新，线上版本相对版本旧一点，导致在分配Block的时候，只能固定以/26的BlockSize，也就是说一个IPBlock包含64个IP，而目前每台节点的Pod数量限制是默认的110，那么在使用2个Block也就是128个IP的时候就会出现比较大的浪费现象。这个问题在<a href="https://github.com/projectcalico/libcalico-go/pull/931" target="_blank" rel="noopener">Allow the blockSize to be configured for Calico IPAM</a>中已经得到改进，目标版本v3.3.0。</p>
+<p>因此，在高于v3.3.0版本的Calico中可以自定义BlockSize，比如定义为30，也就是一个Block 4个IP，这样可以比较好的提升IP的利用率，当然这样带来的问题是对外广播的路由数量的增加，所以需要权衡，找到一个合适的BlockSize。</p>
+<p>参考：</p>
+<ol>
+<li><a href="https://zhengyinyong.com/calico-ip-allocation.html" target="_blank" rel="noopener">https://zhengyinyong.com/calico-ip-allocation.html</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Calico/" rel="tag"># Calico</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/09/14/raspberrypi-boot-without-HDMI-connected/" rel="prev" title="树莓派启动时需要连接HDMI问题">
+      <i class="fa fa-chevron-left"></i> 树莓派启动时需要连接HDMI问题
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/11/03/interpreting-the-output-of-lspci/" rel="next" title="lspci命令输出的一些解释">
+      lspci命令输出的一些解释 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Calico-IP分配策略"><span class="nav-number">1.</span> <span class="nav-text">Calico IP分配策略</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一些问题"><span class="nav-number">2.</span> <span class="nav-text">一些问题</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">76</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">166</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'd69b2454aff0c42e46ed',
+      clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',
+      repo        : 'c0refast.github.io',
+      owner       : 'C0reFast',
+      admin       : ['C0reFast'],
+      id          : '2b70a8bfde78122677cba01026563ee5',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
