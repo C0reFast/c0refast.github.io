@@ -169,6 +169,76 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/04/17/netease-cloud-music-archlinux-whitescreen/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2017/04/17/netease-cloud-music-archlinux-whitescreen/" class="post-title-link" itemprop="url">ArchLinux下网易云音乐白屏问题</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017年4月17日 10:37 10:37:18" itemprop="dateCreated datePublished" datetime="2017-04-17T10:37:18+08:00">2017年4月17日 10:37</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>ArchLinux下网易云音乐会有偶然的白屏情况，是由于不支持某些emoji字体导致的，可以安装<code>noto-fonts-emoji</code>，然后配置一下字体即可解决：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo pacman -S noto-fonts-emoji</span><br></pre></td></tr></table></figure>
+<p>配置<code>~/.config/fontconfig/conf.d/51-noto-color-emoji.conf</code>文件：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version="1.0"?&gt;</span></span><br><span class="line"><span class="meta">&lt;!DOCTYPE <span class="meta-keyword">fontconfig</span> <span class="meta-keyword">SYSTEM</span> <span class="meta-string">"fonts.dtd"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">fontconfig</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">selectfont</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">acceptfont</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">pattern</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">patelt</span> <span class="attr">name</span>=<span class="string">"family"</span>&gt;</span><span class="tag">&lt;<span class="name">string</span>&gt;</span>Noto Color Emoji<span class="tag">&lt;/<span class="name">string</span>&gt;</span><span class="tag">&lt;/<span class="name">patelt</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">pattern</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">acceptfont</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">selectfont</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">match</span> <span class="attr">target</span>=<span class="string">"font"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">test</span> <span class="attr">name</span>=<span class="string">"family"</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">string</span>&gt;</span>Noto Color Emoji<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">test</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">edit</span> <span class="attr">name</span>=<span class="string">"scalable"</span> <span class="attr">mode</span>=<span class="string">"assign"</span>&gt;</span><span class="tag">&lt;<span class="name">bool</span>&gt;</span>true<span class="tag">&lt;/<span class="name">bool</span>&gt;</span><span class="tag">&lt;/<span class="name">edit</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">edit</span> <span class="attr">name</span>=<span class="string">"embeddedbitmap"</span> <span class="attr">mode</span>=<span class="string">"assign"</span>&gt;</span><span class="tag">&lt;<span class="name">bool</span>&gt;</span>true<span class="tag">&lt;/<span class="name">bool</span>&gt;</span><span class="tag">&lt;/<span class="name">edit</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">edit</span> <span class="attr">name</span>=<span class="string">"hinting"</span> <span class="attr">mode</span>=<span class="string">"assign"</span>&gt;</span><span class="tag">&lt;<span class="name">bool</span>&gt;</span>true<span class="tag">&lt;/<span class="name">bool</span>&gt;</span><span class="tag">&lt;/<span class="name">edit</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">edit</span> <span class="attr">name</span>=<span class="string">"hintstyle"</span> <span class="attr">mode</span>=<span class="string">"assign"</span>&gt;</span><span class="tag">&lt;<span class="name">const</span>&gt;</span>hintfull<span class="tag">&lt;/<span class="name">const</span>&gt;</span><span class="tag">&lt;/<span class="name">edit</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">match</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">match</span> <span class="attr">target</span>=<span class="string">"pattern"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">test</span> <span class="attr">name</span>=<span class="string">"family"</span> <span class="attr">qual</span>=<span class="string">"first"</span> <span class="attr">compare</span>=<span class="string">"contains"</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">string</span>&gt;</span>emoji<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">test</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">edit</span> <span class="attr">mode</span>=<span class="string">"assign"</span> <span class="attr">name</span>=<span class="string">"color"</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">bool</span>&gt;</span>true<span class="tag">&lt;/<span class="name">bool</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">edit</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">edit</span> <span class="attr">mode</span>=<span class="string">"assign"</span> <span class="attr">name</span>=<span class="string">"family"</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">string</span>&gt;</span>Noto Color Emoji<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">edit</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">match</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">match</span> <span class="attr">target</span>=<span class="string">"pattern"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">edit</span> <span class="attr">name</span>=<span class="string">"family"</span> <span class="attr">mode</span>=<span class="string">"prepend"</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">string</span>&gt;</span>Noto Color Emoji<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">edit</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">match</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">fontconfig</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>参考： <a href="https://blog.judge.moe/archives/90/" target="_blank" rel="noopener">https://blog.judge.moe/archives/90/</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/03/29/bash-zsh-fast-sudo/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -888,89 +958,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/01/08/apache-basic-auth/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chen Fu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2017/01/08/apache-basic-auth/" class="post-title-link" itemprop="url">Apache 2.2 Basic Auth</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2017年1月8日 19:42 19:42:19" itemprop="dateCreated datePublished" datetime="2017-01-08T19:42:19+08:00">2017年1月8日 19:42</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">源码分析</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>最近需要修改一下Apache的BasicAuth模块，顺便简单分析一下。</p>
-<p>首先是 <code>mod_authn_file</code>, 这个模块从文件中读取用户名和密码组合，并逐一check看用户名和密码是否符合。代码在 <code>modules/aaa/mod_authn_file.c</code>。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> authn_provider authn_file_provider =</span><br><span class="line">&#123;</span><br><span class="line">    &amp;check_password,</span><br><span class="line">    &amp;get_realm_hash,</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">//注册一个叫file的AuthProvider，主要是两个函数check_password和get_realm_hash</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">register_hooks</span><span class="params">(<span class="keyword">apr_pool_t</span> *p)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ap_register_provider(p, AUTHN_PROVIDER_GROUP, <span class="string">"file"</span>, <span class="string">"0"</span>,</span><br><span class="line">                         &amp;authn_file_provider);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2017/01/08/apache-basic-auth/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1040,7 +1027,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">76</span>
+          <span class="site-state-item-count">77</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1053,7 +1040,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">166</span>
+        <span class="site-state-item-count">170</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
