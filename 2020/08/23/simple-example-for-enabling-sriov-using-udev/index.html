@@ -4,18 +4,23 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
-<script id="hexo-configurations">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+
+<script class="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
 
   <meta name="description" content="在虚拟化场景下，SR-IOV（Single Root I&#x2F;O Virtualization）是一个很常用的功能，通过SR-IOV，一个物理的设备（Physical Function），可以派生出很多虚拟设备（Virtual Function），这些虚拟设备具有简单的PCIe功能。以网卡为例，通过SR-IOV，我们可以将一块网卡，虚拟化成很多块网卡，这些虚拟出来的网卡，有自己独立的PCIe地址，中断">
@@ -33,10 +38,11 @@
 <meta property="article:tag" content="Udev Rules">
 <meta name="twitter:card" content="summary">
 
+
 <link rel="canonical" href="https://www.ichenfu.com/2020/08/23/simple-example-for-enabling-sriov-using-udev/">
 
 
-<script id="page-configurations">
+<script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
@@ -65,24 +71,36 @@
 
   <noscript>
   <style>
-  .use-motion .brand,
+  body { margin-top: 2rem; }
+
   .use-motion .menu-item,
-  .sidebar-inner,
+  .use-motion .sidebar,
   .use-motion .post-block,
   .use-motion .pagination,
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
 
   .use-motion .site-title,
-  .use-motion .site-subtitle {
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
     opacity: initial;
     top: initial;
   }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
   </style>
 </noscript>
 
@@ -90,25 +108,25 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container">
-    <div class="headband"></div>
+  <div class="headband"></div>
 
+  <main class="main">
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="切换导航栏">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
     </div>
   </div>
 
   <div class="site-meta">
 
     <a href="/" class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
+      <i class="logo-line"></i>
       <h1 class="site-title">C0reFast记事本</h1>
-      <span class="logo-line-after"><i></i></span>
+      <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
   </div>
@@ -121,32 +139,31 @@
 
 
 
-
 <nav class="site-nav">
-  <ul id="menu" class="menu">
+  <ul class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
   </ul>
@@ -156,195 +173,18 @@
 
 
 </div>
-    </header>
-
-    
-  <div class="back-to-top">
-    <i class="fa fa-arrow-up"></i>
-    <span>0%</span>
-  </div>
-
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content post posts-expand">
-            
-
-    
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/08/23/simple-example-for-enabling-sriov-using-udev/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chen Fu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          编写Udev规则文件开机设置网卡SR-IOV
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020年8月23日 10:56 10:56:21" itemprop="dateCreated datePublished" datetime="2020-08-23T10:56:21+08:00">2020年8月23日 10:56</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%95%88%E7%8E%87%E9%85%8D%E7%BD%AE/" itemprop="url" rel="index"><span itemprop="name">效率配置</span></a>
-                </span>
-            </span>
-
-          
-            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span id="busuanzi_value_page_pv"></span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <p>在虚拟化场景下，<code>SR-IOV</code>（<code>Single Root I/O Virtualization</code>）是一个很常用的功能，通过SR-IOV，一个物理的设备（<code>Physical Function</code>），可以派生出很多虚拟设备（<code>Virtual Function</code>），这些虚拟设备具有简单的PCIe功能。以网卡为例，通过<code>SR-IOV</code>，我们可以将一块网卡，虚拟化成很多块网卡，这些虚拟出来的网卡，有自己独立的PCIe地址，中断，配置空间等，这些虚拟出来的网卡，可以作为单独的PCIe设备被attach到虚拟机中，实现网络功能，当然，场景并不局限于VM。</p>
-<p>这里先不关注<code>SR-IOV</code>的应用场景，或者其实现原理，而是关心一个简单的问题：如何设置<code>SR-IOV</code>，并且能稳定的实现开机启动时就设置好呢？</p>
-<a id="more"></a>
-
-<p>这里以网卡为例，假设要开启<code>SR-IOV</code>的网卡名字为<code>eth0</code>，文档里会提示你<code>echo 7 &gt; /sys/class/net/eth0/device/sriov_numvfs</code>。在系统启动完成之后，这么做肯定是没有问题。问题是，在系统启动阶段，这么做是不是可以呢？红帽的文档<a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux_openstack_platform/7/html/networking_guide/sec-sr-iov" target="_blank" rel="noopener">第 8 章 配置 SR-IOV 网络</a>通过<code>rc.local</code>来实现：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># chmod +x /etc/rc.d/rc.local</span></span><br><span class="line"><span class="comment"># echo "echo 7 &gt; /sys/class/net/enp4s0f1/device/sriov_numvfs" &gt;&gt; /etc/rc.local</span></span><br></pre></td></tr></table></figure>
-<p>但是呢，文档里也提示了：</p>
-<blockquote><p>注意<br>因为额外的 systemd，Red Hat Enterprise Linux 将会并行启动服务，而不是依次启动它们。这意味着，rc.local 在引导过程中被执行的位置是不固定的。因此，一些不可预见的情况可能会出现，我们不推荐使用这个方法。</p>
-</blockquote>
-<p>也就是说，因为<code>systemd</code>的并行特性，可能这么做不一定能获得预期的结果。</p>
-<p>同样是这篇文档，还提供了驱动options的方式：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@compute ~]# echo &quot;options igb max_vfs&#x3D;7&quot; &gt;&gt;&#x2F;etc&#x2F;modprobe.d&#x2F;igb.conf</span><br></pre></td></tr></table></figure>
-
-<p>然而不巧的是，并不是所有的网卡驱动都支持这个option，在例子里使用的<code>igb</code>驱动，这个驱动对应的主要是Intel的千兆网卡芯片比如<code>I350</code>，而我们使用的是<code>X700</code>系列的网卡，加载的驱动是<code>i40e</code>，这个驱动并没有对应的<code>max_vfs</code>参数，只提供了一个<code>debug</code>参数：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># modinfo i40e</span></span><br><span class="line">filename:       /lib/modules/3.10.0-957.21.3.el7.x86_64/updates/drivers/net/ethernet/intel/i40e/i40e.ko</span><br><span class="line">version:        2.8.43</span><br><span class="line">license:        GPL</span><br><span class="line">description:    Intel(R) 40-10 Gigabit Ethernet Connection Network Driver</span><br><span class="line">author:         Intel Corporation, &lt;e1000-devel@lists.sourceforge.net&gt;</span><br><span class="line">retpoline:      Y</span><br><span class="line">rhelversion:    7.6</span><br><span class="line">srcversion:     F8774F317E76D8D6B699043</span><br><span class="line">...</span><br><span class="line">depends:        ptp</span><br><span class="line">vermagic:       3.10.0-957.21.3.el7.x86_64 SMP mod_unload modversions</span><br><span class="line">parm:           debug:Debug level (0=none,...,16=all) (int)</span><br></pre></td></tr></table></figure>
-
-<p>那怎么办呢？经历了一番折腾，算是找到了一个比较稳定的办法，利用Udev，通过编写Udev Rule文件，实现开机自动打开<code>SR-IOV</code>功能，这么做还额外带来另一个好处，还记得之前写的文章<a href="https://www.ichenfu.com/2020/06/08/rename-nic-names/">使用udev重命名网卡</a>么，这里顺便也把网卡名字改成统一的了，既实现了<code>SR-IOV</code>的开机配置，又统一了网卡名字，一举两得！</p>
-<p>既然是Udev，那就需要一些匹配规则了，针对网卡来说，最稳定的匹配规则之一，就是网卡的Mac地址，所以，可以确定的是，肯定会根据网卡Mac地址去匹配：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SUBSYSTEM==<span class="string">"net"</span>, ACTION==<span class="string">"add"</span>, DRIVERS==<span class="string">"?*"</span>, ATTR&#123;address&#125;==<span class="string">"00:11:22:33:44:01"</span>, NAME=<span class="string">"eth0"</span></span><br></pre></td></tr></table></figure>
-<p>然后呢，这里仅仅是设置了网卡名字，<code>SR-IOV</code>怎么开呢？我们先进到网卡的目录看一眼：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@compute ~]<span class="comment"># ls /sys/class/net/eth0/</span></span><br><span class="line">addr_assign_type  carrier          dev_port  gro_flush_timeout  link_mode     phys_port_id    proto_down  subsystem</span><br><span class="line">address           carrier_changes  dormant   ifalias            mtu           phys_port_name  queues      tx_queue_len</span><br><span class="line">addr_len          device           duplex    ifindex            netdev_group  phys_switch_id  speed       <span class="built_in">type</span></span><br><span class="line">broadcast         dev_id           flags     iflink             operstate     power           statistics  uevent</span><br></pre></td></tr></table></figure>
-<p>可以这么理解：规则里的<code>ATTR{address}</code>，相当于<code>/sys/class/net/eth0/address</code>文件，那么也就是说ATTR所代表的目录就是<code>/sys/class/net/eth0/</code>，那<code>/sys/class/net/eth0/device/sriov_numvfs</code>这个配置文件不就是<code>ATTR{device/sriov_numvfs}</code>么？是这样么？是的，没错，那在规则文件里，使用<code>=</code>号赋值就行了吧：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SUBSYSTEM==<span class="string">"net"</span>, ACTION==<span class="string">"add"</span>, DRIVERS==<span class="string">"?*"</span>, ATTR&#123;address&#125;==<span class="string">"00:11:22:33:44:01"</span>, ATTR&#123;device/sriov_numvfs&#125;=<span class="string">"7"</span>, NAME=<span class="string">"eth0"</span></span><br></pre></td></tr></table></figure>
-<p>是不是真的可以呢？可以测试一下，把上面的内容保存到<code>/etc/udev/rules.d/70-persistent-net.rules</code>：执行<code>udevadm test /sys/class/net/eth0</code>，从一大堆输出里找到：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@compute ~]<span class="comment"># udevadm test /sys/class/net/eth0</span></span><br><span class="line">...</span><br><span class="line">ATTR <span class="string">'/sys/devices/pci0000:17/0000:17:02.0/0000:19:00.1/net/eth0/device/sriov_numvfs'</span> writing <span class="string">'7'</span> 70-persistent-net.rules:1</span><br><span class="line">NAME <span class="string">'eth0'</span> /etc/udev/rules.d/70-persistent-net.rules:1</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>确实可以！重启试试，依然能工作。问题解决。</p>
-<p>当然，这自然不是唯一的办法，目前呢，还能想到的一个办法，就是写个Oneshot的Systemd Service，在network-pre.target这个阶段执行，这样可以比较稳定的确定执行的时间，不至于像<code>rc.local</code>那样不知道什么时候被执行了。</p>
-<p>最后感慨一下：Udev真的是个强大的工具！</p>
-
-    </div>
-
-    
-    
-    <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
-  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
-  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
-</div>
-
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/SR-IOV/" rel="tag"># SR-IOV</a>
-              <a href="/tags/Udev/" rel="tag"># Udev</a>
-              <a href="/tags/Udev-Rules/" rel="tag"># Udev Rules</a>
-          </div>
-
         
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/2020/07/24/achieve-one-core-turbo/" rel="prev" title="如何实现CPU单核睿频？">
-      <i class="fa fa-chevron-left"></i> 如何实现CPU单核睿频？
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/09/04/mount-cephfs-wrong-fs-type/" rel="next" title="挂载CephFS出现wrong fs type的问题">
-      挂载CephFS出现wrong fs type的问题 <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-
-
-          </div>
-          
-    <div class="comments" id="gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
   
   <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
   </div>
 
   <aside class="sidebar">
-    <div class="sidebar-inner">
 
-      <ul class="sidebar-nav motion-element">
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
         </li>
@@ -353,17 +193,18 @@
         </li>
       </ul>
 
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-      </div>
-      <!--/noindex-->
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+        </section>
+        <!--/noindex-->
 
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <p class="site-author-name" itemprop="name">Chen Fu</p>
   <div class="site-description" itemprop="description"></div>
 </div>
-<div class="site-state-wrap motion-element">
+<div class="site-state-wrap site-overview-item animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
@@ -388,9 +229,8 @@
 </div>
 
 
-  <div class="links-of-blogroll motion-element">
-    <div class="links-of-blogroll-title">
-      <i class="fa fa-fw fa-link"></i>
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
       Links
     </div>
     <ul class="links-of-blogroll-list">
@@ -406,37 +246,233 @@
     </ul>
   </div>
 
+        </section>
       </div>
-
     </div>
   </aside>
-  <div id="sidebar-dimmer"></div>
+  <div class="sidebar-dimmer"></div>
 
 
-      </div>
-    </main>
+    </header>
 
-    <footer class="footer">
-      <div class="footer-inner">
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/08/23/simple-example-for-enabling-sriov-using-udev/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          编写Udev规则文件开机设置网卡SR-IOV
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020年8月23日 10:56 10:56:21" itemprop="dateCreated datePublished" datetime="2020-08-23T10:56:21+08:00">2020年8月23日 10:56</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%95%88%E7%8E%87%E9%85%8D%E7%BD%AE/" itemprop="url" rel="index"><span itemprop="name">效率配置</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>在虚拟化场景下，<code>SR-IOV</code>（<code>Single Root I/O Virtualization</code>）是一个很常用的功能，通过SR-IOV，一个物理的设备（<code>Physical Function</code>），可以派生出很多虚拟设备（<code>Virtual Function</code>），这些虚拟设备具有简单的PCIe功能。以网卡为例，通过<code>SR-IOV</code>，我们可以将一块网卡，虚拟化成很多块网卡，这些虚拟出来的网卡，有自己独立的PCIe地址，中断，配置空间等，这些虚拟出来的网卡，可以作为单独的PCIe设备被attach到虚拟机中，实现网络功能，当然，场景并不局限于VM。</p>
+<p>这里先不关注<code>SR-IOV</code>的应用场景，或者其实现原理，而是关心一个简单的问题：如何设置<code>SR-IOV</code>，并且能稳定的实现开机启动时就设置好呢？</p>
+<a id="more"></a>
+
+<p>这里以网卡为例，假设要开启<code>SR-IOV</code>的网卡名字为<code>eth0</code>，文档里会提示你<code>echo 7 &gt; /sys/class/net/eth0/device/sriov_numvfs</code>。在系统启动完成之后，这么做肯定是没有问题。问题是，在系统启动阶段，这么做是不是可以呢？红帽的文档<a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux_openstack_platform/7/html/networking_guide/sec-sr-iov">第 8 章 配置 SR-IOV 网络</a>通过<code>rc.local</code>来实现：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># chmod +x /etc/rc.d/rc.local</span>
+<span class="token comment"># echo "echo 7 > /sys/class/net/enp4s0f1/device/sriov_numvfs" >> /etc/rc.local</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>但是呢，文档里也提示了：</p>
+<blockquote><p>注意<br>因为额外的 systemd，Red Hat Enterprise Linux 将会并行启动服务，而不是依次启动它们。这意味着，rc.local 在引导过程中被执行的位置是不固定的。因此，一些不可预见的情况可能会出现，我们不推荐使用这个方法。</p>
+</blockquote>
+<p>也就是说，因为<code>systemd</code>的并行特性，可能这么做不一定能获得预期的结果。</p>
+<p>同样是这篇文档，还提供了驱动options的方式：</p>
+<pre class="line-numbers language-none"><code class="language-none">[root@compute ~]# echo &quot;options igb max_vfs&#x3D;7&quot; &gt;&gt;&#x2F;etc&#x2F;modprobe.d&#x2F;igb.conf<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>然而不巧的是，并不是所有的网卡驱动都支持这个option，在例子里使用的<code>igb</code>驱动，这个驱动对应的主要是Intel的千兆网卡芯片比如<code>I350</code>，而我们使用的是<code>X700</code>系列的网卡，加载的驱动是<code>i40e</code>，这个驱动并没有对应的<code>max_vfs</code>参数，只提供了一个<code>debug</code>参数：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># modinfo i40e</span>
+filename:       /lib/modules/3.10.0-957.21.3.el7.x86_64/updates/drivers/net/ethernet/intel/i40e/i40e.ko
+version:        <span class="token number">2.8</span>.43
+license:        GPL
+description:    Intel<span class="token punctuation">(</span>R<span class="token punctuation">)</span> <span class="token number">40</span>-10 Gigabit Ethernet Connection Network Driver
+author:         Intel Corporation, <span class="token operator">&lt;</span>e1000-devel@lists.sourceforge.net<span class="token operator">></span>
+retpoline:      Y
+rhelversion:    <span class="token number">7.6</span>
+srcversion:     F8774F317E76D8D6B699043
+<span class="token punctuation">..</span>.
+depends:        ptp
+vermagic:       <span class="token number">3.10</span>.0-957.21.3.el7.x86_64 SMP mod_unload modversions
+parm:           debug:Debug level <span class="token punctuation">(</span><span class="token number">0</span><span class="token operator">=</span>none,<span class="token punctuation">..</span>.,16<span class="token operator">=</span>all<span class="token punctuation">)</span> <span class="token punctuation">(</span>int<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>那怎么办呢？经历了一番折腾，算是找到了一个比较稳定的办法，利用Udev，通过编写Udev Rule文件，实现开机自动打开<code>SR-IOV</code>功能，这么做还额外带来另一个好处，还记得之前写的文章<a href="https://www.ichenfu.com/2020/06/08/rename-nic-names/">使用udev重命名网卡</a>么，这里顺便也把网卡名字改成统一的了，既实现了<code>SR-IOV</code>的开机配置，又统一了网卡名字，一举两得！</p>
+<p>既然是Udev，那就需要一些匹配规则了，针对网卡来说，最稳定的匹配规则之一，就是网卡的Mac地址，所以，可以确定的是，肯定会根据网卡Mac地址去匹配：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token assign-left variable">SUBSYSTEM</span><span class="token operator">==</span><span class="token string">"net"</span>, <span class="token assign-left variable">ACTION</span><span class="token operator">==</span><span class="token string">"add"</span>, <span class="token assign-left variable">DRIVERS</span><span class="token operator">==</span><span class="token string">"?*"</span>, ATTR<span class="token punctuation">&#123;</span>address<span class="token punctuation">&#125;</span><span class="token operator">==</span><span class="token string">"00:11:22:33:44:01"</span>, <span class="token assign-left variable">NAME</span><span class="token operator">=</span><span class="token string">"eth0"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>然后呢，这里仅仅是设置了网卡名字，<code>SR-IOV</code>怎么开呢？我们先进到网卡的目录看一眼：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@compute ~<span class="token punctuation">]</span><span class="token comment"># ls /sys/class/net/eth0/</span>
+addr_assign_type  carrier          dev_port  gro_flush_timeout  link_mode     phys_port_id    proto_down  subsystem
+address           carrier_changes  dormant   ifalias            mtu           phys_port_name  queues      tx_queue_len
+addr_len          device           duplex    ifindex            netdev_group  phys_switch_id  speed       <span class="token builtin class-name">type</span>
+broadcast         dev_id           flags     iflink             operstate     power           statistics  uevent<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以这么理解：规则里的<code>ATTR&#123;address&#125;</code>，相当于<code>/sys/class/net/eth0/address</code>文件，那么也就是说ATTR所代表的目录就是<code>/sys/class/net/eth0/</code>，那<code>/sys/class/net/eth0/device/sriov_numvfs</code>这个配置文件不就是<code>ATTR&#123;device/sriov_numvfs&#125;</code>么？是这样么？是的，没错，那在规则文件里，使用<code>=</code>号赋值就行了吧：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token assign-left variable">SUBSYSTEM</span><span class="token operator">==</span><span class="token string">"net"</span>, <span class="token assign-left variable">ACTION</span><span class="token operator">==</span><span class="token string">"add"</span>, <span class="token assign-left variable">DRIVERS</span><span class="token operator">==</span><span class="token string">"?*"</span>, ATTR<span class="token punctuation">&#123;</span>address<span class="token punctuation">&#125;</span><span class="token operator">==</span><span class="token string">"00:11:22:33:44:01"</span>, ATTR<span class="token punctuation">&#123;</span>device/sriov_numvfs<span class="token punctuation">&#125;</span><span class="token operator">=</span><span class="token string">"7"</span>, <span class="token assign-left variable">NAME</span><span class="token operator">=</span><span class="token string">"eth0"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>是不是真的可以呢？可以测试一下，把上面的内容保存到<code>/etc/udev/rules.d/70-persistent-net.rules</code>：执行<code>udevadm test /sys/class/net/eth0</code>，从一大堆输出里找到：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@compute ~<span class="token punctuation">]</span><span class="token comment"># udevadm test /sys/class/net/eth0</span>
+<span class="token punctuation">..</span>.
+ATTR <span class="token string">'/sys/devices/pci0000:17/0000:17:02.0/0000:19:00.1/net/eth0/device/sriov_numvfs'</span> writing <span class="token string">'7'</span> <span class="token number">70</span>-persistent-net.rules:1
+NAME <span class="token string">'eth0'</span> /etc/udev/rules.d/70-persistent-net.rules:1
+<span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>确实可以！重启试试，依然能工作。问题解决。</p>
+<p>当然，这自然不是唯一的办法，目前呢，还能想到的一个办法，就是写个Oneshot的Systemd Service，在network-pre.target这个阶段执行，这样可以比较稳定的确定执行的时间，不至于像<code>rc.local</code>那样不知道什么时候被执行了。</p>
+<p>最后感慨一下：Udev真的是个强大的工具！</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/SR-IOV/" rel="tag"># SR-IOV</a>
+              <a href="/tags/Udev/" rel="tag"># Udev</a>
+              <a href="/tags/Udev-Rules/" rel="tag"># Udev Rules</a>
+          </div>
+
         
 
-        
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/07/24/achieve-one-core-turbo/" rel="prev" title="如何实现CPU单核睿频？">
+                  <i class="fa fa-chevron-left"></i> 如何实现CPU单核睿频？
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/09/04/mount-cephfs-wrong-fs-type/" rel="next" title="挂载CephFS出现wrong fs type的问题">
+                  挂载CephFS出现wrong fs type的问题 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
 
 <div class="copyright">
   
   &copy; 
   <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
-    <i class="fa fa-user"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
-  </div>
-
-        
 <div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
@@ -445,7 +481,6 @@
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-divider">|</span>
     <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
@@ -455,31 +490,15 @@
       </span>
     </span>
 </div>
-
-
-
-
-
-
-
-
-      </div>
-    </footer>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
   </div>
 
+    </div>
+  </footer>
+
   
-  <script src="/lib/anime.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
   
 
@@ -497,15 +516,28 @@
 
 
 
+
+
+
   
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
 
   
 
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
 
 <script>
-NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
-  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
     var gitalk = new Gitalk({
       clientID    : 'd69b2454aff0c42e46ed',
       clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',

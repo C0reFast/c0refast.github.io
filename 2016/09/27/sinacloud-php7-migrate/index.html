@@ -4,18 +4,23 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
-<script id="hexo-configurations">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+
+<script class="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
 
   <meta name="description" content="新浪云的PHP 7版本运行环境上线了，相对于PHP 5,PHP 7的性能，在官方宣传和实际应用测试中，都有极好的性能表现，大多数的主流应用和框架都有超过1倍的性能提升。 随着新浪云支持PHP 7运行环境，将应用切换到PHP 7版本运行无疑是更好的选择，但是，由于PHP 7的修改十分巨大，因此，有极少部分的代码是不兼容的，需要针对性的进行修改，想比较巨大的性能提升，这些小的修改就变得微不足道了～">
@@ -34,10 +39,11 @@
 <meta property="article:tag" content="迁移">
 <meta name="twitter:card" content="summary">
 
+
 <link rel="canonical" href="https://www.ichenfu.com/2016/09/27/sinacloud-php7-migrate/">
 
 
-<script id="page-configurations">
+<script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
@@ -66,24 +72,36 @@
 
   <noscript>
   <style>
-  .use-motion .brand,
+  body { margin-top: 2rem; }
+
   .use-motion .menu-item,
-  .sidebar-inner,
+  .use-motion .sidebar,
   .use-motion .post-block,
   .use-motion .pagination,
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
 
   .use-motion .site-title,
-  .use-motion .site-subtitle {
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
     opacity: initial;
     top: initial;
   }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
   </style>
 </noscript>
 
@@ -91,25 +109,25 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container">
-    <div class="headband"></div>
+  <div class="headband"></div>
 
+  <main class="main">
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="切换导航栏">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
     </div>
   </div>
 
   <div class="site-meta">
 
     <a href="/" class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
+      <i class="logo-line"></i>
       <h1 class="site-title">C0reFast记事本</h1>
-      <span class="logo-line-after"><i></i></span>
+      <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
   </div>
@@ -122,32 +140,31 @@
 
 
 
-
 <nav class="site-nav">
-  <ul id="menu" class="menu">
+  <ul class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
   </ul>
@@ -157,205 +174,18 @@
 
 
 </div>
-    </header>
-
-    
-  <div class="back-to-top">
-    <i class="fa fa-arrow-up"></i>
-    <span>0%</span>
-  </div>
-
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content post posts-expand">
-            
-
-    
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2016/09/27/sinacloud-php7-migrate/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chen Fu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          新浪云换7指南
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2016年9月27日 11:27 11:27:25" itemprop="dateCreated datePublished" datetime="2016-09-27T11:27:25+08:00">2016年9月27日 11:27</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-
-          
-            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span id="busuanzi_value_page_pv"></span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <p>新浪云的PHP 7版本运行环境上线了，相对于PHP 5,PHP 7的性能，在官方宣传和实际应用测试中，都有极好的性能表现，大多数的主流应用和框架都有超过1倍的性能提升。</p>
-<p>随着新浪云支持PHP 7运行环境，将应用切换到PHP 7版本运行无疑是更好的选择，但是，由于PHP 7的修改十分巨大，因此，有极少部分的代码是不兼容的，需要针对性的进行修改，想比较巨大的性能提升，这些小的修改就变得微不足道了～ <a id="more"></a></p>
-<p>目前新浪云的PHP 7极度接近标准PHP 7环境，几乎对原版PHP 7没有任何修改，因此，能在原版PHP 7环境中运行的程序，一定可以在新浪云无缝的运行。</p>
-<p>针对PHP 7的修改，官方也提出了<a href="http://php.net/manual/zh/migration70.php" target="_blank" rel="noopener">迁移指南</a>，通过迁移指南，可以根据实际情况，满足PHP 7的代码编写要求。其中，最终要的，大概有这几项：</p>
-<ol>
-<li>mysql系列函数被移除，mysql系列函数(mysql_connect, mysql_query …)，在PHP 5.5.0 起已经被标记为废弃状态，并在PHP 7版本中已经移除，官方更加推荐使用mysqli系列函数，或者PDO进行数据库的相关操作，如果您在代码中使用了mysql系列函数，需要将其修改为mysqli，或者使用PDO，以便能在PHP 7环境运行。</li>
-<li><code>$HTTP_RAW_POST_DATA</code> 被移除。同样的，<code>$HTTP_RAW_POST_DATA</code>变量在PHP 5.6.0 中被标记为废弃状态，在PHP 7中已经移除，因此，需要使用 php://input 作为替代。</li>
-<li><code>ereg</code>系列函数(ereg, eregi, ereg_replace …)等也同样被移除了，如果有类似的调用，需要替换为<code>preg</code>相关的函数。</li>
-<li>针对新浪云的服务，原有的SaeCounter，SaeRank已经不再支持，需要使用Redis服务进行替换。</li>
-</ol>
-<p>除了上述的一些比较大的修改，还有一些小的变更，可以参考<a href="http://php.net/manual/zh/migration70.php" target="_blank" rel="noopener">迁移指南</a>，或者，直接切换到PHP 7版本，根据错误日志，找到不符合规范的地方，直接修改就好啦～</p>
-<p>最后，放一个针对PHP 7运行环境的性能测试，结果会让你大吃一惊的！</p>
-<p>首先说一下测试环境：<br>在一台机器上，使用ab进行压测，设置连接数为30，测试请求总数为1000，应用为WordPress 4.6.1全新安装版本，换用不同的PHP版本，可以得到下面的结果：<br>PHP 5.3：</p>
-<pre><code>Concurrency Level:      30
-Time taken for tests:   21.246 seconds
-Complete requests:      1000
-Failed requests:        0
-Write errors:           0
-Total transferred:      11064000 bytes
-HTML transferred:       10845000 bytes
-Requests per second:    47.07 [#/sec] (mean)
-Time per request:       637.381 [ms] (mean)
-Time per request:       21.246 [ms] (mean, across all concurrent requests)
-Transfer rate:          508.55 [Kbytes/sec] received</code></pre><p>PHP 5.6：</p>
-<pre><code>Concurrency Level:      30
-Time taken for tests:   22.701 seconds
-Complete requests:      1000
-Failed requests:        0
-Write errors:           0
-Total transferred:      11064000 bytes
-HTML transferred:       10845000 bytes
-Requests per second:    44.05 [#/sec] (mean)
-Time per request:       681.031 [ms] (mean)
-Time per request:       22.701 [ms] (mean, across all concurrent requests)
-Transfer rate:          475.96 [Kbytes/sec] received</code></pre><p>PHP 7：</p>
-<pre><code>Concurrency Level:      30
-Time taken for tests:   4.473 seconds
-Complete requests:      1000
-Failed requests:        0
-Write errors:           0
-Total transferred:      11064000 bytes
-HTML transferred:       10845000 bytes
-Requests per second:    223.54 [#/sec] (mean)
-Time per request:       134.202 [ms] (mean)
-Time per request:       4.473 [ms] (mean, across all concurrent requests)
-Transfer rate:          2415.31 [Kbytes/sec] received</code></pre><p>可以看到，性能差距巨大，同样的请求数和并发，生成的内容长度也相同，PHP 7的QPS从PHP 5的44.05/sec和47.07/sec，暴涨到223.54/sec，实现了几乎5倍的增长，每个请求的时间也从650ms左右降低到了只有130ms。有如此提升，还不赶紧试试PHP 7的强大威力！</p>
-
-    </div>
-
-    
-    
-    <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
-  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
-  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
-</div>
-
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/SinaCloud/" rel="tag"># SinaCloud</a>
-              <a href="/tags/PHP-7/" rel="tag"># PHP 7</a>
-              <a href="/tags/Migrate/" rel="tag"># Migrate</a>
-              <a href="/tags/%E8%BF%81%E7%A7%BB/" rel="tag"># 迁移</a>
-          </div>
-
         
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/2016/08/17/sae-channel/" rel="prev" title="也许是最简单的新浪云 Channel服务教程">
-      <i class="fa fa-chevron-left"></i> 也许是最简单的新浪云 Channel服务教程
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/2016/10/14/remove-thunderbird-signature-separator/" rel="next" title="删除Thunderbird默认签名分割符的两条横线">
-      删除Thunderbird默认签名分割符的两条横线 <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-
-
-          </div>
-          
-    <div class="comments" id="gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
   
   <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
   </div>
 
   <aside class="sidebar">
-    <div class="sidebar-inner">
 
-      <ul class="sidebar-nav motion-element">
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
         </li>
@@ -364,17 +194,18 @@ Transfer rate:          2415.31 [Kbytes/sec] received</code></pre><p>可以看�
         </li>
       </ul>
 
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-      </div>
-      <!--/noindex-->
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+        </section>
+        <!--/noindex-->
 
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <p class="site-author-name" itemprop="name">Chen Fu</p>
   <div class="site-description" itemprop="description"></div>
 </div>
-<div class="site-state-wrap motion-element">
+<div class="site-state-wrap site-overview-item animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
@@ -399,9 +230,8 @@ Transfer rate:          2415.31 [Kbytes/sec] received</code></pre><p>可以看�
 </div>
 
 
-  <div class="links-of-blogroll motion-element">
-    <div class="links-of-blogroll-title">
-      <i class="fa fa-fw fa-link"></i>
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
       Links
     </div>
     <ul class="links-of-blogroll-list">
@@ -417,37 +247,225 @@ Transfer rate:          2415.31 [Kbytes/sec] received</code></pre><p>可以看�
     </ul>
   </div>
 
+        </section>
       </div>
-
     </div>
   </aside>
-  <div id="sidebar-dimmer"></div>
+  <div class="sidebar-dimmer"></div>
 
 
-      </div>
-    </main>
+    </header>
 
-    <footer class="footer">
-      <div class="footer-inner">
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2016/09/27/sinacloud-php7-migrate/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          新浪云换7指南
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2016年9月27日 11:27 11:27:25" itemprop="dateCreated datePublished" datetime="2016-09-27T11:27:25+08:00">2016年9月27日 11:27</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>新浪云的PHP 7版本运行环境上线了，相对于PHP 5,PHP 7的性能，在官方宣传和实际应用测试中，都有极好的性能表现，大多数的主流应用和框架都有超过1倍的性能提升。</p>
+<p>随着新浪云支持PHP 7运行环境，将应用切换到PHP 7版本运行无疑是更好的选择，但是，由于PHP 7的修改十分巨大，因此，有极少部分的代码是不兼容的，需要针对性的进行修改，想比较巨大的性能提升，这些小的修改就变得微不足道了～ <a id="more"></a></p>
+<p>目前新浪云的PHP 7极度接近标准PHP 7环境，几乎对原版PHP 7没有任何修改，因此，能在原版PHP 7环境中运行的程序，一定可以在新浪云无缝的运行。</p>
+<p>针对PHP 7的修改，官方也提出了<a target="_blank" rel="noopener" href="http://php.net/manual/zh/migration70.php">迁移指南</a>，通过迁移指南，可以根据实际情况，满足PHP 7的代码编写要求。其中，最终要的，大概有这几项：</p>
+<ol>
+<li>mysql系列函数被移除，mysql系列函数(mysql_connect, mysql_query …)，在PHP 5.5.0 起已经被标记为废弃状态，并在PHP 7版本中已经移除，官方更加推荐使用mysqli系列函数，或者PDO进行数据库的相关操作，如果您在代码中使用了mysql系列函数，需要将其修改为mysqli，或者使用PDO，以便能在PHP 7环境运行。</li>
+<li><code>$HTTP_RAW_POST_DATA</code> 被移除。同样的，<code>$HTTP_RAW_POST_DATA</code>变量在PHP 5.6.0 中被标记为废弃状态，在PHP 7中已经移除，因此，需要使用 php://input 作为替代。</li>
+<li><code>ereg</code>系列函数(ereg, eregi, ereg_replace …)等也同样被移除了，如果有类似的调用，需要替换为<code>preg</code>相关的函数。</li>
+<li>针对新浪云的服务，原有的SaeCounter，SaeRank已经不再支持，需要使用Redis服务进行替换。</li>
+</ol>
+<p>除了上述的一些比较大的修改，还有一些小的变更，可以参考<a target="_blank" rel="noopener" href="http://php.net/manual/zh/migration70.php">迁移指南</a>，或者，直接切换到PHP 7版本，根据错误日志，找到不符合规范的地方，直接修改就好啦～</p>
+<p>最后，放一个针对PHP 7运行环境的性能测试，结果会让你大吃一惊的！</p>
+<p>首先说一下测试环境：<br>在一台机器上，使用ab进行压测，设置连接数为30，测试请求总数为1000，应用为WordPress 4.6.1全新安装版本，换用不同的PHP版本，可以得到下面的结果：<br>PHP 5.3：</p>
+<pre><code>Concurrency Level:      30
+Time taken for tests:   21.246 seconds
+Complete requests:      1000
+Failed requests:        0
+Write errors:           0
+Total transferred:      11064000 bytes
+HTML transferred:       10845000 bytes
+Requests per second:    47.07 [#/sec] (mean)
+Time per request:       637.381 [ms] (mean)
+Time per request:       21.246 [ms] (mean, across all concurrent requests)
+Transfer rate:          508.55 [Kbytes/sec] received</code></pre>
+<p>PHP 5.6：</p>
+<pre><code>Concurrency Level:      30
+Time taken for tests:   22.701 seconds
+Complete requests:      1000
+Failed requests:        0
+Write errors:           0
+Total transferred:      11064000 bytes
+HTML transferred:       10845000 bytes
+Requests per second:    44.05 [#/sec] (mean)
+Time per request:       681.031 [ms] (mean)
+Time per request:       22.701 [ms] (mean, across all concurrent requests)
+Transfer rate:          475.96 [Kbytes/sec] received</code></pre>
+<p>PHP 7：</p>
+<pre><code>Concurrency Level:      30
+Time taken for tests:   4.473 seconds
+Complete requests:      1000
+Failed requests:        0
+Write errors:           0
+Total transferred:      11064000 bytes
+HTML transferred:       10845000 bytes
+Requests per second:    223.54 [#/sec] (mean)
+Time per request:       134.202 [ms] (mean)
+Time per request:       4.473 [ms] (mean, across all concurrent requests)
+Transfer rate:          2415.31 [Kbytes/sec] received</code></pre>
+<p>可以看到，性能差距巨大，同样的请求数和并发，生成的内容长度也相同，PHP 7的QPS从PHP 5的44.05/sec和47.07/sec，暴涨到223.54/sec，实现了几乎5倍的增长，每个请求的时间也从650ms左右降低到了只有130ms。有如此提升，还不赶紧试试PHP 7的强大威力！</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/SinaCloud/" rel="tag"># SinaCloud</a>
+              <a href="/tags/PHP-7/" rel="tag"># PHP 7</a>
+              <a href="/tags/Migrate/" rel="tag"># Migrate</a>
+              <a href="/tags/%E8%BF%81%E7%A7%BB/" rel="tag"># 迁移</a>
+          </div>
+
         
 
-        
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2016/08/17/sae-channel/" rel="prev" title="也许是最简单的新浪云 Channel服务教程">
+                  <i class="fa fa-chevron-left"></i> 也许是最简单的新浪云 Channel服务教程
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2016/10/14/remove-thunderbird-signature-separator/" rel="next" title="删除Thunderbird默认签名分割符的两条横线">
+                  删除Thunderbird默认签名分割符的两条横线 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
 
 <div class="copyright">
   
   &copy; 
   <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
-    <i class="fa fa-user"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
-  </div>
-
-        
 <div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
@@ -456,7 +474,6 @@ Transfer rate:          2415.31 [Kbytes/sec] received</code></pre><p>可以看�
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-divider">|</span>
     <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
@@ -466,31 +483,15 @@ Transfer rate:          2415.31 [Kbytes/sec] received</code></pre><p>可以看�
       </span>
     </span>
 </div>
-
-
-
-
-
-
-
-
-      </div>
-    </footer>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
   </div>
 
+    </div>
+  </footer>
+
   
-  <script src="/lib/anime.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
   
 
@@ -508,15 +509,28 @@ Transfer rate:          2415.31 [Kbytes/sec] received</code></pre><p>可以看�
 
 
 
+
+
+
   
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
 
   
 
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
 
 <script>
-NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
-  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
     var gitalk = new Gitalk({
       clientID    : 'd69b2454aff0c42e46ed',
       clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',

@@ -4,18 +4,23 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
-<script id="hexo-configurations">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+
+<script class="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
 
   <meta name="description" content="由于工作中某个需求，需要使用Cgroups对某个进程的IO进行限制。所以，需要在Cgroup的blkio子系统中进行配置，我们限制的是读取磁盘的iops，所以，需要在blkio.throttle.write_iops_device中写入该限制。 echo &quot;8:0 10&quot; &gt; &#x2F;cgroup&#x2F;blkio&#x2F;test&#x2F;blkio.throttle.read_iops_devi">
@@ -34,10 +39,11 @@
 <meta property="article:tag" content="&#x2F;proc&#x2F;devices&#x2F;">
 <meta name="twitter:card" content="summary">
 
+
 <link rel="canonical" href="https://www.ichenfu.com/2014/12/28/linux-devices/">
 
 
-<script id="page-configurations">
+<script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
@@ -66,24 +72,36 @@
 
   <noscript>
   <style>
-  .use-motion .brand,
+  body { margin-top: 2rem; }
+
   .use-motion .menu-item,
-  .sidebar-inner,
+  .use-motion .sidebar,
   .use-motion .post-block,
   .use-motion .pagination,
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
 
   .use-motion .site-title,
-  .use-motion .site-subtitle {
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
     opacity: initial;
     top: initial;
   }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
   </style>
 </noscript>
 
@@ -91,25 +109,25 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container">
-    <div class="headband"></div>
+  <div class="headband"></div>
 
+  <main class="main">
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="切换导航栏">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
     </div>
   </div>
 
   <div class="site-meta">
 
     <a href="/" class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
+      <i class="logo-line"></i>
       <h1 class="site-title">C0reFast记事本</h1>
-      <span class="logo-line-after"><i></i></span>
+      <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
   </div>
@@ -122,32 +140,31 @@
 
 
 
-
 <nav class="site-nav">
-  <ul id="menu" class="menu">
+  <ul class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
   </ul>
@@ -157,191 +174,18 @@
 
 
 </div>
-    </header>
-
-    
-  <div class="back-to-top">
-    <i class="fa fa-arrow-up"></i>
-    <span>0%</span>
-  </div>
-
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content post posts-expand">
-            
-
-    
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2014/12/28/linux-devices/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chen Fu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Linux中的主设备号
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2014年12月28日 9:54 9:54:12" itemprop="dateCreated datePublished" datetime="2014-12-28T09:54:12+08:00">2014年12月28日 9:54</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
-                </span>
-            </span>
-
-          
-            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span id="busuanzi_value_page_pv"></span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <p>由于工作中某个需求，需要使用Cgroups对某个进程的IO进行限制。所以，需要在Cgroup的blkio子系统中进行配置，我们限制的是读取磁盘的iops，所以，需要在blkio.throttle.write_iops_device中写入该限制。</p>
-<pre><code>echo &quot;8:0 10&quot; &gt; /cgroup/blkio/test/blkio.throttle.read_iops_device</code></pre><p>这里，对sda的read iops进行了限制，上限为10次IO操作每秒。</p>
-<a id="more"></a>
-<h2 id="如何获得"><a href="#如何获得" class="headerlink" title="如何获得"></a>如何获得</h2><p>于是就产生了一个疑问，这里的”8:0”是什么？为什么对sda进行限制需要使用”8:0”这个奇怪的代号？这个”8:0”又是怎么得到的？</p>
-<p>首先说一下”8:0”是如何得到的。在Linux系统下，可以使用：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ls -l /dev/sd*</span></span><br><span class="line">brw-rw----. 1 root disk 8, 0 Dec 27 20:23 /dev/sda</span><br><span class="line">brw-rw----. 1 root disk 8, 1 Dec 27 20:23 /dev/sda1</span><br><span class="line">brw-rw----. 1 root disk 8, 2 Dec 27 20:23 /dev/sda2</span><br></pre></td></tr></table></figure>
-<p>可以看到，/dev/sda前面有一个标志”8, 0”，这个就是我们要限制的设备的设备号。</p>
-<h2 id="为什么是8-0"><a href="#为什么是8-0" class="headerlink" title="为什么是8:0"></a>为什么是8:0</h2><p>对于Linux系统/dev/下的所有文件，都是由驱动程序去注册，方便对对应的设备进行调用的。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ls -l /dev/</span></span><br><span class="line">total 0</span><br><span class="line">drwxr-xr-x. 2 root root         640 Dec 27 20:23 block</span><br><span class="line">drwxr-xr-x. 2 root root          80 Dec 27 20:23 bsg</span><br><span class="line">crw-------. 1 root root     10, 234 Dec 27 20:23 btrfs-control</span><br><span class="line">drwxr-xr-x. 3 root root          60 Dec 27 20:23 bus</span><br><span class="line">lrwxrwxrwx. 1 root root           3 Dec 27 20:23 cdrom -&gt; sr0</span><br><span class="line">drwxr-xr-x. 2 root root        2660 Dec 27 20:24 char</span><br><span class="line">crw-------. 1 root root      5,   1 Dec 27 20:23 console</span><br><span class="line">lrwxrwxrwx. 1 root root          11 Dec 27 20:23 core -&gt; /proc/kcore</span><br><span class="line">drwxr-xr-x. 4 root root          80 Dec 27 20:23 cpu</span><br><span class="line">crw-rw----. 1 root root     10,  61 Dec 27 20:23 cpu_dma_latency</span><br><span class="line">crw-rw----. 1 root root     10,  62 Dec 27 20:23 crash</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>可以看到，在/dev下有各种各样的“文件”，这些文件各有不同，这些都是驱动程序注册的一个虚拟的文件。</p>
-<p>那这些驱动在哪里呢？系统中有一个/proc/deveices文件：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cat /proc/devices</span></span><br><span class="line">Character devices:</span><br><span class="line">1 mem</span><br><span class="line">4 /dev/vc/0</span><br><span class="line">4 tty</span><br><span class="line">4 ttyS</span><br><span class="line">5 /dev/tty</span><br><span class="line">5 /dev/console</span><br><span class="line">5 /dev/ptmx</span><br><span class="line">7 vcs</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Block devices:</span><br><span class="line">1 ramdisk</span><br><span class="line">259 blkext</span><br><span class="line">7 loop</span><br><span class="line">8 sd</span><br><span class="line">9 md</span><br><span class="line">11 sr</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>可以看到，有2种设备，Character device和Block device，字符型设备和块设备，字符型设备可以按字符去读取，而块设备一次读取必须是一整块数据。<br>在设备前面的数字，就是主设备号了，可以看到8这个主设备号属于Block device，驱动程序是sd，也就是SCSI disk。<br>在<a href="https://www.kernel.org/doc/Documentation/admin-guide/devices.txt" target="_blank" rel="noopener">Kernel Documentation</a>中，对这些编号都有比较明确的说明，当然，如果是自己编写的驱动程序，也是可以向系统申请到一个编号的。<br>在文档中可以看到：</p>
-<pre><code>8 block    SCSI disk devices (0-15)
-      0 = /dev/sda        First SCSI disk whole disk
-     16 = /dev/sdb        Second SCSI disk whole disk
-     32 = /dev/sdc        Third SCSI disk whole disk
-        ...
-    240 = /dev/sdp        Sixteenth SCSI disk whole disk
-
-    Partitions are handled in the same way as for IDE
-    disks (see major number 3) except that the limit on
-    partitions is 15.</code></pre><p>8被SCSI disk devices所占用，可以表示前16个SCSI设备，每个设备最多存在15个分区。而我们的服务器就是SCSI接口的硬盘，所以，8:0就是代表了sda本身，而8:1则是sda1，依次类推。</p>
-
-    </div>
-
-    
-    
-    <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
-  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
-  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
-</div>
-
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/Cgroups/" rel="tag"># Cgroups</a>
-              <a href="/tags/Linux/" rel="tag"># Linux</a>
-              <a href="/tags/dev/" rel="tag"># /dev/</a>
-              <a href="/tags/proc-devices/" rel="tag"># /proc/devices/</a>
-          </div>
-
         
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/2014/11/23/centos-ddns/" rel="prev" title="在CentOS下配置DDNS并实现动态更新">
-      <i class="fa fa-chevron-left"></i> 在CentOS下配置DDNS并实现动态更新
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/2015/03/01/override-php-function/" rel="next" title="替换PHP底层函数实现">
-      替换PHP底层函数实现 <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-
-
-          </div>
-          
-    <div class="comments" id="gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
   
   <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
   </div>
 
   <aside class="sidebar">
-    <div class="sidebar-inner">
 
-      <ul class="sidebar-nav motion-element">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
         </li>
@@ -350,18 +194,19 @@
         </li>
       </ul>
 
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#如何获得"><span class="nav-number">1.</span> <span class="nav-text">如何获得</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么是8-0"><span class="nav-number">2.</span> <span class="nav-text">为什么是8:0</span></a></li></ol></div>
-      </div>
-      <!--/noindex-->
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E8%8E%B7%E5%BE%97"><span class="nav-number">1.</span> <span class="nav-text">如何获得</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF8-0"><span class="nav-number">2.</span> <span class="nav-text">为什么是8:0</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
 
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <p class="site-author-name" itemprop="name">Chen Fu</p>
   <div class="site-description" itemprop="description"></div>
 </div>
-<div class="site-state-wrap motion-element">
+<div class="site-state-wrap site-overview-item animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
@@ -386,9 +231,8 @@
 </div>
 
 
-  <div class="links-of-blogroll motion-element">
-    <div class="links-of-blogroll-title">
-      <i class="fa fa-fw fa-link"></i>
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
       Links
     </div>
     <ul class="links-of-blogroll-list">
@@ -404,37 +248,245 @@
     </ul>
   </div>
 
+        </section>
       </div>
-
     </div>
   </aside>
-  <div id="sidebar-dimmer"></div>
+  <div class="sidebar-dimmer"></div>
 
 
-      </div>
-    </main>
+    </header>
 
-    <footer class="footer">
-      <div class="footer-inner">
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2014/12/28/linux-devices/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Linux中的主设备号
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2014年12月28日 9:54 9:54:12" itemprop="dateCreated datePublished" datetime="2014-12-28T09:54:12+08:00">2014年12月28日 9:54</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>由于工作中某个需求，需要使用Cgroups对某个进程的IO进行限制。所以，需要在Cgroup的blkio子系统中进行配置，我们限制的是读取磁盘的iops，所以，需要在blkio.throttle.write_iops_device中写入该限制。</p>
+<pre><code>echo &quot;8:0 10&quot; &gt; /cgroup/blkio/test/blkio.throttle.read_iops_device</code></pre>
+<p>这里，对sda的read iops进行了限制，上限为10次IO操作每秒。</p>
+<a id="more"></a>
+<h2 id="如何获得"><a href="#如何获得" class="headerlink" title="如何获得"></a>如何获得</h2><p>于是就产生了一个疑问，这里的”8:0”是什么？为什么对sda进行限制需要使用”8:0”这个奇怪的代号？这个”8:0”又是怎么得到的？</p>
+<p>首先说一下”8:0”是如何得到的。在Linux系统下，可以使用：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># ls -l /dev/sd*</span>
+brw-rw----. <span class="token number">1</span> root disk <span class="token number">8</span>, <span class="token number">0</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 /dev/sda
+brw-rw----. <span class="token number">1</span> root disk <span class="token number">8</span>, <span class="token number">1</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 /dev/sda1
+brw-rw----. <span class="token number">1</span> root disk <span class="token number">8</span>, <span class="token number">2</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 /dev/sda2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，/dev/sda前面有一个标志”8, 0”，这个就是我们要限制的设备的设备号。</p>
+<h2 id="为什么是8-0"><a href="#为什么是8-0" class="headerlink" title="为什么是8:0"></a>为什么是8:0</h2><p>对于Linux系统/dev/下的所有文件，都是由驱动程序去注册，方便对对应的设备进行调用的。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># ls -l /dev/</span>
+total <span class="token number">0</span>
+drwxr-xr-x. <span class="token number">2</span> root root         <span class="token number">640</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 block
+drwxr-xr-x. <span class="token number">2</span> root root          <span class="token number">80</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 bsg
+crw-------. <span class="token number">1</span> root root     <span class="token number">10</span>, <span class="token number">234</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 btrfs-control
+drwxr-xr-x. <span class="token number">3</span> root root          <span class="token number">60</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 bus
+lrwxrwxrwx. <span class="token number">1</span> root root           <span class="token number">3</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 cdrom -<span class="token operator">></span> sr0
+drwxr-xr-x. <span class="token number">2</span> root root        <span class="token number">2660</span> Dec <span class="token number">27</span> <span class="token number">20</span>:24 char
+crw-------. <span class="token number">1</span> root root      <span class="token number">5</span>,   <span class="token number">1</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 console
+lrwxrwxrwx. <span class="token number">1</span> root root          <span class="token number">11</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 core -<span class="token operator">></span> /proc/kcore
+drwxr-xr-x. <span class="token number">4</span> root root          <span class="token number">80</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 cpu
+crw-rw----. <span class="token number">1</span> root root     <span class="token number">10</span>,  <span class="token number">61</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 cpu_dma_latency
+crw-rw----. <span class="token number">1</span> root root     <span class="token number">10</span>,  <span class="token number">62</span> Dec <span class="token number">27</span> <span class="token number">20</span>:23 crash
+<span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，在/dev下有各种各样的“文件”，这些文件各有不同，这些都是驱动程序注册的一个虚拟的文件。</p>
+<p>那这些驱动在哪里呢？系统中有一个/proc/deveices文件：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># cat /proc/devices</span>
+Character devices:
+<span class="token number">1</span> mem
+<span class="token number">4</span> /dev/vc/0
+<span class="token number">4</span> <span class="token function">tty</span>
+<span class="token number">4</span> ttyS
+<span class="token number">5</span> /dev/tty
+<span class="token number">5</span> /dev/console
+<span class="token number">5</span> /dev/ptmx
+<span class="token number">7</span> vcs
+<span class="token punctuation">..</span>.
+
+Block devices:
+<span class="token number">1</span> ramdisk
+<span class="token number">259</span> blkext
+<span class="token number">7</span> loop
+<span class="token number">8</span> sd
+<span class="token number">9</span> md
+<span class="token number">11</span> sr
+<span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，有2种设备，Character device和Block device，字符型设备和块设备，字符型设备可以按字符去读取，而块设备一次读取必须是一整块数据。<br>在设备前面的数字，就是主设备号了，可以看到8这个主设备号属于Block device，驱动程序是sd，也就是SCSI disk。<br>在<a target="_blank" rel="noopener" href="https://www.kernel.org/doc/Documentation/admin-guide/devices.txt">Kernel Documentation</a>中，对这些编号都有比较明确的说明，当然，如果是自己编写的驱动程序，也是可以向系统申请到一个编号的。<br>在文档中可以看到：</p>
+<pre><code>8 block    SCSI disk devices (0-15)
+      0 = /dev/sda        First SCSI disk whole disk
+     16 = /dev/sdb        Second SCSI disk whole disk
+     32 = /dev/sdc        Third SCSI disk whole disk
+        ...
+    240 = /dev/sdp        Sixteenth SCSI disk whole disk
+
+    Partitions are handled in the same way as for IDE
+    disks (see major number 3) except that the limit on
+    partitions is 15.</code></pre>
+<p>8被SCSI disk devices所占用，可以表示前16个SCSI设备，每个设备最多存在15个分区。而我们的服务器就是SCSI接口的硬盘，所以，8:0就是代表了sda本身，而8:1则是sda1，依次类推。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Cgroups/" rel="tag"># Cgroups</a>
+              <a href="/tags/Linux/" rel="tag"># Linux</a>
+              <a href="/tags/dev/" rel="tag"># /dev/</a>
+              <a href="/tags/proc-devices/" rel="tag"># /proc/devices/</a>
+          </div>
+
         
 
-        
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2014/11/23/centos-ddns/" rel="prev" title="在CentOS下配置DDNS并实现动态更新">
+                  <i class="fa fa-chevron-left"></i> 在CentOS下配置DDNS并实现动态更新
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2015/03/01/override-php-function/" rel="next" title="替换PHP底层函数实现">
+                  替换PHP底层函数实现 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
 
 <div class="copyright">
   
   &copy; 
   <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
-    <i class="fa fa-user"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
-  </div>
-
-        
 <div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
@@ -443,7 +495,6 @@
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-divider">|</span>
     <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
@@ -453,31 +504,15 @@
       </span>
     </span>
 </div>
-
-
-
-
-
-
-
-
-      </div>
-    </footer>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
   </div>
 
+    </div>
+  </footer>
+
   
-  <script src="/lib/anime.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
   
 
@@ -495,15 +530,28 @@
 
 
 
+
+
+
   
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
 
   
 
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
 
 <script>
-NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
-  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
     var gitalk = new Gitalk({
       clientID    : 'd69b2454aff0c42e46ed',
       clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',

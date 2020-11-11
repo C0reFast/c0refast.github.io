@@ -4,18 +4,23 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
-<script id="hexo-configurations">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+
+<script class="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
 
   <meta name="description" content="Harbor是vmware中国开发的一款企业级的DockerRegistry服务器，我们内部也是有搭建了一个Harbor，但是版本是0.5，对于当前最新的release版本1.5.2而言已经太老了，确实也有一些问题，比如不支持多级的镜像名称，某些情况下会触发bug导致panic。 所以需要升级一下，既然考虑升级了，就干脆升级到最新的版本1.5.2了。首先说一下目前的Harbor，官方提供的离线安装">
@@ -33,10 +38,11 @@
 <meta property="article:tag" content="alembic">
 <meta name="twitter:card" content="summary">
 
+
 <link rel="canonical" href="https://www.ichenfu.com/2018/08/07/upgrade-harbor/">
 
 
-<script id="page-configurations">
+<script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
@@ -65,24 +71,36 @@
 
   <noscript>
   <style>
-  .use-motion .brand,
+  body { margin-top: 2rem; }
+
   .use-motion .menu-item,
-  .sidebar-inner,
+  .use-motion .sidebar,
   .use-motion .post-block,
   .use-motion .pagination,
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
 
   .use-motion .site-title,
-  .use-motion .site-subtitle {
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
     opacity: initial;
     top: initial;
   }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
   </style>
 </noscript>
 
@@ -90,25 +108,25 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container">
-    <div class="headband"></div>
+  <div class="headband"></div>
 
+  <main class="main">
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="切换导航栏">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
     </div>
   </div>
 
   <div class="site-meta">
 
     <a href="/" class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
+      <i class="logo-line"></i>
       <h1 class="site-title">C0reFast记事本</h1>
-      <span class="logo-line-after"><i></i></span>
+      <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
   </div>
@@ -121,32 +139,31 @@
 
 
 
-
 <nav class="site-nav">
-  <ul id="menu" class="menu">
+  <ul class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
   </ul>
@@ -156,193 +173,18 @@
 
 
 </div>
-    </header>
-
-    
-  <div class="back-to-top">
-    <i class="fa fa-arrow-up"></i>
-    <span>0%</span>
-  </div>
-
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content post posts-expand">
-            
-
-    
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/08/07/upgrade-harbor/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chen Fu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Harbor折腾升级记
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2018年8月7日 10:07 10:07:12" itemprop="dateCreated datePublished" datetime="2018-08-07T10:07:12+08:00">2018年8月7日 10:07</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
-                </span>
-            </span>
-
-          
-            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span id="busuanzi_value_page_pv"></span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <p>Harbor是vmware中国开发的一款企业级的DockerRegistry服务器，我们内部也是有搭建了一个Harbor，但是版本是0.5，对于当前最新的release版本1.5.2而言已经太老了，确实也有一些问题，比如不支持多级的镜像名称，某些情况下会触发bug导致panic。</p>
-<p>所以需要升级一下，既然考虑升级了，就干脆升级到最新的版本1.5.2了。首先说一下目前的Harbor，官方提供的离线安装包里，默认是本地启动一个MySQL，将Harbor需要的一些数据存储在本地的MySQL中的，这个是不能接受的，所以在之前的部署中，是使用了外部的一个MySQL，同样，registry的存储在线上也是使用了共享存储，保证可用性。</p>
-<p>不过Harbor的1.5.2版本对于0.5版本变化还是比较大的，首先是增加了adminserver这个角色，将所有的配置都拿到adminserver中存储，ui组件通过http请求定期向adminserver请求当前最新的配置信息，其次是数据库结构，新版本和旧版本相比数据库结构发生了很大的变化。</p>
-<p>对于升级操作，官方也提供了解决方案，可以参考<a href="https://github.com/vmware/harbor/blob/d1f2b2311f98e1d3bb00203af01e87ce7f0087de/docs/migration_guide.md" target="_blank" rel="noopener">migration_guide</a>进行升级，升级工具的镜像官方也是提供了，但是这其中存在一个问题，就是升级工具依赖本地的MySQL，也就是说，这个工具只能工作在MySQL是Harbor离线安装包启动的情况下，如果使用了外部的MySQL，这个升级工具就无法直接使用了。</p>
-<p>所以呢，最终还是需要去看一下官方的升级工具是如何实现的，看能否通过其他办法手动升级，于是就花了点时间看了一下代码，找到了最后的实现方式，具体的代码在<a href="https://github.com/vmware/harbor/tree/d1f2b2311f98e1d3bb00203af01e87ce7f0087de/tools/migration/db/alembic/mysql" target="_blank" rel="noopener">alembic/mysql</a>这个目录下，原理也很简单，官方使用了一个Python的工具<code>alembic</code>实现了数据库结构的版本管理。</p>
-<p>手动运行数据库升级，首先需要安装<code>alembic</code>工具，可以通过<code>pip</code>安装，或者针对不同的发行版找对应的软件包。</p>
-<p>下面开始操作：</p>
-<a id="more"></a>
-<p>目录下有一个<code>alembic.tpl</code>文件，这个文件是alembic运行所需要配置文件的模板，我们可以通过<code>source alembic.tpl &gt; alembic.ini</code>实例化一个配置文件，然后打开配置文件，可以看到最关键的两个配置：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">script_location = /harbor-migration/db/alembic/mysql/migration_harbor</span><br><span class="line">sqlalchemy.url = mysql://:@localhost:3306/registry?unix_socket=/var/run/mysqld/mysqld.sock</span><br></pre></td></tr></table></figure>
-
-<p>分别是脚本路径和连接MySQL的地址，默认的在工具镜像中脚本路径是放在<code>/harbor-migration/</code>这个目录下，这个需要根据机器上的情况修改到对应目录，然后<code>sqlalchemy.url</code>配置也很明显，需要修改为实际线上数据库的连接地址。</p>
-<p>修改完成后，就可以调用<code>alembic</code>工具升级数据库了:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> PYTHONPATH=`<span class="built_in">pwd</span>`    <span class="comment"># 添加PYTHONPATH</span></span><br><span class="line">alembic -c alembic.ini current <span class="comment"># 查看当前数据库版本</span></span><br><span class="line">alembic -c alembic.ini upgrade 1.5  <span class="comment"># 升级到1.5版本</span></span><br><span class="line">alembic -c alembic.ini current <span class="comment"># 查看升级后数据库版本</span></span><br></pre></td></tr></table></figure>
-
-<p>脚本运行完成后，数据库结构就能升级成功了。需要提醒的是，建议先导出线上数据到单独的一个数据库中做一下测试，确认没有问题后再进行线上操作，另外，做好备份！</p>
-<p>数据库升级完成，该升级各个组建了，新版Harbor的配置也有比较大的变化，默认安装时会有个<code>harbor.cfg</code>，官方也提供了一个工具去做<code>harbor.cfg</code>的版本迁移，但是我们也不需要通过这个工具了，在安装时，<code>prepare</code>脚本会根据<code>harbor.cfg</code>文件生成对应组件所需要的配置和env文件，所以我们直接使用新版的默认<code>harbor.cfg</code>生成配置文件，再对比老的配置文件，然后直接修改最后的配置文件保持一致。</p>
-<p>需要注意的是，新版Harbor大部分的配置都集中在<code>common/config/adminserver/env</code>文件中，而adminserver是老版本没有的角色，老版本大部分配置都集中在<code>common/config/ui/app.conf</code>和<code>common/config/ui/env</code>中。<br>最终我们采取的办法是，先用默认配置生成一份实际的配置文件，特别是<code>common/config/adminserver/env</code>文件，再根据老版本的线上配置文件比对，直接修改生成后的配置文件而不是<code>harbor.cfg</code>，相当于新旧配置文件做一次merge。等配置文件准备完成，直接调用<code>docker-compose up -d</code>以新配置文件启动Harbor容器。</p>
-<p>总体来说，升级还是很顺利的，具体的步骤如下：<br>    1. 备份数据库<br>    2. 停止并删除老Harbor容器<br>    3. 通过alembic升级数据库版本<br>    4. 通过docker-compose up -d启动新版本Harbor容器</p>
-<p>升级过程很顺利，容器启动后工作正常，但是遇到一个小问题，就是Harbor管理平台里显示的日志的时间差了8个小时，这个其实是在容器化中很容易遇到的一个情况，容器中的时区和宿主机不一致，毕竟我们在中国嘛，还是应该用北京时间，虽然问题挺常见，但是在Harbor解决这个问题还是费了一些力气。<br>正常的思路，就是修改一下<code>docker-compose.yaml</code>将<code>/usr/share/zoneinfo/Asia/Shanghai</code>挂载到<code>/etc/localtime</code>，这样容器内部时区就正确了。测试了一下，确实如此，在容器中执行date命令已经可以正常返回正确的时间。<br>但是日志的时间并没有变化，这个确实令人费解，由于Harbor的镜像相关日志都是写到数据库中的，所以还是需要看一下具体插入日志的代码，看是否能够发现一些问题：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 需要记录日志的地方调用dao.AddAccessLog插入日志，可以看到OpTime就是time.Now()。</span></span><br><span class="line"><span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> err = dao.AddAccessLog(</span><br><span class="line">		models.AccessLog&#123;</span><br><span class="line">			Username:  p.SecurityCtx.GetUsername(),</span><br><span class="line">			ProjectID: projectID,</span><br><span class="line">			RepoName:  pro.Name + <span class="string">"/"</span>,</span><br><span class="line">			RepoTag:   <span class="string">"N/A"</span>,</span><br><span class="line">			Operation: <span class="string">"create"</span>,</span><br><span class="line">			OpTime:    time.Now(),</span><br><span class="line">		&#125;); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Errorf(<span class="string">"failed to add access log: %v"</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;()</span><br><span class="line"></span><br><span class="line"><span class="comment">// AddAccessLog具体实现</span></span><br><span class="line"><span class="comment">// AddAccessLog persists the access logs</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">AddAccessLog</span><span class="params">(accessLog models.AccessLog)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="comment">// the max length of username in database is 255, replace the last</span></span><br><span class="line">	<span class="comment">// three charaters with "..." if the length is greater than 256</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(accessLog.Username) &gt; <span class="number">255</span> &#123;</span><br><span class="line">		accessLog.Username = accessLog.Username[:<span class="number">252</span>] + <span class="string">"..."</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	o := GetOrmer()</span><br><span class="line">	_, err := o.Insert(&amp;accessLog)</span><br><span class="line">	<span class="keyword">return</span> err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>看到这边，基本可以确定和ORM实现没有关系了，因为用的mysql驱动是<code>go-sql-driver/mysql</code>，而这个驱动可以单独设置时区，而且驱动默认的时区是<code>UTC</code>，所以需要修改，具体可以参考<a href="https://github.com/go-sql-driver/mysql#loc" target="_blank" rel="noopener">mysql#loc</a>，于是问题就变成了如何将这个参数传到驱动了，继续看代码：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// NewMySQL returns an instance of mysql</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewMySQL</span><span class="params">(host, port, usr, pwd, database <span class="keyword">string</span>)</span> <span class="title">Database</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> &amp;mysql&#123;</span><br><span class="line">		host:     host,</span><br><span class="line">		port:     port,</span><br><span class="line">		usr:      usr,</span><br><span class="line">		pwd:      pwd,</span><br><span class="line">		database: database,</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Register registers MySQL as the underlying database used</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m *mysql)</span> <span class="title">Register</span><span class="params">(alias ...<span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> err := utils.TestTCPConn(m.host+<span class="string">":"</span>+m.port, <span class="number">60</span>, <span class="number">2</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> err := orm.RegisterDriver(<span class="string">"mysql"</span>, orm.DRMySQL); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	an := <span class="string">"default"</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(alias) != <span class="number">0</span> &#123;</span><br><span class="line">		an = alias[<span class="number">0</span>]</span><br><span class="line">	&#125;</span><br><span class="line">    <span class="comment">// 关键代码！根据配置组合一个MySQL URI，初始化驱动。</span></span><br><span class="line">	conn := fmt.Sprintf(<span class="string">"%s:%s@tcp(%s:%s)/%s"</span>, m.usr,</span><br><span class="line">		m.pwd, m.host, m.port, m.database)</span><br><span class="line">	<span class="keyword">return</span> orm.RegisterDataBase(an, <span class="string">"mysql"</span>, conn)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>也就是说，可以在database名字后面加上<code>?loc=Local</code>来让MySQL驱动使用本地的时区设置。于是就简单了，直接修改<code>common/config/adminserver/env</code>文件，将其中的<code>MYSQL_DATABASE=registry</code>改成<code>MYSQL_DATABASE=registry?loc=Local</code>就行了，虽然有点hack，但是，起码不用修改代码再编译打镜像了吧～<br>一波hack操作，重启对应组建，启动完成，果然时区也正常了～</p>
-<p>PS：Harbor 1.6为了保持和Clair数据库的一致性，将MySQL迁移到PostgreSQL了，所以上面的做法可能就不适用于1.6了，由于暂时内部还没有PostgreSQL的支持，也不需要Clair，所以短期内没有考虑升级1.6，等哪天需要升级了，再看相应的解决方案吧。</p>
-
-    </div>
-
-    
-    
-    <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
-  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
-  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
-</div>
-
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/Harbor%E5%8D%87%E7%BA%A7/" rel="tag"># Harbor升级</a>
-              <a href="/tags/Harbor-Migration/" rel="tag"># Harbor Migration</a>
-              <a href="/tags/alembic/" rel="tag"># alembic</a>
-          </div>
-
         
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/2018/07/06/ceph-pg-states-concepts/" rel="prev" title="Ceph中一些PG相关的状态说明和基本概念说明">
-      <i class="fa fa-chevron-left"></i> Ceph中一些PG相关的状态说明和基本概念说明
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/2018/09/09/packet-flow-in-netfilter/" rel="next" title="netfilter数据流图">
-      netfilter数据流图 <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-
-
-          </div>
-          
-    <div class="comments" id="gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
   
   <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
   </div>
 
   <aside class="sidebar">
-    <div class="sidebar-inner">
 
-      <ul class="sidebar-nav motion-element">
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
         </li>
@@ -351,17 +193,18 @@
         </li>
       </ul>
 
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-      </div>
-      <!--/noindex-->
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+        </section>
+        <!--/noindex-->
 
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <p class="site-author-name" itemprop="name">Chen Fu</p>
   <div class="site-description" itemprop="description"></div>
 </div>
-<div class="site-state-wrap motion-element">
+<div class="site-state-wrap site-overview-item animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
@@ -386,9 +229,8 @@
 </div>
 
 
-  <div class="links-of-blogroll motion-element">
-    <div class="links-of-blogroll-title">
-      <i class="fa fa-fw fa-link"></i>
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
       Links
     </div>
     <ul class="links-of-blogroll-list">
@@ -404,37 +246,272 @@
     </ul>
   </div>
 
+        </section>
       </div>
-
     </div>
   </aside>
-  <div id="sidebar-dimmer"></div>
+  <div class="sidebar-dimmer"></div>
 
 
-      </div>
-    </main>
+    </header>
 
-    <footer class="footer">
-      <div class="footer-inner">
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/08/07/upgrade-harbor/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Harbor折腾升级记
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018年8月7日 10:07 10:07:12" itemprop="dateCreated datePublished" datetime="2018-08-07T10:07:12+08:00">2018年8月7日 10:07</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>Harbor是vmware中国开发的一款企业级的DockerRegistry服务器，我们内部也是有搭建了一个Harbor，但是版本是0.5，对于当前最新的release版本1.5.2而言已经太老了，确实也有一些问题，比如不支持多级的镜像名称，某些情况下会触发bug导致panic。</p>
+<p>所以需要升级一下，既然考虑升级了，就干脆升级到最新的版本1.5.2了。首先说一下目前的Harbor，官方提供的离线安装包里，默认是本地启动一个MySQL，将Harbor需要的一些数据存储在本地的MySQL中的，这个是不能接受的，所以在之前的部署中，是使用了外部的一个MySQL，同样，registry的存储在线上也是使用了共享存储，保证可用性。</p>
+<p>不过Harbor的1.5.2版本对于0.5版本变化还是比较大的，首先是增加了adminserver这个角色，将所有的配置都拿到adminserver中存储，ui组件通过http请求定期向adminserver请求当前最新的配置信息，其次是数据库结构，新版本和旧版本相比数据库结构发生了很大的变化。</p>
+<p>对于升级操作，官方也提供了解决方案，可以参考<a target="_blank" rel="noopener" href="https://github.com/vmware/harbor/blob/d1f2b2311f98e1d3bb00203af01e87ce7f0087de/docs/migration_guide.md">migration_guide</a>进行升级，升级工具的镜像官方也是提供了，但是这其中存在一个问题，就是升级工具依赖本地的MySQL，也就是说，这个工具只能工作在MySQL是Harbor离线安装包启动的情况下，如果使用了外部的MySQL，这个升级工具就无法直接使用了。</p>
+<p>所以呢，最终还是需要去看一下官方的升级工具是如何实现的，看能否通过其他办法手动升级，于是就花了点时间看了一下代码，找到了最后的实现方式，具体的代码在<a target="_blank" rel="noopener" href="https://github.com/vmware/harbor/tree/d1f2b2311f98e1d3bb00203af01e87ce7f0087de/tools/migration/db/alembic/mysql">alembic/mysql</a>这个目录下，原理也很简单，官方使用了一个Python的工具<code>alembic</code>实现了数据库结构的版本管理。</p>
+<p>手动运行数据库升级，首先需要安装<code>alembic</code>工具，可以通过<code>pip</code>安装，或者针对不同的发行版找对应的软件包。</p>
+<p>下面开始操作：</p>
+<a id="more"></a>
+<p>目录下有一个<code>alembic.tpl</code>文件，这个文件是alembic运行所需要配置文件的模板，我们可以通过<code>source alembic.tpl &gt; alembic.ini</code>实例化一个配置文件，然后打开配置文件，可以看到最关键的两个配置：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">script_location <span class="token operator">=</span> /harbor-migration/db/alembic/mysql/migration_harbor
+sqlalchemy.url <span class="token operator">=</span> mysql://:@localhost:3306/registry?unix_socket<span class="token operator">=</span>/var/run/mysqld/mysqld.sock<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>分别是脚本路径和连接MySQL的地址，默认的在工具镜像中脚本路径是放在<code>/harbor-migration/</code>这个目录下，这个需要根据机器上的情况修改到对应目录，然后<code>sqlalchemy.url</code>配置也很明显，需要修改为实际线上数据库的连接地址。</p>
+<p>修改完成后，就可以调用<code>alembic</code>工具升级数据库了:</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">export</span> <span class="token assign-left variable">PYTHONPATH</span><span class="token operator">=</span><span class="token variable"><span class="token variable">`</span><span class="token builtin class-name">pwd</span><span class="token variable">`</span></span>    <span class="token comment"># 添加PYTHONPATH</span>
+alembic -c alembic.ini current <span class="token comment"># 查看当前数据库版本</span>
+alembic -c alembic.ini upgrade <span class="token number">1.5</span>  <span class="token comment"># 升级到1.5版本</span>
+alembic -c alembic.ini current <span class="token comment"># 查看升级后数据库版本</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>脚本运行完成后，数据库结构就能升级成功了。需要提醒的是，建议先导出线上数据到单独的一个数据库中做一下测试，确认没有问题后再进行线上操作，另外，做好备份！</p>
+<p>数据库升级完成，该升级各个组建了，新版Harbor的配置也有比较大的变化，默认安装时会有个<code>harbor.cfg</code>，官方也提供了一个工具去做<code>harbor.cfg</code>的版本迁移，但是我们也不需要通过这个工具了，在安装时，<code>prepare</code>脚本会根据<code>harbor.cfg</code>文件生成对应组件所需要的配置和env文件，所以我们直接使用新版的默认<code>harbor.cfg</code>生成配置文件，再对比老的配置文件，然后直接修改最后的配置文件保持一致。</p>
+<p>需要注意的是，新版Harbor大部分的配置都集中在<code>common/config/adminserver/env</code>文件中，而adminserver是老版本没有的角色，老版本大部分配置都集中在<code>common/config/ui/app.conf</code>和<code>common/config/ui/env</code>中。<br>最终我们采取的办法是，先用默认配置生成一份实际的配置文件，特别是<code>common/config/adminserver/env</code>文件，再根据老版本的线上配置文件比对，直接修改生成后的配置文件而不是<code>harbor.cfg</code>，相当于新旧配置文件做一次merge。等配置文件准备完成，直接调用<code>docker-compose up -d</code>以新配置文件启动Harbor容器。</p>
+<p>总体来说，升级还是很顺利的，具体的步骤如下：<br>    1. 备份数据库<br>    2. 停止并删除老Harbor容器<br>    3. 通过alembic升级数据库版本<br>    4. 通过docker-compose up -d启动新版本Harbor容器</p>
+<p>升级过程很顺利，容器启动后工作正常，但是遇到一个小问题，就是Harbor管理平台里显示的日志的时间差了8个小时，这个其实是在容器化中很容易遇到的一个情况，容器中的时区和宿主机不一致，毕竟我们在中国嘛，还是应该用北京时间，虽然问题挺常见，但是在Harbor解决这个问题还是费了一些力气。<br>正常的思路，就是修改一下<code>docker-compose.yaml</code>将<code>/usr/share/zoneinfo/Asia/Shanghai</code>挂载到<code>/etc/localtime</code>，这样容器内部时区就正确了。测试了一下，确实如此，在容器中执行date命令已经可以正常返回正确的时间。<br>但是日志的时间并没有变化，这个确实令人费解，由于Harbor的镜像相关日志都是写到数据库中的，所以还是需要看一下具体插入日志的代码，看是否能够发现一些问题：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// 需要记录日志的地方调用dao.AddAccessLog插入日志，可以看到OpTime就是time.Now()。</span>
+<span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> err <span class="token operator">=</span> dao<span class="token punctuation">.</span><span class="token function">AddAccessLog</span><span class="token punctuation">(</span>
+		models<span class="token punctuation">.</span>AccessLog<span class="token punctuation">&#123;</span>
+			Username<span class="token punctuation">:</span>  p<span class="token punctuation">.</span>SecurityCtx<span class="token punctuation">.</span><span class="token function">GetUsername</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+			ProjectID<span class="token punctuation">:</span> projectID<span class="token punctuation">,</span>
+			RepoName<span class="token punctuation">:</span>  pro<span class="token punctuation">.</span>Name <span class="token operator">+</span> <span class="token string">"/"</span><span class="token punctuation">,</span>
+			RepoTag<span class="token punctuation">:</span>   <span class="token string">"N/A"</span><span class="token punctuation">,</span>
+			Operation<span class="token punctuation">:</span> <span class="token string">"create"</span><span class="token punctuation">,</span>
+			OpTime<span class="token punctuation">:</span>    time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"failed to add access log: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment">// AddAccessLog具体实现</span>
+<span class="token comment">// AddAccessLog persists the access logs</span>
+<span class="token keyword">func</span> <span class="token function">AddAccessLog</span><span class="token punctuation">(</span>accessLog models<span class="token punctuation">.</span>AccessLog<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token comment">// the max length of username in database is 255, replace the last</span>
+	<span class="token comment">// three charaters with "..." if the length is greater than 256</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>accessLog<span class="token punctuation">.</span>Username<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">255</span> <span class="token punctuation">&#123;</span>
+		accessLog<span class="token punctuation">.</span>Username <span class="token operator">=</span> accessLog<span class="token punctuation">.</span>Username<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">252</span><span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token string">"..."</span>
+	<span class="token punctuation">&#125;</span>
+
+	o <span class="token operator">:=</span> <span class="token function">GetOrmer</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token boolean">_</span><span class="token punctuation">,</span> err <span class="token operator">:=</span> o<span class="token punctuation">.</span><span class="token function">Insert</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>accessLog<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> err
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>看到这边，基本可以确定和ORM实现没有关系了，因为用的mysql驱动是<code>go-sql-driver/mysql</code>，而这个驱动可以单独设置时区，而且驱动默认的时区是<code>UTC</code>，所以需要修改，具体可以参考<a target="_blank" rel="noopener" href="https://github.com/go-sql-driver/mysql#loc">mysql#loc</a>，于是问题就变成了如何将这个参数传到驱动了，继续看代码：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// NewMySQL returns an instance of mysql</span>
+<span class="token keyword">func</span> <span class="token function">NewMySQL</span><span class="token punctuation">(</span>host<span class="token punctuation">,</span> port<span class="token punctuation">,</span> usr<span class="token punctuation">,</span> pwd<span class="token punctuation">,</span> database <span class="token builtin">string</span><span class="token punctuation">)</span> Database <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>mysql<span class="token punctuation">&#123;</span>
+		host<span class="token punctuation">:</span>     host<span class="token punctuation">,</span>
+		port<span class="token punctuation">:</span>     port<span class="token punctuation">,</span>
+		usr<span class="token punctuation">:</span>      usr<span class="token punctuation">,</span>
+		pwd<span class="token punctuation">:</span>      pwd<span class="token punctuation">,</span>
+		database<span class="token punctuation">:</span> database<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">// Register registers MySQL as the underlying database used</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>m <span class="token operator">*</span>mysql<span class="token punctuation">)</span> <span class="token function">Register</span><span class="token punctuation">(</span>alias <span class="token operator">...</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> utils<span class="token punctuation">.</span><span class="token function">TestTCPConn</span><span class="token punctuation">(</span>m<span class="token punctuation">.</span>host<span class="token operator">+</span><span class="token string">":"</span><span class="token operator">+</span>m<span class="token punctuation">.</span>port<span class="token punctuation">,</span> <span class="token number">60</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> orm<span class="token punctuation">.</span><span class="token function">RegisterDriver</span><span class="token punctuation">(</span><span class="token string">"mysql"</span><span class="token punctuation">,</span> orm<span class="token punctuation">.</span>DRMySQL<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	an <span class="token operator">:=</span> <span class="token string">"default"</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>alias<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		an <span class="token operator">=</span> alias<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+	<span class="token punctuation">&#125;</span>
+    <span class="token comment">// 关键代码！根据配置组合一个MySQL URI，初始化驱动。</span>
+	conn <span class="token operator">:=</span> fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"%s:%s@tcp(%s:%s)/%s"</span><span class="token punctuation">,</span> m<span class="token punctuation">.</span>usr<span class="token punctuation">,</span>
+		m<span class="token punctuation">.</span>pwd<span class="token punctuation">,</span> m<span class="token punctuation">.</span>host<span class="token punctuation">,</span> m<span class="token punctuation">.</span>port<span class="token punctuation">,</span> m<span class="token punctuation">.</span>database<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> orm<span class="token punctuation">.</span><span class="token function">RegisterDataBase</span><span class="token punctuation">(</span>an<span class="token punctuation">,</span> <span class="token string">"mysql"</span><span class="token punctuation">,</span> conn<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>也就是说，可以在database名字后面加上<code>?loc=Local</code>来让MySQL驱动使用本地的时区设置。于是就简单了，直接修改<code>common/config/adminserver/env</code>文件，将其中的<code>MYSQL_DATABASE=registry</code>改成<code>MYSQL_DATABASE=registry?loc=Local</code>就行了，虽然有点hack，但是，起码不用修改代码再编译打镜像了吧～<br>一波hack操作，重启对应组建，启动完成，果然时区也正常了～</p>
+<p>PS：Harbor 1.6为了保持和Clair数据库的一致性，将MySQL迁移到PostgreSQL了，所以上面的做法可能就不适用于1.6了，由于暂时内部还没有PostgreSQL的支持，也不需要Clair，所以短期内没有考虑升级1.6，等哪天需要升级了，再看相应的解决方案吧。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Harbor%E5%8D%87%E7%BA%A7/" rel="tag"># Harbor升级</a>
+              <a href="/tags/Harbor-Migration/" rel="tag"># Harbor Migration</a>
+              <a href="/tags/alembic/" rel="tag"># alembic</a>
+          </div>
+
         
 
-        
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/07/06/ceph-pg-states-concepts/" rel="prev" title="Ceph中一些PG相关的状态说明和基本概念说明">
+                  <i class="fa fa-chevron-left"></i> Ceph中一些PG相关的状态说明和基本概念说明
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/09/09/packet-flow-in-netfilter/" rel="next" title="netfilter数据流图">
+                  netfilter数据流图 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
 
 <div class="copyright">
   
   &copy; 
   <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
-    <i class="fa fa-user"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
-  </div>
-
-        
 <div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
@@ -443,7 +520,6 @@
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-divider">|</span>
     <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
@@ -453,31 +529,15 @@
       </span>
     </span>
 </div>
-
-
-
-
-
-
-
-
-      </div>
-    </footer>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
   </div>
 
+    </div>
+  </footer>
+
   
-  <script src="/lib/anime.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
   
 
@@ -495,15 +555,28 @@
 
 
 
+
+
+
   
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
 
   
 
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
 
 <script>
-NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
-  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
     var gitalk = new Gitalk({
       clientID    : 'd69b2454aff0c42e46ed',
       clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',

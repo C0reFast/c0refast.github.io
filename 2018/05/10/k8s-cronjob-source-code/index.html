@@ -4,18 +4,23 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
-<script id="hexo-configurations">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+
+<script class="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
 
   <meta name="description" content="最近的一个项目需要用到Kubernetes的CronJob，主要用来定时执行一个备份任务，刚开始使用的时候发现没有按照预期的情况运行，所以决定看看CronJob Controller的代码，看看他是怎么实现对应的功能的，正好发现网上也没有其他人写过关于CronJob Controller代码的解析（可能是太简单了不用写吧）。所以也就正好记录一下。 CronJob Controller的代码在kub">
@@ -33,10 +38,11 @@
 <meta property="article:tag" content="源码分析">
 <meta name="twitter:card" content="summary">
 
+
 <link rel="canonical" href="https://www.ichenfu.com/2018/05/10/k8s-cronjob-source-code/">
 
 
-<script id="page-configurations">
+<script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
@@ -65,24 +71,36 @@
 
   <noscript>
   <style>
-  .use-motion .brand,
+  body { margin-top: 2rem; }
+
   .use-motion .menu-item,
-  .sidebar-inner,
+  .use-motion .sidebar,
   .use-motion .post-block,
   .use-motion .pagination,
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
 
   .use-motion .site-title,
-  .use-motion .site-subtitle {
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
     opacity: initial;
     top: initial;
   }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
   </style>
 </noscript>
 
@@ -90,25 +108,25 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container">
-    <div class="headband"></div>
+  <div class="headband"></div>
 
+  <main class="main">
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="切换导航栏">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
     </div>
   </div>
 
   <div class="site-meta">
 
     <a href="/" class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
+      <i class="logo-line"></i>
       <h1 class="site-title">C0reFast记事本</h1>
-      <span class="logo-line-after"><i></i></span>
+      <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
   </div>
@@ -121,32 +139,31 @@
 
 
 
-
 <nav class="site-nav">
-  <ul id="menu" class="menu">
+  <ul class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
   </ul>
@@ -156,183 +173,18 @@
 
 
 </div>
-    </header>
-
-    
-  <div class="back-to-top">
-    <i class="fa fa-arrow-up"></i>
-    <span>0%</span>
-  </div>
-
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content post posts-expand">
-            
-
-    
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/05/10/k8s-cronjob-source-code/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chen Fu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Kubernetes CronJob Controller源码分析
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2018年5月10日 10:21 10:21:53" itemprop="dateCreated datePublished" datetime="2018-05-10T10:21:53+08:00">2018年5月10日 10:21</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
-                </span>
-            </span>
-
-          
-            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span id="busuanzi_value_page_pv"></span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <p>最近的一个项目需要用到Kubernetes的CronJob，主要用来定时执行一个备份任务，刚开始使用的时候发现没有按照预期的情况运行，所以决定看看<code>CronJob Controller</code>的代码，看看他是怎么实现对应的功能的，正好发现网上也没有其他人写过关于<code>CronJob Controller</code>代码的解析（可能是太简单了不用写吧）。所以也就正好记录一下。</p>
-<p><code>CronJob Controller</code>的代码在<code>kubernetes/pkg/controller/cronjob</code>路径下，主要的逻辑实现在这个目录的<code>cronjob_controller.go</code>，这里分析的是<code>v1.10.2</code>版本的代码，可以直接链接到<a href="https://github.com/kubernetes/kubernetes/blob/v1.10.2/pkg/controller/cronjob/cronjob_controller.go" target="_blank" rel="noopener">Github</a>查看。</p>
-<a id="more"></a>
-
-<p>我们直接跳过创建Controller的过程，直接看运行的部分：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(jm *CronJobController)</span> <span class="title">Run</span><span class="params">(stopCh &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">	<span class="keyword">defer</span> utilruntime.HandleCrash()</span><br><span class="line">	glog.Infof(<span class="string">"Starting CronJob Manager"</span>)</span><br><span class="line">	<span class="comment">// Check things every 10 second.</span></span><br><span class="line">	<span class="keyword">go</span> wait.Until(jm.syncAll, <span class="number">10</span>*time.Second, stopCh)</span><br><span class="line">	&lt;-stopCh</span><br><span class="line">	glog.Infof(<span class="string">"Shutting down CronJob Manager"</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这个很简单，每隔10s去执行一次syncAll这个方法，然后我们再看看这个方法：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(jm *CronJobController)</span> <span class="title">syncAll</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="comment">// List children (Jobs) before parents (CronJob).</span></span><br><span class="line">	<span class="comment">// This guarantees that if we see any Job that got orphaned by the GC orphan finalizer,</span></span><br><span class="line">	<span class="comment">// we must also see that the parent CronJob has non-nil DeletionTimestamp (see #42639).</span></span><br><span class="line">	<span class="comment">// Note that this only works because we are NOT using any caches here.</span></span><br><span class="line">	<span class="comment">// 先把所有的Job给列出来，主要是为了找到所有的CronJob和CronJob创建的Job的对应关系</span></span><br><span class="line">	jl, err := jm.kubeClient.BatchV1().Jobs(metav1.NamespaceAll).List(metav1.ListOptions&#123;&#125;)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		utilruntime.HandleError(fmt.Errorf(<span class="string">"can't list Jobs: %v"</span>, err))</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	js := jl.Items</span><br><span class="line">	glog.V(<span class="number">4</span>).Infof(<span class="string">"Found %d jobs"</span>, <span class="built_in">len</span>(js))</span><br><span class="line">	<span class="comment">// 这里列出来所有的CronJob</span></span><br><span class="line">	sjl, err := jm.kubeClient.BatchV1beta1().CronJobs(metav1.NamespaceAll).List(metav1.ListOptions&#123;&#125;)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		utilruntime.HandleError(fmt.Errorf(<span class="string">"can't list CronJobs: %v"</span>, err))</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	sjs := sjl.Items</span><br><span class="line">	glog.V(<span class="number">4</span>).Infof(<span class="string">"Found %d cronjobs"</span>, <span class="built_in">len</span>(sjs))</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 获取一个map[uid][]Job，主要就是根据CronJob的UID将所有属于它的Job给聚合起来</span></span><br><span class="line">	jobsBySj := groupJobsByParent(js)</span><br><span class="line">	glog.V(<span class="number">4</span>).Infof(<span class="string">"Found %d groups"</span>, <span class="built_in">len</span>(jobsBySj))</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> _, sj := <span class="keyword">range</span> sjs &#123;</span><br><span class="line">		<span class="comment">// 针对每个CronJob调用syncOne</span></span><br><span class="line">		syncOne(&amp;sj, jobsBySj[sj.UID], time.Now(), jm.jobControl, jm.sjControl, jm.podControl, jm.recorder)</span><br><span class="line">		<span class="comment">// 根据相应的配置，主要是SuccessfulJobsHistoryLimit和FailedJobsHistoryLimit删除掉多余的Job</span></span><br><span class="line">		cleanupFinishedJobs(&amp;sj, jobsBySj[sj.UID], jm.jobControl, jm.sjControl, jm.podControl, jm.recorder)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>然后就走到了关键方法syncOne了：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">syncOne</span><span class="params">(sj *batchv1beta1.CronJob, js []batchv1.Job, now time.Time, jc jobControlInterface, sjc sjControlInterface, pc podControlInterface, recorder record.EventRecorder)</span></span> &#123;</span><br><span class="line">	nameForLog := fmt.Sprintf(<span class="string">"%s/%s"</span>, sj.Namespace, sj.Name)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 首先扫一遍所有的子Job，看是否有不在Active列表中的孤儿，以及已经执行完成但是还在Active列表中的Job，记录一下Event，删掉不对应的状态。</span></span><br><span class="line">	childrenJobs := <span class="built_in">make</span>(<span class="keyword">map</span>[types.UID]<span class="keyword">bool</span>)</span><br><span class="line">	<span class="keyword">for</span> _, j := <span class="keyword">range</span> js &#123;</span><br><span class="line">		childrenJobs[j.ObjectMeta.UID] = <span class="literal">true</span></span><br><span class="line">		found := inActiveList(*sj, j.ObjectMeta.UID)</span><br><span class="line">		<span class="keyword">if</span> !found &amp;&amp; !IsJobFinished(&amp;j) &#123;</span><br><span class="line">			recorder.Eventf(sj, v1.EventTypeWarning, <span class="string">"UnexpectedJob"</span>, <span class="string">"Saw a job that the controller did not create or forgot: %v"</span>, j.Name)</span><br><span class="line">			<span class="comment">// We found an unfinished job that has us as the parent, but it is not in our Active list.</span></span><br><span class="line">			<span class="comment">// This could happen if we crashed right after creating the Job and before updating the status,</span></span><br><span class="line">			<span class="comment">// or if our jobs list is newer than our sj status after a relist, or if someone intentionally created</span></span><br><span class="line">			<span class="comment">// a job that they wanted us to adopt.</span></span><br><span class="line"></span><br><span class="line">			<span class="comment">// <span class="doctag">TODO:</span> maybe handle the adoption case?  Concurrency/suspend rules will not apply in that case, obviously, since we can't</span></span><br><span class="line">			<span class="comment">// stop users from creating jobs if they have permission.  It is assumed that if a</span></span><br><span class="line">			<span class="comment">// user has permission to create a job within a namespace, then they have permission to make any scheduledJob</span></span><br><span class="line">			<span class="comment">// in the same namespace "adopt" that job.  ReplicaSets and their Pods work the same way.</span></span><br><span class="line">			<span class="comment">// TBS: how to update sj.Status.LastScheduleTime if the adopted job is newer than any we knew about?</span></span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> found &amp;&amp; IsJobFinished(&amp;j) &#123;</span><br><span class="line">			deleteFromActiveList(sj, j.ObjectMeta.UID)</span><br><span class="line">			<span class="comment">// <span class="doctag">TODO:</span> event to call out failure vs success.</span></span><br><span class="line">			recorder.Eventf(sj, v1.EventTypeNormal, <span class="string">"SawCompletedJob"</span>, <span class="string">"Saw completed job: %v"</span>, j.Name)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Remove any job reference from the active list if the corresponding job does not exist any more.</span></span><br><span class="line">	<span class="comment">// Otherwise, the cronjob may be stuck in active mode forever even though there is no matching</span></span><br><span class="line">	<span class="comment">// job running.</span></span><br><span class="line">	<span class="comment">// 然后再看一下Active里是否有一些不存在的Job，如果有，也删除掉</span></span><br><span class="line">	<span class="keyword">for</span> _, j := <span class="keyword">range</span> sj.Status.Active &#123;</span><br><span class="line">		<span class="keyword">if</span> found := childrenJobs[j.UID]; !found &#123;</span><br><span class="line">			recorder.Eventf(sj, v1.EventTypeNormal, <span class="string">"MissingJob"</span>, <span class="string">"Active job went missing: %v"</span>, j.Name)</span><br><span class="line">			deleteFromActiveList(sj, j.UID)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 更新一下CronJob的状态</span></span><br><span class="line">	updatedSJ, err := sjc.UpdateStatus(sj)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		glog.Errorf(<span class="string">"Unable to update status for %s (rv = %s): %v"</span>, nameForLog, sj.ResourceVersion, err)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	*sj = *updatedSJ</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 判断CronJob是否删除，如果删除了就不管</span></span><br><span class="line">	<span class="keyword">if</span> sj.DeletionTimestamp != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="comment">// The CronJob is being deleted.</span></span><br><span class="line">		<span class="comment">// Don't do anything other than updating status.</span></span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 判断是否是停止调度状态，如果是则不管</span></span><br><span class="line">	<span class="keyword">if</span> sj.Spec.Suspend != <span class="literal">nil</span> &amp;&amp; *sj.Spec.Suspend &#123;</span><br><span class="line">		glog.V(<span class="number">4</span>).Infof(<span class="string">"Not starting job for %s because it is suspended"</span>, nameForLog)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 这里先计算到目前为止需要执行的Job时间列表</span></span><br><span class="line">	times, err := getRecentUnmetScheduleTimes(*sj, now)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		recorder.Eventf(sj, v1.EventTypeWarning, <span class="string">"FailedNeedsStart"</span>, <span class="string">"Cannot determine if job needs to be started: %v"</span>, err)</span><br><span class="line">		glog.Errorf(<span class="string">"Cannot determine if %s needs to be started: %v"</span>, nameForLog, err)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// <span class="doctag">TODO:</span> handle multiple unmet start times, from oldest to newest, updating status as needed.</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(times) == <span class="number">0</span> &#123;</span><br><span class="line">		glog.V(<span class="number">4</span>).Infof(<span class="string">"No unmet start times for %s"</span>, nameForLog)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(times) &gt; <span class="number">1</span> &#123;</span><br><span class="line">		glog.V(<span class="number">4</span>).Infof(<span class="string">"Multiple unmet start times for %s so only starting last one"</span>, nameForLog)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 拿出最后需要执行的时间</span></span><br><span class="line">	scheduledTime := times[<span class="built_in">len</span>(times)<span class="number">-1</span>]</span><br><span class="line">	tooLate := <span class="literal">false</span></span><br><span class="line">	<span class="comment">// 如果存在StartingDeadlineSeconds配置，判断当前时间是否超过了执行时限</span></span><br><span class="line">	<span class="keyword">if</span> sj.Spec.StartingDeadlineSeconds != <span class="literal">nil</span> &#123;</span><br><span class="line">		tooLate = scheduledTime.Add(time.Second * time.Duration(*sj.Spec.StartingDeadlineSeconds)).Before(now)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 如果超过了执行时限就不做了</span></span><br><span class="line">	<span class="keyword">if</span> tooLate &#123;</span><br><span class="line">		glog.V(<span class="number">4</span>).Infof(<span class="string">"Missed starting window for %s"</span>, nameForLog)</span><br><span class="line">		<span class="comment">// <span class="doctag">TODO:</span> generate an event for a miss.  Use a warning level event because it indicates a</span></span><br><span class="line">		<span class="comment">// problem with the controller (restart or long queue), and is not expected by user either.</span></span><br><span class="line">		<span class="comment">// Since we don't set LastScheduleTime when not scheduling, we are going to keep noticing</span></span><br><span class="line">		<span class="comment">// the miss every cycle.  In order to avoid sending multiple events, and to avoid processing</span></span><br><span class="line">		<span class="comment">// the sj again and again, we could set a Status.LastMissedTime when we notice a miss.</span></span><br><span class="line">		<span class="comment">// Then, when we call getRecentUnmetScheduleTimes, we can take max(creationTimestamp,</span></span><br><span class="line">		<span class="comment">// Status.LastScheduleTime, Status.LastMissedTime), and then so we won't generate</span></span><br><span class="line">		<span class="comment">// and event the next time we process it, and also so the user looking at the status</span></span><br><span class="line">		<span class="comment">// can see easily that there was a missed execution.</span></span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 如果ConcurrencyPolicy配置为Forbid即不允许并行执行但是现在有正在执行的Job也不会添加新的</span></span><br><span class="line">	<span class="keyword">if</span> sj.Spec.ConcurrencyPolicy == batchv1beta1.ForbidConcurrent &amp;&amp; <span class="built_in">len</span>(sj.Status.Active) &gt; <span class="number">0</span> &#123;</span><br><span class="line">		<span class="comment">// Regardless which source of information we use for the set of active jobs,</span></span><br><span class="line">		<span class="comment">// there is some risk that we won't see an active job when there is one.</span></span><br><span class="line">		<span class="comment">// (because we haven't seen the status update to the SJ or the created pod).</span></span><br><span class="line">		<span class="comment">// So it is theoretically possible to have concurrency with Forbid.</span></span><br><span class="line">		<span class="comment">// As long the as the invokations are "far enough apart in time", this usually won't happen.</span></span><br><span class="line">		<span class="comment">//</span></span><br><span class="line">		<span class="comment">// <span class="doctag">TODO:</span> for Forbid, we could use the same name for every execution, as a lock.</span></span><br><span class="line">		<span class="comment">// With replace, we could use a name that is deterministic per execution time.</span></span><br><span class="line">		<span class="comment">// But that would mean that you could not inspect prior successes or failures of Forbid jobs.</span></span><br><span class="line">		glog.V(<span class="number">4</span>).Infof(<span class="string">"Not starting job for %s because of prior execution still running and concurrency policy is Forbid"</span>, nameForLog)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	如果ConcurrencyPolicy配置为Replace并且有正在运行的Job则把对应的Job给删除掉</span><br><span class="line">	<span class="keyword">if</span> sj.Spec.ConcurrencyPolicy == batchv1beta1.ReplaceConcurrent &#123;</span><br><span class="line">		<span class="keyword">for</span> _, j := <span class="keyword">range</span> sj.Status.Active &#123;</span><br><span class="line">			<span class="comment">// <span class="doctag">TODO:</span> this should be replaced with server side job deletion</span></span><br><span class="line">			<span class="comment">// currently this mimics JobReaper from pkg/kubectl/stop.go</span></span><br><span class="line">			glog.V(<span class="number">4</span>).Infof(<span class="string">"Deleting job %s of %s that was still running at next scheduled start time"</span>, j.Name, nameForLog)</span><br><span class="line"></span><br><span class="line">			job, err := jc.GetJob(j.Namespace, j.Name)</span><br><span class="line">			<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">				recorder.Eventf(sj, v1.EventTypeWarning, <span class="string">"FailedGet"</span>, <span class="string">"Get job: %v"</span>, err)</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> !deleteJob(sj, job, jc, pc, recorder, <span class="string">""</span>) &#123;</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 根据CronJob Spec中JobTemplate的配置获取Job对象，其中Job对象的名字会加上scheduledTime计算出的Hash，目前是unix timestamp</span></span><br><span class="line">	jobReq, err := getJobFromTemplate(sj, scheduledTime)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		glog.Errorf(<span class="string">"Unable to make Job from template in %s: %v"</span>, nameForLog, err)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 调用接口创建一个新的Job</span></span><br><span class="line">	jobResp, err := jc.CreateJob(sj.Namespace, jobReq)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		recorder.Eventf(sj, v1.EventTypeWarning, <span class="string">"FailedCreate"</span>, <span class="string">"Error creating job: %v"</span>, err)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	glog.V(<span class="number">4</span>).Infof(<span class="string">"Created Job %s for %s"</span>, jobResp.Name, nameForLog)</span><br><span class="line">	recorder.Eventf(sj, v1.EventTypeNormal, <span class="string">"SuccessfulCreate"</span>, <span class="string">"Created job %v"</span>, jobResp.Name)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// ------------------------------------------------------------------ //</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// If this process restarts at this point (after posting a job, but</span></span><br><span class="line">	<span class="comment">// before updating the status), then we might try to start the job on</span></span><br><span class="line">	<span class="comment">// the next time.  Actually, if we relist the SJs and Jobs on the next</span></span><br><span class="line">	<span class="comment">// iteration of syncAll, we might not see our own status update, and</span></span><br><span class="line">	<span class="comment">// then post one again.  So, we need to use the job name as a lock to</span></span><br><span class="line">	<span class="comment">// prevent us from making the job twice (name the job with hash of its</span></span><br><span class="line">	<span class="comment">// scheduled time).</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// Add the just-started job to the status list.</span></span><br><span class="line">	<span class="comment">// 将刚创建的Job加到CronJob的Active列表中，设置LastScheduleTime，更新CronJob</span></span><br><span class="line">	ref, err := getRef(jobResp)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		glog.V(<span class="number">2</span>).Infof(<span class="string">"Unable to make object reference for job for %s"</span>, nameForLog)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		sj.Status.Active = <span class="built_in">append</span>(sj.Status.Active, *ref)</span><br><span class="line">	&#125;</span><br><span class="line">	sj.Status.LastScheduleTime = &amp;metav1.Time&#123;Time: scheduledTime&#125;</span><br><span class="line">	<span class="keyword">if</span> _, err := sjc.UpdateStatus(sj); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		glog.Infof(<span class="string">"Unable to update status for %s (rv = %s): %v"</span>, nameForLog, sj.ResourceVersion, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>整体逻辑还是比较简单和清晰的，其中有个获取需要执行的时间列表的方法<code>getRecentUnmetScheduleTimes</code>，可以再看一下：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">getRecentUnmetScheduleTimes</span><span class="params">(sj batchv1beta1.CronJob, now time.Time)</span> <span class="params">([]time.Time, error)</span></span> &#123;</span><br><span class="line">	starts := []time.Time&#123;&#125;</span><br><span class="line">	<span class="comment">// 使用robfig/cron对Schedule进行解析</span></span><br><span class="line">	sched, err := cron.ParseStandard(sj.Spec.Schedule)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> starts, fmt.Errorf(<span class="string">"Unparseable schedule: %s : %s"</span>, sj.Spec.Schedule, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 判断初始时间，如果CronJob之前被执行过，则以上次执行实现为准，如果没有执行过，则以CronJob创建时间为准</span></span><br><span class="line">	<span class="keyword">var</span> earliestTime time.Time</span><br><span class="line">	<span class="keyword">if</span> sj.Status.LastScheduleTime != <span class="literal">nil</span> &#123;</span><br><span class="line">		earliestTime = sj.Status.LastScheduleTime.Time</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="comment">// If none found, then this is either a recently created scheduledJob,</span></span><br><span class="line">		<span class="comment">// or the active/completed info was somehow lost (contract for status</span></span><br><span class="line">		<span class="comment">// in kubernetes says it may need to be recreated), or that we have</span></span><br><span class="line">		<span class="comment">// started a job, but have not noticed it yet (distributed systems can</span></span><br><span class="line">		<span class="comment">// have arbitrary delays).  In any case, use the creation time of the</span></span><br><span class="line">		<span class="comment">// CronJob as last known start time.</span></span><br><span class="line">		earliestTime = sj.ObjectMeta.CreationTimestamp.Time</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 如果设置了StartingDeadlineSeconds，并且当前时间减去该值比初始时间还晚，那就以新的时间为准</span></span><br><span class="line">	<span class="keyword">if</span> sj.Spec.StartingDeadlineSeconds != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="comment">// Controller is not going to schedule anything below this point</span></span><br><span class="line">		schedulingDeadline := now.Add(-time.Second * time.Duration(*sj.Spec.StartingDeadlineSeconds))</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> schedulingDeadline.After(earliestTime) &#123;</span><br><span class="line">			earliestTime = schedulingDeadline</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 如果初始时间比现在还晚，直接跳过了</span></span><br><span class="line">	<span class="keyword">if</span> earliestTime.After(now) &#123;</span><br><span class="line">		<span class="keyword">return</span> []time.Time&#123;&#125;, <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 计算从初始时间到现在所有需要执行的任务的时间</span></span><br><span class="line">	<span class="comment">// 主要有可能一个Cron会错过很多次执行，所以需要计算所有的，但是如果超过太多，也就没有意义了。只关注前100个</span></span><br><span class="line">	<span class="keyword">for</span> t := sched.Next(earliestTime); !t.After(now); t = sched.Next(t) &#123;</span><br><span class="line">		starts = <span class="built_in">append</span>(starts, t)</span><br><span class="line">		<span class="comment">// An object might miss several starts. For example, if</span></span><br><span class="line">		<span class="comment">// controller gets wedged on friday at 5:01pm when everyone has</span></span><br><span class="line">		<span class="comment">// gone home, and someone comes in on tuesday AM and discovers</span></span><br><span class="line">		<span class="comment">// the problem and restarts the controller, then all the hourly</span></span><br><span class="line">		<span class="comment">// jobs, more than 80 of them for one hourly scheduledJob, should</span></span><br><span class="line">		<span class="comment">// all start running with no further intervention (if the scheduledJob</span></span><br><span class="line">		<span class="comment">// allows concurrency and late starts).</span></span><br><span class="line">		<span class="comment">//</span></span><br><span class="line">		<span class="comment">// However, if there is a bug somewhere, or incorrect clock</span></span><br><span class="line">		<span class="comment">// on controller's server or apiservers (for setting creationTimestamp)</span></span><br><span class="line">		<span class="comment">// then there could be so many missed start times (it could be off</span></span><br><span class="line">		<span class="comment">// by decades or more), that it would eat up all the CPU and memory</span></span><br><span class="line">		<span class="comment">// of this controller. In that case, we want to not try to list</span></span><br><span class="line">		<span class="comment">// all the missed start times.</span></span><br><span class="line">		<span class="comment">//</span></span><br><span class="line">		<span class="comment">// I've somewhat arbitrarily picked 100, as more than 80,</span></span><br><span class="line">		<span class="comment">// but less than "lots".</span></span><br><span class="line">		<span class="keyword">if</span> <span class="built_in">len</span>(starts) &gt; <span class="number">100</span> &#123;</span><br><span class="line">			<span class="comment">// We can't get the most recent times so just return an empty slice</span></span><br><span class="line">			<span class="keyword">return</span> []time.Time&#123;&#125;, fmt.Errorf(<span class="string">"Too many missed start time (&gt; 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew."</span>)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> starts, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>基本上主要的业务逻辑都在这里了，整体上看还是十分“暴力”和简单的，没有用到Informer等等类似的东西，就是不停轮询、计算需要执行的任务、添加任务。</p>
-<p>需要吐槽一下的是，由于之前版本里K8s的CronJob名字叫ScheduledJob，后来改成了CronJob，导致代码里很多变量的命名都还是使用的ScheduledJob的缩写sj什么的，改名也不改变量名的，一开始看的时候就觉得这变量名怎么这么奇怪。</p>
-<p>代码看完了，最后回到开头的问题，问题出在哪呢？最后发现其实是时区错了，<code>controller-mananger</code>运行的容器的时区是UTC时间，然而Unix Cron语法里没有时区概念，作为中国人当然是以北京时间为标准设置Cron，结果呢，差了8个小时~~囧。</p>
-
-    </div>
-
-    
-    
-    <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
-  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
-  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
-</div>
-
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/Kubernetes/" rel="tag"># Kubernetes</a>
-              <a href="/tags/CronJob/" rel="tag"># CronJob</a>
-              <a href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># 源码分析</a>
-          </div>
-
         
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/2018/03/20/ddia-note-chapter-1/" rel="prev" title="《DDIA》读书笔记第一章">
-      <i class="fa fa-chevron-left"></i> 《DDIA》读书笔记第一章
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/2018/05/15/linux-timezone/" rel="next" title="Linux时间和timezone概念解释">
-      Linux时间和timezone概念解释 <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-
-
-          </div>
-          
-    <div class="comments" id="gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
   
   <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
   </div>
 
   <aside class="sidebar">
-    <div class="sidebar-inner">
 
-      <ul class="sidebar-nav motion-element">
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
         </li>
@@ -341,17 +193,18 @@
         </li>
       </ul>
 
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-      </div>
-      <!--/noindex-->
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+        </section>
+        <!--/noindex-->
 
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <p class="site-author-name" itemprop="name">Chen Fu</p>
   <div class="site-description" itemprop="description"></div>
 </div>
-<div class="site-state-wrap motion-element">
+<div class="site-state-wrap site-overview-item animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
@@ -376,9 +229,8 @@
 </div>
 
 
-  <div class="links-of-blogroll motion-element">
-    <div class="links-of-blogroll-title">
-      <i class="fa fa-fw fa-link"></i>
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
       Links
     </div>
     <ul class="links-of-blogroll-list">
@@ -394,37 +246,462 @@
     </ul>
   </div>
 
+        </section>
       </div>
-
     </div>
   </aside>
-  <div id="sidebar-dimmer"></div>
+  <div class="sidebar-dimmer"></div>
 
 
-      </div>
-    </main>
+    </header>
 
-    <footer class="footer">
-      <div class="footer-inner">
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/05/10/k8s-cronjob-source-code/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kubernetes CronJob Controller源码分析
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018年5月10日 10:21 10:21:53" itemprop="dateCreated datePublished" datetime="2018-05-10T10:21:53+08:00">2018年5月10日 10:21</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>最近的一个项目需要用到Kubernetes的CronJob，主要用来定时执行一个备份任务，刚开始使用的时候发现没有按照预期的情况运行，所以决定看看<code>CronJob Controller</code>的代码，看看他是怎么实现对应的功能的，正好发现网上也没有其他人写过关于<code>CronJob Controller</code>代码的解析（可能是太简单了不用写吧）。所以也就正好记录一下。</p>
+<p><code>CronJob Controller</code>的代码在<code>kubernetes/pkg/controller/cronjob</code>路径下，主要的逻辑实现在这个目录的<code>cronjob_controller.go</code>，这里分析的是<code>v1.10.2</code>版本的代码，可以直接链接到<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/blob/v1.10.2/pkg/controller/cronjob/cronjob_controller.go">Github</a>查看。</p>
+<a id="more"></a>
+
+<p>我们直接跳过创建Controller的过程，直接看运行的部分：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>jm <span class="token operator">*</span>CronJobController<span class="token punctuation">)</span> <span class="token function">Run</span><span class="token punctuation">(</span>stopCh <span class="token operator">&lt;-</span><span class="token keyword">chan</span> <span class="token keyword">struct</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">defer</span> utilruntime<span class="token punctuation">.</span><span class="token function">HandleCrash</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	glog<span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Starting CronJob Manager"</span><span class="token punctuation">)</span>
+	<span class="token comment">// Check things every 10 second.</span>
+	<span class="token keyword">go</span> wait<span class="token punctuation">.</span><span class="token function">Until</span><span class="token punctuation">(</span>jm<span class="token punctuation">.</span>syncAll<span class="token punctuation">,</span> <span class="token number">10</span><span class="token operator">*</span>time<span class="token punctuation">.</span>Second<span class="token punctuation">,</span> stopCh<span class="token punctuation">)</span>
+	<span class="token operator">&lt;-</span>stopCh
+	glog<span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Shutting down CronJob Manager"</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个很简单，每隔10s去执行一次syncAll这个方法，然后我们再看看这个方法：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>jm <span class="token operator">*</span>CronJobController<span class="token punctuation">)</span> <span class="token function">syncAll</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token comment">// List children (Jobs) before parents (CronJob).</span>
+	<span class="token comment">// This guarantees that if we see any Job that got orphaned by the GC orphan finalizer,</span>
+	<span class="token comment">// we must also see that the parent CronJob has non-nil DeletionTimestamp (see #42639).</span>
+	<span class="token comment">// Note that this only works because we are NOT using any caches here.</span>
+	<span class="token comment">// 先把所有的Job给列出来，主要是为了找到所有的CronJob和CronJob创建的Job的对应关系</span>
+	jl<span class="token punctuation">,</span> err <span class="token operator">:=</span> jm<span class="token punctuation">.</span>kubeClient<span class="token punctuation">.</span><span class="token function">BatchV1</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Jobs</span><span class="token punctuation">(</span>metav1<span class="token punctuation">.</span>NamespaceAll<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">List</span><span class="token punctuation">(</span>metav1<span class="token punctuation">.</span>ListOptions<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		utilruntime<span class="token punctuation">.</span><span class="token function">HandleError</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"can't list Jobs: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	js <span class="token operator">:=</span> jl<span class="token punctuation">.</span>Items
+	glog<span class="token punctuation">.</span><span class="token function">V</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Found %d jobs"</span><span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>js<span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token comment">// 这里列出来所有的CronJob</span>
+	sjl<span class="token punctuation">,</span> err <span class="token operator">:=</span> jm<span class="token punctuation">.</span>kubeClient<span class="token punctuation">.</span><span class="token function">BatchV1beta1</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">CronJobs</span><span class="token punctuation">(</span>metav1<span class="token punctuation">.</span>NamespaceAll<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">List</span><span class="token punctuation">(</span>metav1<span class="token punctuation">.</span>ListOptions<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		utilruntime<span class="token punctuation">.</span><span class="token function">HandleError</span><span class="token punctuation">(</span>fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"can't list CronJobs: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	sjs <span class="token operator">:=</span> sjl<span class="token punctuation">.</span>Items
+	glog<span class="token punctuation">.</span><span class="token function">V</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Found %d cronjobs"</span><span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>sjs<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+	<span class="token comment">// 获取一个map[uid][]Job，主要就是根据CronJob的UID将所有属于它的Job给聚合起来</span>
+	jobsBySj <span class="token operator">:=</span> <span class="token function">groupJobsByParent</span><span class="token punctuation">(</span>js<span class="token punctuation">)</span>
+	glog<span class="token punctuation">.</span><span class="token function">V</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Found %d groups"</span><span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>jobsBySj<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> sj <span class="token operator">:=</span> <span class="token keyword">range</span> sjs <span class="token punctuation">&#123;</span>
+		<span class="token comment">// 针对每个CronJob调用syncOne</span>
+		<span class="token function">syncOne</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>sj<span class="token punctuation">,</span> jobsBySj<span class="token punctuation">[</span>sj<span class="token punctuation">.</span>UID<span class="token punctuation">]</span><span class="token punctuation">,</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> jm<span class="token punctuation">.</span>jobControl<span class="token punctuation">,</span> jm<span class="token punctuation">.</span>sjControl<span class="token punctuation">,</span> jm<span class="token punctuation">.</span>podControl<span class="token punctuation">,</span> jm<span class="token punctuation">.</span>recorder<span class="token punctuation">)</span>
+		<span class="token comment">// 根据相应的配置，主要是SuccessfulJobsHistoryLimit和FailedJobsHistoryLimit删除掉多余的Job</span>
+		<span class="token function">cleanupFinishedJobs</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>sj<span class="token punctuation">,</span> jobsBySj<span class="token punctuation">[</span>sj<span class="token punctuation">.</span>UID<span class="token punctuation">]</span><span class="token punctuation">,</span> jm<span class="token punctuation">.</span>jobControl<span class="token punctuation">,</span> jm<span class="token punctuation">.</span>sjControl<span class="token punctuation">,</span> jm<span class="token punctuation">.</span>podControl<span class="token punctuation">,</span> jm<span class="token punctuation">.</span>recorder<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>然后就走到了关键方法syncOne了：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">syncOne</span><span class="token punctuation">(</span>sj <span class="token operator">*</span>batchv1beta1<span class="token punctuation">.</span>CronJob<span class="token punctuation">,</span> js <span class="token punctuation">[</span><span class="token punctuation">]</span>batchv1<span class="token punctuation">.</span>Job<span class="token punctuation">,</span> now time<span class="token punctuation">.</span>Time<span class="token punctuation">,</span> jc jobControlInterface<span class="token punctuation">,</span> sjc sjControlInterface<span class="token punctuation">,</span> pc podControlInterface<span class="token punctuation">,</span> recorder record<span class="token punctuation">.</span>EventRecorder<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	nameForLog <span class="token operator">:=</span> fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"%s/%s"</span><span class="token punctuation">,</span> sj<span class="token punctuation">.</span>Namespace<span class="token punctuation">,</span> sj<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+
+	<span class="token comment">// 首先扫一遍所有的子Job，看是否有不在Active列表中的孤儿，以及已经执行完成但是还在Active列表中的Job，记录一下Event，删掉不对应的状态。</span>
+	childrenJobs <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token keyword">map</span><span class="token punctuation">[</span>types<span class="token punctuation">.</span>UID<span class="token punctuation">]</span><span class="token builtin">bool</span><span class="token punctuation">)</span>
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> j <span class="token operator">:=</span> <span class="token keyword">range</span> js <span class="token punctuation">&#123;</span>
+		childrenJobs<span class="token punctuation">[</span>j<span class="token punctuation">.</span>ObjectMeta<span class="token punctuation">.</span>UID<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">true</span>
+		found <span class="token operator">:=</span> <span class="token function">inActiveList</span><span class="token punctuation">(</span><span class="token operator">*</span>sj<span class="token punctuation">,</span> j<span class="token punctuation">.</span>ObjectMeta<span class="token punctuation">.</span>UID<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> <span class="token operator">!</span>found <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span><span class="token function">IsJobFinished</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>j<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			recorder<span class="token punctuation">.</span><span class="token function">Eventf</span><span class="token punctuation">(</span>sj<span class="token punctuation">,</span> v1<span class="token punctuation">.</span>EventTypeWarning<span class="token punctuation">,</span> <span class="token string">"UnexpectedJob"</span><span class="token punctuation">,</span> <span class="token string">"Saw a job that the controller did not create or forgot: %v"</span><span class="token punctuation">,</span> j<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+			<span class="token comment">// We found an unfinished job that has us as the parent, but it is not in our Active list.</span>
+			<span class="token comment">// This could happen if we crashed right after creating the Job and before updating the status,</span>
+			<span class="token comment">// or if our jobs list is newer than our sj status after a relist, or if someone intentionally created</span>
+			<span class="token comment">// a job that they wanted us to adopt.</span>
+
+			<span class="token comment">// TODO: maybe handle the adoption case?  Concurrency/suspend rules will not apply in that case, obviously, since we can't</span>
+			<span class="token comment">// stop users from creating jobs if they have permission.  It is assumed that if a</span>
+			<span class="token comment">// user has permission to create a job within a namespace, then they have permission to make any scheduledJob</span>
+			<span class="token comment">// in the same namespace "adopt" that job.  ReplicaSets and their Pods work the same way.</span>
+			<span class="token comment">// TBS: how to update sj.Status.LastScheduleTime if the adopted job is newer than any we knew about?</span>
+		<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> found <span class="token operator">&amp;&amp;</span> <span class="token function">IsJobFinished</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>j<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">deleteFromActiveList</span><span class="token punctuation">(</span>sj<span class="token punctuation">,</span> j<span class="token punctuation">.</span>ObjectMeta<span class="token punctuation">.</span>UID<span class="token punctuation">)</span>
+			<span class="token comment">// TODO: event to call out failure vs success.</span>
+			recorder<span class="token punctuation">.</span><span class="token function">Eventf</span><span class="token punctuation">(</span>sj<span class="token punctuation">,</span> v1<span class="token punctuation">.</span>EventTypeNormal<span class="token punctuation">,</span> <span class="token string">"SawCompletedJob"</span><span class="token punctuation">,</span> <span class="token string">"Saw completed job: %v"</span><span class="token punctuation">,</span> j<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token comment">// Remove any job reference from the active list if the corresponding job does not exist any more.</span>
+	<span class="token comment">// Otherwise, the cronjob may be stuck in active mode forever even though there is no matching</span>
+	<span class="token comment">// job running.</span>
+	<span class="token comment">// 然后再看一下Active里是否有一些不存在的Job，如果有，也删除掉</span>
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> j <span class="token operator">:=</span> <span class="token keyword">range</span> sj<span class="token punctuation">.</span>Status<span class="token punctuation">.</span>Active <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> found <span class="token operator">:=</span> childrenJobs<span class="token punctuation">[</span>j<span class="token punctuation">.</span>UID<span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token operator">!</span>found <span class="token punctuation">&#123;</span>
+			recorder<span class="token punctuation">.</span><span class="token function">Eventf</span><span class="token punctuation">(</span>sj<span class="token punctuation">,</span> v1<span class="token punctuation">.</span>EventTypeNormal<span class="token punctuation">,</span> <span class="token string">"MissingJob"</span><span class="token punctuation">,</span> <span class="token string">"Active job went missing: %v"</span><span class="token punctuation">,</span> j<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+			<span class="token function">deleteFromActiveList</span><span class="token punctuation">(</span>sj<span class="token punctuation">,</span> j<span class="token punctuation">.</span>UID<span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 更新一下CronJob的状态</span>
+	updatedSJ<span class="token punctuation">,</span> err <span class="token operator">:=</span> sjc<span class="token punctuation">.</span><span class="token function">UpdateStatus</span><span class="token punctuation">(</span>sj<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		glog<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"Unable to update status for %s (rv = %s): %v"</span><span class="token punctuation">,</span> nameForLog<span class="token punctuation">,</span> sj<span class="token punctuation">.</span>ResourceVersion<span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token operator">*</span>sj <span class="token operator">=</span> <span class="token operator">*</span>updatedSJ
+
+	<span class="token comment">// 判断CronJob是否删除，如果删除了就不管</span>
+	<span class="token keyword">if</span> sj<span class="token punctuation">.</span>DeletionTimestamp <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token comment">// The CronJob is being deleted.</span>
+		<span class="token comment">// Don't do anything other than updating status.</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 判断是否是停止调度状态，如果是则不管</span>
+	<span class="token keyword">if</span> sj<span class="token punctuation">.</span>Spec<span class="token punctuation">.</span>Suspend <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">*</span>sj<span class="token punctuation">.</span>Spec<span class="token punctuation">.</span>Suspend <span class="token punctuation">&#123;</span>
+		glog<span class="token punctuation">.</span><span class="token function">V</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Not starting job for %s because it is suspended"</span><span class="token punctuation">,</span> nameForLog<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 这里先计算到目前为止需要执行的Job时间列表</span>
+	times<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">getRecentUnmetScheduleTimes</span><span class="token punctuation">(</span><span class="token operator">*</span>sj<span class="token punctuation">,</span> now<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		recorder<span class="token punctuation">.</span><span class="token function">Eventf</span><span class="token punctuation">(</span>sj<span class="token punctuation">,</span> v1<span class="token punctuation">.</span>EventTypeWarning<span class="token punctuation">,</span> <span class="token string">"FailedNeedsStart"</span><span class="token punctuation">,</span> <span class="token string">"Cannot determine if job needs to be started: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		glog<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"Cannot determine if %s needs to be started: %v"</span><span class="token punctuation">,</span> nameForLog<span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// TODO: handle multiple unmet start times, from oldest to newest, updating status as needed.</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>times<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		glog<span class="token punctuation">.</span><span class="token function">V</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"No unmet start times for %s"</span><span class="token punctuation">,</span> nameForLog<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>times<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">1</span> <span class="token punctuation">&#123;</span>
+		glog<span class="token punctuation">.</span><span class="token function">V</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Multiple unmet start times for %s so only starting last one"</span><span class="token punctuation">,</span> nameForLog<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 拿出最后需要执行的时间</span>
+	scheduledTime <span class="token operator">:=</span> times<span class="token punctuation">[</span><span class="token function">len</span><span class="token punctuation">(</span>times<span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span>
+	tooLate <span class="token operator">:=</span> <span class="token boolean">false</span>
+	<span class="token comment">// 如果存在StartingDeadlineSeconds配置，判断当前时间是否超过了执行时限</span>
+	<span class="token keyword">if</span> sj<span class="token punctuation">.</span>Spec<span class="token punctuation">.</span>StartingDeadlineSeconds <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		tooLate <span class="token operator">=</span> scheduledTime<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>time<span class="token punctuation">.</span>Second <span class="token operator">*</span> time<span class="token punctuation">.</span><span class="token function">Duration</span><span class="token punctuation">(</span><span class="token operator">*</span>sj<span class="token punctuation">.</span>Spec<span class="token punctuation">.</span>StartingDeadlineSeconds<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Before</span><span class="token punctuation">(</span>now<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 如果超过了执行时限就不做了</span>
+	<span class="token keyword">if</span> tooLate <span class="token punctuation">&#123;</span>
+		glog<span class="token punctuation">.</span><span class="token function">V</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Missed starting window for %s"</span><span class="token punctuation">,</span> nameForLog<span class="token punctuation">)</span>
+		<span class="token comment">// TODO: generate an event for a miss.  Use a warning level event because it indicates a</span>
+		<span class="token comment">// problem with the controller (restart or long queue), and is not expected by user either.</span>
+		<span class="token comment">// Since we don't set LastScheduleTime when not scheduling, we are going to keep noticing</span>
+		<span class="token comment">// the miss every cycle.  In order to avoid sending multiple events, and to avoid processing</span>
+		<span class="token comment">// the sj again and again, we could set a Status.LastMissedTime when we notice a miss.</span>
+		<span class="token comment">// Then, when we call getRecentUnmetScheduleTimes, we can take max(creationTimestamp,</span>
+		<span class="token comment">// Status.LastScheduleTime, Status.LastMissedTime), and then so we won't generate</span>
+		<span class="token comment">// and event the next time we process it, and also so the user looking at the status</span>
+		<span class="token comment">// can see easily that there was a missed execution.</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 如果ConcurrencyPolicy配置为Forbid即不允许并行执行但是现在有正在执行的Job也不会添加新的</span>
+	<span class="token keyword">if</span> sj<span class="token punctuation">.</span>Spec<span class="token punctuation">.</span>ConcurrencyPolicy <span class="token operator">==</span> batchv1beta1<span class="token punctuation">.</span>ForbidConcurrent <span class="token operator">&amp;&amp;</span> <span class="token function">len</span><span class="token punctuation">(</span>sj<span class="token punctuation">.</span>Status<span class="token punctuation">.</span>Active<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token comment">// Regardless which source of information we use for the set of active jobs,</span>
+		<span class="token comment">// there is some risk that we won't see an active job when there is one.</span>
+		<span class="token comment">// (because we haven't seen the status update to the SJ or the created pod).</span>
+		<span class="token comment">// So it is theoretically possible to have concurrency with Forbid.</span>
+		<span class="token comment">// As long the as the invokations are "far enough apart in time", this usually won't happen.</span>
+		<span class="token comment">//</span>
+		<span class="token comment">// TODO: for Forbid, we could use the same name for every execution, as a lock.</span>
+		<span class="token comment">// With replace, we could use a name that is deterministic per execution time.</span>
+		<span class="token comment">// But that would mean that you could not inspect prior successes or failures of Forbid jobs.</span>
+		glog<span class="token punctuation">.</span><span class="token function">V</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Not starting job for %s because of prior execution still running and concurrency policy is Forbid"</span><span class="token punctuation">,</span> nameForLog<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	如果ConcurrencyPolicy配置为Replace并且有正在运行的Job则把对应的Job给删除掉
+	<span class="token keyword">if</span> sj<span class="token punctuation">.</span>Spec<span class="token punctuation">.</span>ConcurrencyPolicy <span class="token operator">==</span> batchv1beta1<span class="token punctuation">.</span>ReplaceConcurrent <span class="token punctuation">&#123;</span>
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> j <span class="token operator">:=</span> <span class="token keyword">range</span> sj<span class="token punctuation">.</span>Status<span class="token punctuation">.</span>Active <span class="token punctuation">&#123;</span>
+			<span class="token comment">// TODO: this should be replaced with server side job deletion</span>
+			<span class="token comment">// currently this mimics JobReaper from pkg/kubectl/stop.go</span>
+			glog<span class="token punctuation">.</span><span class="token function">V</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Deleting job %s of %s that was still running at next scheduled start time"</span><span class="token punctuation">,</span> j<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> nameForLog<span class="token punctuation">)</span>
+
+			job<span class="token punctuation">,</span> err <span class="token operator">:=</span> jc<span class="token punctuation">.</span><span class="token function">GetJob</span><span class="token punctuation">(</span>j<span class="token punctuation">.</span>Namespace<span class="token punctuation">,</span> j<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+			<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				recorder<span class="token punctuation">.</span><span class="token function">Eventf</span><span class="token punctuation">(</span>sj<span class="token punctuation">,</span> v1<span class="token punctuation">.</span>EventTypeWarning<span class="token punctuation">,</span> <span class="token string">"FailedGet"</span><span class="token punctuation">,</span> <span class="token string">"Get job: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+				<span class="token keyword">return</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">if</span> <span class="token operator">!</span><span class="token function">deleteJob</span><span class="token punctuation">(</span>sj<span class="token punctuation">,</span> job<span class="token punctuation">,</span> jc<span class="token punctuation">,</span> pc<span class="token punctuation">,</span> recorder<span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">return</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 根据CronJob Spec中JobTemplate的配置获取Job对象，其中Job对象的名字会加上scheduledTime计算出的Hash，目前是unix timestamp</span>
+	jobReq<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">getJobFromTemplate</span><span class="token punctuation">(</span>sj<span class="token punctuation">,</span> scheduledTime<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		glog<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"Unable to make Job from template in %s: %v"</span><span class="token punctuation">,</span> nameForLog<span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 调用接口创建一个新的Job</span>
+	jobResp<span class="token punctuation">,</span> err <span class="token operator">:=</span> jc<span class="token punctuation">.</span><span class="token function">CreateJob</span><span class="token punctuation">(</span>sj<span class="token punctuation">.</span>Namespace<span class="token punctuation">,</span> jobReq<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		recorder<span class="token punctuation">.</span><span class="token function">Eventf</span><span class="token punctuation">(</span>sj<span class="token punctuation">,</span> v1<span class="token punctuation">.</span>EventTypeWarning<span class="token punctuation">,</span> <span class="token string">"FailedCreate"</span><span class="token punctuation">,</span> <span class="token string">"Error creating job: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+	glog<span class="token punctuation">.</span><span class="token function">V</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Created Job %s for %s"</span><span class="token punctuation">,</span> jobResp<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> nameForLog<span class="token punctuation">)</span>
+	recorder<span class="token punctuation">.</span><span class="token function">Eventf</span><span class="token punctuation">(</span>sj<span class="token punctuation">,</span> v1<span class="token punctuation">.</span>EventTypeNormal<span class="token punctuation">,</span> <span class="token string">"SuccessfulCreate"</span><span class="token punctuation">,</span> <span class="token string">"Created job %v"</span><span class="token punctuation">,</span> jobResp<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+
+	<span class="token comment">// ------------------------------------------------------------------ //</span>
+
+	<span class="token comment">// If this process restarts at this point (after posting a job, but</span>
+	<span class="token comment">// before updating the status), then we might try to start the job on</span>
+	<span class="token comment">// the next time.  Actually, if we relist the SJs and Jobs on the next</span>
+	<span class="token comment">// iteration of syncAll, we might not see our own status update, and</span>
+	<span class="token comment">// then post one again.  So, we need to use the job name as a lock to</span>
+	<span class="token comment">// prevent us from making the job twice (name the job with hash of its</span>
+	<span class="token comment">// scheduled time).</span>
+
+	<span class="token comment">// Add the just-started job to the status list.</span>
+	<span class="token comment">// 将刚创建的Job加到CronJob的Active列表中，设置LastScheduleTime，更新CronJob</span>
+	ref<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">getRef</span><span class="token punctuation">(</span>jobResp<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		glog<span class="token punctuation">.</span><span class="token function">V</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Unable to make object reference for job for %s"</span><span class="token punctuation">,</span> nameForLog<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		sj<span class="token punctuation">.</span>Status<span class="token punctuation">.</span>Active <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>sj<span class="token punctuation">.</span>Status<span class="token punctuation">.</span>Active<span class="token punctuation">,</span> <span class="token operator">*</span>ref<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	sj<span class="token punctuation">.</span>Status<span class="token punctuation">.</span>LastScheduleTime <span class="token operator">=</span> <span class="token operator">&amp;</span>metav1<span class="token punctuation">.</span>Time<span class="token punctuation">&#123;</span>Time<span class="token punctuation">:</span> scheduledTime<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> <span class="token boolean">_</span><span class="token punctuation">,</span> err <span class="token operator">:=</span> sjc<span class="token punctuation">.</span><span class="token function">UpdateStatus</span><span class="token punctuation">(</span>sj<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		glog<span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Unable to update status for %s (rv = %s): %v"</span><span class="token punctuation">,</span> nameForLog<span class="token punctuation">,</span> sj<span class="token punctuation">.</span>ResourceVersion<span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">return</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>整体逻辑还是比较简单和清晰的，其中有个获取需要执行的时间列表的方法<code>getRecentUnmetScheduleTimes</code>，可以再看一下：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">getRecentUnmetScheduleTimes</span><span class="token punctuation">(</span>sj batchv1beta1<span class="token punctuation">.</span>CronJob<span class="token punctuation">,</span> now time<span class="token punctuation">.</span>Time<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span>time<span class="token punctuation">.</span>Time<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	starts <span class="token operator">:=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>time<span class="token punctuation">.</span>Time<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+	<span class="token comment">// 使用robfig/cron对Schedule进行解析</span>
+	sched<span class="token punctuation">,</span> err <span class="token operator">:=</span> cron<span class="token punctuation">.</span><span class="token function">ParseStandard</span><span class="token punctuation">(</span>sj<span class="token punctuation">.</span>Spec<span class="token punctuation">.</span>Schedule<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> starts<span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"Unparseable schedule: %s : %s"</span><span class="token punctuation">,</span> sj<span class="token punctuation">.</span>Spec<span class="token punctuation">.</span>Schedule<span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token comment">// 判断初始时间，如果CronJob之前被执行过，则以上次执行实现为准，如果没有执行过，则以CronJob创建时间为准</span>
+	<span class="token keyword">var</span> earliestTime time<span class="token punctuation">.</span>Time
+	<span class="token keyword">if</span> sj<span class="token punctuation">.</span>Status<span class="token punctuation">.</span>LastScheduleTime <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		earliestTime <span class="token operator">=</span> sj<span class="token punctuation">.</span>Status<span class="token punctuation">.</span>LastScheduleTime<span class="token punctuation">.</span>Time
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		<span class="token comment">// If none found, then this is either a recently created scheduledJob,</span>
+		<span class="token comment">// or the active/completed info was somehow lost (contract for status</span>
+		<span class="token comment">// in kubernetes says it may need to be recreated), or that we have</span>
+		<span class="token comment">// started a job, but have not noticed it yet (distributed systems can</span>
+		<span class="token comment">// have arbitrary delays).  In any case, use the creation time of the</span>
+		<span class="token comment">// CronJob as last known start time.</span>
+		earliestTime <span class="token operator">=</span> sj<span class="token punctuation">.</span>ObjectMeta<span class="token punctuation">.</span>CreationTimestamp<span class="token punctuation">.</span>Time
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 如果设置了StartingDeadlineSeconds，并且当前时间减去该值比初始时间还晚，那就以新的时间为准</span>
+	<span class="token keyword">if</span> sj<span class="token punctuation">.</span>Spec<span class="token punctuation">.</span>StartingDeadlineSeconds <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token comment">// Controller is not going to schedule anything below this point</span>
+		schedulingDeadline <span class="token operator">:=</span> now<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token operator">-</span>time<span class="token punctuation">.</span>Second <span class="token operator">*</span> time<span class="token punctuation">.</span><span class="token function">Duration</span><span class="token punctuation">(</span><span class="token operator">*</span>sj<span class="token punctuation">.</span>Spec<span class="token punctuation">.</span>StartingDeadlineSeconds<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+		<span class="token keyword">if</span> schedulingDeadline<span class="token punctuation">.</span><span class="token function">After</span><span class="token punctuation">(</span>earliestTime<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			earliestTime <span class="token operator">=</span> schedulingDeadline
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 如果初始时间比现在还晚，直接跳过了</span>
+	<span class="token keyword">if</span> earliestTime<span class="token punctuation">.</span><span class="token function">After</span><span class="token punctuation">(</span>now<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>time<span class="token punctuation">.</span>Time<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 计算从初始时间到现在所有需要执行的任务的时间</span>
+	<span class="token comment">// 主要有可能一个Cron会错过很多次执行，所以需要计算所有的，但是如果超过太多，也就没有意义了。只关注前100个</span>
+	<span class="token keyword">for</span> t <span class="token operator">:=</span> sched<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span>earliestTime<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token operator">!</span>t<span class="token punctuation">.</span><span class="token function">After</span><span class="token punctuation">(</span>now<span class="token punctuation">)</span><span class="token punctuation">;</span> t <span class="token operator">=</span> sched<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span>t<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		starts <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>starts<span class="token punctuation">,</span> t<span class="token punctuation">)</span>
+		<span class="token comment">// An object might miss several starts. For example, if</span>
+		<span class="token comment">// controller gets wedged on friday at 5:01pm when everyone has</span>
+		<span class="token comment">// gone home, and someone comes in on tuesday AM and discovers</span>
+		<span class="token comment">// the problem and restarts the controller, then all the hourly</span>
+		<span class="token comment">// jobs, more than 80 of them for one hourly scheduledJob, should</span>
+		<span class="token comment">// all start running with no further intervention (if the scheduledJob</span>
+		<span class="token comment">// allows concurrency and late starts).</span>
+		<span class="token comment">//</span>
+		<span class="token comment">// However, if there is a bug somewhere, or incorrect clock</span>
+		<span class="token comment">// on controller's server or apiservers (for setting creationTimestamp)</span>
+		<span class="token comment">// then there could be so many missed start times (it could be off</span>
+		<span class="token comment">// by decades or more), that it would eat up all the CPU and memory</span>
+		<span class="token comment">// of this controller. In that case, we want to not try to list</span>
+		<span class="token comment">// all the missed start times.</span>
+		<span class="token comment">//</span>
+		<span class="token comment">// I've somewhat arbitrarily picked 100, as more than 80,</span>
+		<span class="token comment">// but less than "lots".</span>
+		<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>starts<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">100</span> <span class="token punctuation">&#123;</span>
+			<span class="token comment">// We can't get the most recent times so just return an empty slice</span>
+			<span class="token keyword">return</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>time<span class="token punctuation">.</span>Time<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"Too many missed start time (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew."</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> starts<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>基本上主要的业务逻辑都在这里了，整体上看还是十分“暴力”和简单的，没有用到Informer等等类似的东西，就是不停轮询、计算需要执行的任务、添加任务。</p>
+<p>需要吐槽一下的是，由于之前版本里K8s的CronJob名字叫ScheduledJob，后来改成了CronJob，导致代码里很多变量的命名都还是使用的ScheduledJob的缩写sj什么的，改名也不改变量名的，一开始看的时候就觉得这变量名怎么这么奇怪。</p>
+<p>代码看完了，最后回到开头的问题，问题出在哪呢？最后发现其实是时区错了，<code>controller-mananger</code>运行的容器的时区是UTC时间，然而Unix Cron语法里没有时区概念，作为中国人当然是以北京时间为标准设置Cron，结果呢，差了8个小时~~囧。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Kubernetes/" rel="tag"># Kubernetes</a>
+              <a href="/tags/CronJob/" rel="tag"># CronJob</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># 源码分析</a>
+          </div>
+
         
 
-        
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/03/20/ddia-note-chapter-1/" rel="prev" title="《DDIA》读书笔记第一章">
+                  <i class="fa fa-chevron-left"></i> 《DDIA》读书笔记第一章
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/05/15/linux-timezone/" rel="next" title="Linux时间和timezone概念解释">
+                  Linux时间和timezone概念解释 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
 
 <div class="copyright">
   
   &copy; 
   <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
-    <i class="fa fa-user"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
-  </div>
-
-        
 <div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
@@ -433,7 +710,6 @@
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-divider">|</span>
     <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
@@ -443,31 +719,15 @@
       </span>
     </span>
 </div>
-
-
-
-
-
-
-
-
-      </div>
-    </footer>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
   </div>
 
+    </div>
+  </footer>
+
   
-  <script src="/lib/anime.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
   
 
@@ -485,15 +745,28 @@
 
 
 
+
+
+
   
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
 
   
 
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
 
 <script>
-NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
-  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
     var gitalk = new Gitalk({
       clientID    : 'd69b2454aff0c42e46ed',
       clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',

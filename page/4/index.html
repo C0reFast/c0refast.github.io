@@ -4,18 +4,23 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
-<script id="hexo-configurations">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+
+<script class="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
 
   <meta property="og:type" content="website">
@@ -26,10 +31,11 @@
 <meta property="article:author" content="Chen Fu">
 <meta name="twitter:card" content="summary">
 
+
 <link rel="canonical" href="https://www.ichenfu.com/page/4/">
 
 
-<script id="page-configurations">
+<script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
@@ -58,24 +64,36 @@
 
   <noscript>
   <style>
-  .use-motion .brand,
+  body { margin-top: 2rem; }
+
   .use-motion .menu-item,
-  .sidebar-inner,
+  .use-motion .sidebar,
   .use-motion .post-block,
   .use-motion .pagination,
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
 
   .use-motion .site-title,
-  .use-motion .site-subtitle {
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
     opacity: initial;
     top: initial;
   }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
   </style>
 </noscript>
 
@@ -83,25 +101,25 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container">
-    <div class="headband"></div>
+  <div class="headband"></div>
 
+  <main class="main">
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="切换导航栏">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
     </div>
   </div>
 
   <div class="site-meta">
 
     <a href="/" class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
+      <i class="logo-line"></i>
       <h1 class="site-title">C0reFast记事本</h1>
-      <span class="logo-line-after"><i></i></span>
+      <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
   </div>
@@ -114,32 +132,31 @@
 
 
 
-
 <nav class="site-nav">
-  <ul id="menu" class="menu">
+  <ul class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
   </ul>
@@ -149,6 +166,86 @@
 
 
 </div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">77</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">170</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+        </li>
+    </ul>
+  </div>
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
     </header>
 
     
@@ -157,18 +254,23 @@
     <span>0%</span>
   </div>
 
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
 
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
 
-          <div class="content index posts-expand">
-            
+    <div class="main-inner index posts-expand">
       
+
+      
+    
+
+
+<div class="post-block">
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/08/07/upgrade-harbor/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -186,33 +288,35 @@
             <a href="/2018/08/07/upgrade-harbor/" class="post-title-link" itemprop="url">Harbor折腾升级记</a>
         </h2>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2018年8月7日 10:07 10:07:12" itemprop="dateCreated datePublished" datetime="2018-08-07T10:07:12+08:00">2018年8月7日 10:07</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
-                </span>
-            </span>
+      <time title="创建时间：2018年8月7日 10:07 10:07:12" itemprop="dateCreated datePublished" datetime="2018-08-07T10:07:12+08:00">2018年8月7日 10:07</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
 
-          
+  
+</div>
 
         </div>
       </header>
@@ -221,13 +325,11 @@
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
           <p>Harbor是vmware中国开发的一款企业级的DockerRegistry服务器，我们内部也是有搭建了一个Harbor，但是版本是0.5，对于当前最新的release版本1.5.2而言已经太老了，确实也有一些问题，比如不支持多级的镜像名称，某些情况下会触发bug导致panic。</p>
 <p>所以需要升级一下，既然考虑升级了，就干脆升级到最新的版本1.5.2了。首先说一下目前的Harbor，官方提供的离线安装包里，默认是本地启动一个MySQL，将Harbor需要的一些数据存储在本地的MySQL中的，这个是不能接受的，所以在之前的部署中，是使用了外部的一个MySQL，同样，registry的存储在线上也是使用了共享存储，保证可用性。</p>
 <p>不过Harbor的1.5.2版本对于0.5版本变化还是比较大的，首先是增加了adminserver这个角色，将所有的配置都拿到adminserver中存储，ui组件通过http请求定期向adminserver请求当前最新的配置信息，其次是数据库结构，新版本和旧版本相比数据库结构发生了很大的变化。</p>
-<p>对于升级操作，官方也提供了解决方案，可以参考<a href="https://github.com/vmware/harbor/blob/d1f2b2311f98e1d3bb00203af01e87ce7f0087de/docs/migration_guide.md" target="_blank" rel="noopener">migration_guide</a>进行升级，升级工具的镜像官方也是提供了，但是这其中存在一个问题，就是升级工具依赖本地的MySQL，也就是说，这个工具只能工作在MySQL是Harbor离线安装包启动的情况下，如果使用了外部的MySQL，这个升级工具就无法直接使用了。</p>
-<p>所以呢，最终还是需要去看一下官方的升级工具是如何实现的，看能否通过其他办法手动升级，于是就花了点时间看了一下代码，找到了最后的实现方式，具体的代码在<a href="https://github.com/vmware/harbor/tree/d1f2b2311f98e1d3bb00203af01e87ce7f0087de/tools/migration/db/alembic/mysql" target="_blank" rel="noopener">alembic/mysql</a>这个目录下，原理也很简单，官方使用了一个Python的工具<code>alembic</code>实现了数据库结构的版本管理。</p>
+<p>对于升级操作，官方也提供了解决方案，可以参考<a target="_blank" rel="noopener" href="https://github.com/vmware/harbor/blob/d1f2b2311f98e1d3bb00203af01e87ce7f0087de/docs/migration_guide.md">migration_guide</a>进行升级，升级工具的镜像官方也是提供了，但是这其中存在一个问题，就是升级工具依赖本地的MySQL，也就是说，这个工具只能工作在MySQL是Harbor离线安装包启动的情况下，如果使用了外部的MySQL，这个升级工具就无法直接使用了。</p>
+<p>所以呢，最终还是需要去看一下官方的升级工具是如何实现的，看能否通过其他办法手动升级，于是就花了点时间看了一下代码，找到了最后的实现方式，具体的代码在<a target="_blank" rel="noopener" href="https://github.com/vmware/harbor/tree/d1f2b2311f98e1d3bb00203af01e87ce7f0087de/tools/migration/db/alembic/mysql">alembic/mysql</a>这个目录下，原理也很简单，官方使用了一个Python的工具<code>alembic</code>实现了数据库结构的版本管理。</p>
 <p>手动运行数据库升级，首先需要安装<code>alembic</code>工具，可以通过<code>pip</code>安装，或者针对不同的发行版找对应的软件包。</p>
 <p>下面开始操作：</p>
           <!--noindex-->
@@ -244,18 +346,25 @@
     
     
     
-      <footer class="post-footer">
+
+    <footer class="post-footer">
         <div class="post-eof"></div>
-      </footer>
+      
+    </footer>
   </article>
-  
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/07/06/ceph-pg-states-concepts/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -273,33 +382,35 @@
             <a href="/2018/07/06/ceph-pg-states-concepts/" class="post-title-link" itemprop="url">Ceph中一些PG相关的状态说明和基本概念说明</a>
         </h2>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2018年7月6日 10:23 10:23:50" itemprop="dateCreated datePublished" datetime="2018-07-06T10:23:50+08:00">2018年7月6日 10:23</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
-                </span>
-            </span>
+      <time title="创建时间：2018年7月6日 10:23 10:23:50" itemprop="dateCreated datePublished" datetime="2018-07-06T10:23:50+08:00">2018年7月6日 10:23</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
+        </span>
+    </span>
 
-          
+  
+</div>
 
         </div>
       </header>
@@ -308,26 +419,33 @@
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
           <p>最近公司有个Ceph集群出了点问题，于是也参与了修复的过程，过程中最让人头疼的就是一堆不明所以的状态了，所以看了看文档，也找了一些参考，<br>整理了一下Ceph PG的一些状态以及相关的概念说明，做了一个中英文的对照版本：</p>
 <h2 id="Placement-Group-States（PG状态）"><a href="#Placement-Group-States（PG状态）" class="headerlink" title="Placement Group States（PG状态）"></a>Placement Group States（PG状态）</h2><p>当检查一个集群的状态时（执行<code>ceph -w</code>或者<code>ceph -s</code>），Ceph会汇报当前PG的状态，每个PG会有一个或多个状态，最优的PG状态是<code>active + clean</code>。<br>下面是所有PG状态的具体解释：</p>
 <h4 id="creating"><a href="#creating" class="headerlink" title="creating"></a><em>creating</em></h4><pre><code>Ceph is still creating the placement group.
-Ceph 仍在创建PG。</code></pre><h4 id="activating"><a href="#activating" class="headerlink" title="activating"></a><em>activating</em></h4><pre><code>The placement group is peered but not yet active.
-PG已经互联，但是还没有active。</code></pre><h4 id="active"><a href="#active" class="headerlink" title="active"></a><em>active</em></h4><pre><code>Ceph will process requests to the placement group.
-Ceph 可处理到此PG的请求。</code></pre><h4 id="clean"><a href="#clean" class="headerlink" title="clean"></a><em>clean</em></h4><pre><code>Ceph replicated all objects in the placement group the correct
+Ceph 仍在创建PG。</code></pre>
+<h4 id="activating"><a href="#activating" class="headerlink" title="activating"></a><em>activating</em></h4><pre><code>The placement group is peered but not yet active.
+PG已经互联，但是还没有active。</code></pre>
+<h4 id="active"><a href="#active" class="headerlink" title="active"></a><em>active</em></h4><pre><code>Ceph will process requests to the placement group.
+Ceph 可处理到此PG的请求。</code></pre>
+<h4 id="clean"><a href="#clean" class="headerlink" title="clean"></a><em>clean</em></h4><pre><code>Ceph replicated all objects in the placement group the correct
 number of times.
-PG内所有的对象都被正确的复制了对应的份数。</code></pre><h4 id="down"><a href="#down" class="headerlink" title="down"></a><em>down</em></h4><pre><code>A replica with necessary data is down, so the placement group is
+PG内所有的对象都被正确的复制了对应的份数。</code></pre>
+<h4 id="down"><a href="#down" class="headerlink" title="down"></a><em>down</em></h4><pre><code>A replica with necessary data is down, so the placement group is
 offline.
-一个包含必备数据的副本离线，所以PG也离线了。</code></pre><h4 id="scrubbing"><a href="#scrubbing" class="headerlink" title="scrubbing"></a><em>scrubbing</em></h4><pre><code>Ceph is checking the placement group metadata for inconsistencies.
-Ceph 正在检查PG metadata的一致性。</code></pre><h4 id="deep"><a href="#deep" class="headerlink" title="deep"></a><em>deep</em></h4><pre><code>Ceph is checking the placement group data against stored checksums.
-Ceph 正在检查PG数据和checksums的一致性。</code></pre><h4 id="degraded"><a href="#degraded" class="headerlink" title="degraded"></a><em>degraded</em></h4><pre><code>Ceph has not replicated some objects in the placement group the
+一个包含必备数据的副本离线，所以PG也离线了。</code></pre>
+<h4 id="scrubbing"><a href="#scrubbing" class="headerlink" title="scrubbing"></a><em>scrubbing</em></h4><pre><code>Ceph is checking the placement group metadata for inconsistencies.
+Ceph 正在检查PG metadata的一致性。</code></pre>
+<h4 id="deep"><a href="#deep" class="headerlink" title="deep"></a><em>deep</em></h4><pre><code>Ceph is checking the placement group data against stored checksums.
+Ceph 正在检查PG数据和checksums的一致性。</code></pre>
+<h4 id="degraded"><a href="#degraded" class="headerlink" title="degraded"></a><em>degraded</em></h4><pre><code>Ceph has not replicated some objects in the placement group the
 correct number of times yet.
-PG中的一些对象还没有被复制到规定的份数。</code></pre><h4 id="inconsistent"><a href="#inconsistent" class="headerlink" title="inconsistent"></a><em>inconsistent</em></h4><pre><code>Ceph detects inconsistencies in the one or more replicas of an
+PG中的一些对象还没有被复制到规定的份数。</code></pre>
+<h4 id="inconsistent"><a href="#inconsistent" class="headerlink" title="inconsistent"></a><em>inconsistent</em></h4><pre><code>Ceph detects inconsistencies in the one or more replicas of an
 object in the placement group (e.g. objects are the wrong size,
 objects are missing from one replica *after* recovery finished,
 etc.).
-Ceph检测到PG中对象的一份或多份数据不一致（比如对象大学不一直，或者恢复成功后对象依然没有等）</code></pre><h4 id="peering"><a href="#peering" class="headerlink" title="peering"></a><em>peering</em></h4><pre><code>The placement group is undergoing the peering process
+Ceph检测到PG中对象的一份或多份数据不一致（比如对象大学不一直，或者恢复成功后对象依然没有等）</code></pre>
+<h4 id="peering"><a href="#peering" class="headerlink" title="peering"></a><em>peering</em></h4><pre><code>The placement group is undergoing the peering process
 PG正在互联过程中。</code></pre>
           <!--noindex-->
             <div class="post-button">
@@ -343,18 +461,25 @@ PG正在互联过程中。</code></pre>
     
     
     
-      <footer class="post-footer">
+
+    <footer class="post-footer">
         <div class="post-eof"></div>
-      </footer>
+      
+    </footer>
   </article>
-  
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/05/17/kube-dns-spec/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -372,33 +497,35 @@ PG正在互联过程中。</code></pre>
             <a href="/2018/05/17/kube-dns-spec/" class="post-title-link" itemprop="url">Kubernetes DNS-Based Service Discovery 翻译</a>
         </h2>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2018年5月17日 16:30 16:30:19" itemprop="dateCreated datePublished" datetime="2018-05-17T16:30:19+08:00">2018年5月17日 16:30</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
-                </span>
-            </span>
+      <time title="创建时间：2018年5月17日 16:30 16:30:19" itemprop="dateCreated datePublished" datetime="2018-05-17T16:30:19+08:00">2018年5月17日 16:30</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
 
-          
+  
+</div>
 
         </div>
       </header>
@@ -407,9 +534,7 @@ PG正在互联过程中。</code></pre>
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
-          <p>本文是<a href="https://github.com/kubernetes/dns/blob/707da5e449f6000e1ce0b92f1a13b966d262dbb2/docs/specification.md" target="_blank" rel="noopener">Kubernetes DNS-Based Service Discovery</a>的翻译，也就是Kubernetes DNS specification的翻译，目前最新版本号是1.0.1。</p>
+          <p>本文是<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dns/blob/707da5e449f6000e1ce0b92f1a13b966d262dbb2/docs/specification.md">Kubernetes DNS-Based Service Discovery</a>的翻译，也就是Kubernetes DNS specification的翻译，目前最新版本号是1.0.1。</p>
 <h2 id="0-关于此文档"><a href="#0-关于此文档" class="headerlink" title="0 - 关于此文档"></a>0 - 关于此文档</h2><p>本文档是Kubernetes基于DNS的服务发现的规范说明，尽管在Kubernetes中还有其他方式的服务发现协议和机制，但是DNS仍然是最常见而且是最推荐使用的扩展。实际的DNS服务并不一定由由默认的Kube-DNS提供。 本文档旨在为所有实现之间的通用性提供相应的基准。</p>
           <!--noindex-->
             <div class="post-button">
@@ -425,18 +550,25 @@ PG正在互联过程中。</code></pre>
     
     
     
-      <footer class="post-footer">
+
+    <footer class="post-footer">
         <div class="post-eof"></div>
-      </footer>
+      
+    </footer>
   </article>
-  
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/05/15/linux-timezone/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -454,33 +586,35 @@ PG正在互联过程中。</code></pre>
             <a href="/2018/05/15/linux-timezone/" class="post-title-link" itemprop="url">Linux时间和timezone概念解释</a>
         </h2>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2018年5月15日 9:29 9:29:12" itemprop="dateCreated datePublished" datetime="2018-05-15T09:29:12+08:00">2018年5月15日 9:29</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
-                </span>
-            </span>
+      <time title="创建时间：2018年5月15日 9:29 9:29:12" itemprop="dateCreated datePublished" datetime="2018-05-15T09:29:12+08:00">2018年5月15日 9:29</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
 
-          
+  
+</div>
 
         </div>
       </header>
@@ -489,8 +623,6 @@ PG正在互联过程中。</code></pre>
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
           <p>在Docker环境中经常会遇到时区相关的问题，所以顺便也看了一下Linux系统下时间相关的一下配置和概念：</p>
 <h2 id="硬件时钟"><a href="#硬件时钟" class="headerlink" title="硬件时钟"></a>硬件时钟</h2><p>硬件时钟也叫RTC（Real Time Clock）或者CMOS时钟，这个是保存在BIOS中的，仅能保存：年、月、日、时、分、秒这些时间数值，无法保存当前时区以及是否使用夏令时调节。</p>
 <h2 id="系统时钟"><a href="#系统时钟" class="headerlink" title="系统时钟"></a>系统时钟</h2><p>系统时钟也叫软件时钟，在系统时钟里是有时区等概念的，在Linux内核里，是保存为自 UTC 时间 1970 年1月1日经过的秒数。系统启动时会读取硬件时钟，并根据<code>/etc/adjtime</code>的设置计算当前的时钟。系统启动之后，系统时钟与硬件时钟独立运行，Linux 通过时钟中断计数维护系统时钟。</p>
@@ -505,8 +637,8 @@ PG正在互联过程中。</code></pre>
 <p>其他相关问题，比如设置时间以及和Windows时间同步等可以参考下面的ArchLinux Wiki链接</p>
 <p>参考：</p>
 <ol>
-<li><a href="https://wiki.archlinux.org/index.php/Time" target="_blank" rel="noopener">https://wiki.archlinux.org/index.php/Time</a></li>
-<li><a href="https://unix.stackexchange.com/questions/384971/whats-the-difference-between-localtime-and-timezone-files" target="_blank" rel="noopener">https://unix.stackexchange.com/questions/384971/whats-the-difference-between-localtime-and-timezone-files</a></li>
+<li><a target="_blank" rel="noopener" href="https://wiki.archlinux.org/index.php/Time">https://wiki.archlinux.org/index.php/Time</a></li>
+<li><a target="_blank" rel="noopener" href="https://unix.stackexchange.com/questions/384971/whats-the-difference-between-localtime-and-timezone-files">https://unix.stackexchange.com/questions/384971/whats-the-difference-between-localtime-and-timezone-files</a></li>
 </ol>
 
       
@@ -515,18 +647,25 @@ PG正在互联过程中。</code></pre>
     
     
     
-      <footer class="post-footer">
+
+    <footer class="post-footer">
         <div class="post-eof"></div>
-      </footer>
+      
+    </footer>
   </article>
-  
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/05/10/k8s-cronjob-source-code/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -544,33 +683,35 @@ PG正在互联过程中。</code></pre>
             <a href="/2018/05/10/k8s-cronjob-source-code/" class="post-title-link" itemprop="url">Kubernetes CronJob Controller源码分析</a>
         </h2>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2018年5月10日 10:21 10:21:53" itemprop="dateCreated datePublished" datetime="2018-05-10T10:21:53+08:00">2018年5月10日 10:21</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
-                </span>
-            </span>
+      <time title="创建时间：2018年5月10日 10:21 10:21:53" itemprop="dateCreated datePublished" datetime="2018-05-10T10:21:53+08:00">2018年5月10日 10:21</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
 
-          
+  
+</div>
 
         </div>
       </header>
@@ -579,10 +720,8 @@ PG正在互联过程中。</code></pre>
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
           <p>最近的一个项目需要用到Kubernetes的CronJob，主要用来定时执行一个备份任务，刚开始使用的时候发现没有按照预期的情况运行，所以决定看看<code>CronJob Controller</code>的代码，看看他是怎么实现对应的功能的，正好发现网上也没有其他人写过关于<code>CronJob Controller</code>代码的解析（可能是太简单了不用写吧）。所以也就正好记录一下。</p>
-<p><code>CronJob Controller</code>的代码在<code>kubernetes/pkg/controller/cronjob</code>路径下，主要的逻辑实现在这个目录的<code>cronjob_controller.go</code>，这里分析的是<code>v1.10.2</code>版本的代码，可以直接链接到<a href="https://github.com/kubernetes/kubernetes/blob/v1.10.2/pkg/controller/cronjob/cronjob_controller.go" target="_blank" rel="noopener">Github</a>查看。</p>
+<p><code>CronJob Controller</code>的代码在<code>kubernetes/pkg/controller/cronjob</code>路径下，主要的逻辑实现在这个目录的<code>cronjob_controller.go</code>，这里分析的是<code>v1.10.2</code>版本的代码，可以直接链接到<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/blob/v1.10.2/pkg/controller/cronjob/cronjob_controller.go">Github</a>查看。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2018/05/10/k8s-cronjob-source-code/#more" rel="contents">
@@ -597,18 +736,25 @@ PG正在互联过程中。</code></pre>
     
     
     
-      <footer class="post-footer">
+
+    <footer class="post-footer">
         <div class="post-eof"></div>
-      </footer>
+      
+    </footer>
   </article>
-  
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/03/20/ddia-note-chapter-1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -626,24 +772,26 @@ PG正在互联过程中。</code></pre>
             <a href="/2018/03/20/ddia-note-chapter-1/" class="post-title-link" itemprop="url">《DDIA》读书笔记第一章</a>
         </h2>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2018年3月20日 19:46 19:46:17" itemprop="dateCreated datePublished" datetime="2018-03-20T19:46:17+08:00">2018年3月20日 19:46</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
+      <time title="创建时间：2018年3月20日 19:46 19:46:17" itemprop="dateCreated datePublished" datetime="2018-03-20T19:46:17+08:00">2018年3月20日 19:46</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
 
-          
+  
+</div>
 
         </div>
       </header>
@@ -652,8 +800,6 @@ PG正在互联过程中。</code></pre>
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
           <p>之前一直听说Designing Data-Intensive Applications (DDIA) 这本书是神书，也决定读一下，顺便做些笔记，也算巩固一下学到的东西吧。</p>
 <p>书的第一部分，主要关注于一些基础的知识，第一章的标题<code>Reliable, Scalable, and Maintainable Applications</code>就讲了三个当前应用的最主要特点：可靠性，可扩展性和可维护性。</p>
 <h2 id="可靠性"><a href="#可靠性" class="headerlink" title="可靠性"></a>可靠性</h2><p>首先是<code>Reliability</code>也就是可靠性，主要包含下面的几个预期：</p>
@@ -678,18 +824,25 @@ PG正在互联过程中。</code></pre>
     
     
     
-      <footer class="post-footer">
+
+    <footer class="post-footer">
         <div class="post-eof"></div>
-      </footer>
+      
+    </footer>
   </article>
-  
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/03/19/go-http-timeouts/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -707,24 +860,26 @@ PG正在互联过程中。</code></pre>
             <a href="/2018/03/19/go-http-timeouts/" class="post-title-link" itemprop="url">两张图解释Golang http的超时机制</a>
         </h2>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2018年3月19日 9:32 9:32:58" itemprop="dateCreated datePublished" datetime="2018-03-19T09:32:58+08:00">2018年3月19日 9:32</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
+      <time title="创建时间：2018年3月19日 9:32 9:32:58" itemprop="dateCreated datePublished" datetime="2018-03-19T09:32:58+08:00">2018年3月19日 9:32</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
 
-          
+  
+</div>
 
         </div>
       </header>
@@ -733,16 +888,28 @@ PG正在互联过程中。</code></pre>
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
-          <p>转自<a href="https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/" target="_blank" rel="noopener">The complete guide to Go net/http timeouts</a>。</p>
+          <p>转自<a target="_blank" rel="noopener" href="https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/">The complete guide to Go net/http timeouts</a>。</p>
 <h3 id="服务端超时"><a href="#服务端超时" class="headerlink" title="服务端超时"></a>服务端超时</h3><p>对于<code>http.Server</code>服务端有两个超时可以设置：<code>ReadTimeout</code>和<code>WriteTimeout</code></p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">srv := &amp;http.Server&#123;</span><br><span class="line">    ReadTimeout: <span class="number">5</span> * time.Second,</span><br><span class="line">    WriteTimeout: <span class="number">10</span> * time.Second,</span><br><span class="line">&#125;</span><br><span class="line">log.Println(srv.ListenAndServe())</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">srv <span class="token operator">:=</span> <span class="token operator">&amp;</span>http<span class="token punctuation">.</span>Server<span class="token punctuation">&#123;</span>
+    ReadTimeout<span class="token punctuation">:</span> <span class="token number">5</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">,</span>
+    WriteTimeout<span class="token punctuation">:</span> <span class="token number">10</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span>
+log<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>srv<span class="token punctuation">.</span><span class="token function">ListenAndServe</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>各自的作用时间见图：</p>
 <p><img src="/images/go_http_timeout_server.png" alt="Server timeout"></p>
 <p>需要注意的是<code>WriteTimeout</code>被设置了两次，一次是在读取Http头过程中，另一次是在读取Http头结束后。</p>
 <h3 id="客户端超时"><a href="#客户端超时" class="headerlink" title="客户端超时"></a>客户端超时</h3><p>对于<code>http.Client</code>客户端，相对要复杂一点，一般的初始化代码如下：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">c := &amp;http.Client&#123;</span><br><span class="line">    Transport: &amp;http.Transport&#123;</span><br><span class="line">        Dial: (&amp;net.Dialer&#123;</span><br><span class="line">                Timeout:   <span class="number">30</span> * time.Second,</span><br><span class="line">                KeepAlive: <span class="number">30</span> * time.Second,</span><br><span class="line">        &#125;).Dial,</span><br><span class="line">        TLSHandshakeTimeout:   <span class="number">10</span> * time.Second,</span><br><span class="line">        ResponseHeaderTimeout: <span class="number">10</span> * time.Second,</span><br><span class="line">        ExpectContinueTimeout: <span class="number">1</span> * time.Second,</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">c <span class="token operator">:=</span> <span class="token operator">&amp;</span>http<span class="token punctuation">.</span>Client<span class="token punctuation">&#123;</span>
+    Transport<span class="token punctuation">:</span> <span class="token operator">&amp;</span>http<span class="token punctuation">.</span>Transport<span class="token punctuation">&#123;</span>
+        Dial<span class="token punctuation">:</span> <span class="token punctuation">(</span><span class="token operator">&amp;</span>net<span class="token punctuation">.</span>Dialer<span class="token punctuation">&#123;</span>
+                Timeout<span class="token punctuation">:</span>   <span class="token number">30</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">,</span>
+                KeepAlive<span class="token punctuation">:</span> <span class="token number">30</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">,</span>
+        <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">.</span>Dial<span class="token punctuation">,</span>
+        TLSHandshakeTimeout<span class="token punctuation">:</span>   <span class="token number">10</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">,</span>
+        ResponseHeaderTimeout<span class="token punctuation">:</span> <span class="token number">10</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">,</span>
+        ExpectContinueTimeout<span class="token punctuation">:</span> <span class="token number">1</span> <span class="token operator">*</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">,</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>这些Timeout各自的作用时间见：</p>
 <p><img src="/images/go_http_timeout_client.png" alt="Client timeout"></p>
 
@@ -752,18 +919,25 @@ PG正在互联过程中。</code></pre>
     
     
     
-      <footer class="post-footer">
+
+    <footer class="post-footer">
         <div class="post-eof"></div>
-      </footer>
+      
+    </footer>
   </article>
-  
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/01/23/cni-bridge-host-local/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -781,33 +955,35 @@ PG正在互联过程中。</code></pre>
             <a href="/2018/01/23/cni-bridge-host-local/" class="post-title-link" itemprop="url">CNI Plugin Bridge代码解析</a>
         </h2>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2018年1月23日 10:52 10:52:30" itemprop="dateCreated datePublished" datetime="2018-01-23T10:52:30+08:00">2018年1月23日 10:52</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
-                </span>
-            </span>
+      <time title="创建时间：2018年1月23日 10:52 10:52:30" itemprop="dateCreated datePublished" datetime="2018-01-23T10:52:30+08:00">2018年1月23日 10:52</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
 
-          
+  
+</div>
 
         </div>
       </header>
@@ -816,12 +992,110 @@ PG正在互联过程中。</code></pre>
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
           <p>在CNI所以默认提供的Plugin中，<code>bridge</code>应该算是最简单的插件了，针对IPAM Plugin，最简单的应该是<code>host-local</code>，这两个插件也是Kubernetes网络<code>kubenet</code>需要的两个插件。所以这里看一下这两个插件的代码。</p>
-<p>所有官方维护的代码，都开源在<a href="https://github.com/containernetworking/plugins" target="_blank" rel="noopener">containernetworking/plugins</a>项目中了。</p>
+<p>所有官方维护的代码，都开源在<a target="_blank" rel="noopener" href="https://github.com/containernetworking/plugins">containernetworking/plugins</a>项目中了。</p>
 <p>其中<code>bridge</code>的代码在<code>plugins/main/bridge</code>目录，最重要的是<code>cmdAdd</code>和<code>cmdDel</code>两个函数，对应CNI SPEC中的ADD和DEL两个主要操作。主要来看一下<code>cmdAdd</code>的实现，精简（删除一些错误处理）后的代码如下：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">cmdAdd</span><span class="params">(args *skel.CmdArgs)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	n, cniVersion, err := loadNetConf(args.StdinData)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> n.IsDefaultGW &#123;</span><br><span class="line">		n.IsGW = <span class="literal">true</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	br, brInterface, err := setupBridge(n)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	netns, err := ns.GetNS(args.Netns)</span><br><span class="line">	<span class="keyword">defer</span> netns.Close()</span><br><span class="line"></span><br><span class="line">	hostInterface, containerInterface, err := setupVeth(netns, br, args.IfName, n.MTU, n.HairpinMode)</span><br><span class="line"></span><br><span class="line">	r, err := ipam.ExecAdd(n.IPAM.Type, args.StdinData)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	result, err := current.NewResultFromResult(r)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(result.IPs) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> errors.New(<span class="string">"IPAM plugin returned missing IP config"</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	result.Interfaces = []*current.Interface&#123;brInterface, hostInterface, containerInterface&#125;</span><br><span class="line"></span><br><span class="line">	gwsV4, gwsV6, err := calcGateways(result, n)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> err := netns.Do(<span class="function"><span class="keyword">func</span><span class="params">(_ ns.NetNS)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">		contVeth, err := net.InterfaceByName(args.IfName)</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> _, ipc := <span class="keyword">range</span> result.IPs &#123;</span><br><span class="line">			<span class="keyword">if</span> ipc.Version == <span class="string">"6"</span> &amp;&amp; (n.HairpinMode || n.PromiscMode) &#123;</span><br><span class="line">				<span class="keyword">if</span> err := disableIPV6DAD(args.IfName); err != <span class="literal">nil</span> &#123;</span><br><span class="line">					<span class="keyword">return</span> err</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">break</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> err := ipam.ConfigureIface(args.IfName, result); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> _, ipc := <span class="keyword">range</span> result.IPs &#123;</span><br><span class="line">			<span class="keyword">if</span> ipc.Version == <span class="string">"4"</span> &#123;</span><br><span class="line">				_ = arping.GratuitousArpOverIface(ipc.Address.IP, *contVeth)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">	&#125;); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> n.IsGW &#123;</span><br><span class="line">		<span class="keyword">var</span> firstV4Addr net.IP</span><br><span class="line">		<span class="keyword">for</span> _, gws := <span class="keyword">range</span> []*gwInfo&#123;gwsV4, gwsV6&#125; &#123;</span><br><span class="line">			<span class="keyword">for</span> _, gw := <span class="keyword">range</span> gws.gws &#123;</span><br><span class="line">				<span class="keyword">if</span> gw.IP.To4() != <span class="literal">nil</span> &amp;&amp; firstV4Addr == <span class="literal">nil</span> &#123;</span><br><span class="line">					firstV4Addr = gw.IP</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				err = ensureBridgeAddr(br, gws.family, &amp;gw, n.ForceAddress)</span><br><span class="line">				<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">					<span class="keyword">return</span> fmt.Errorf(<span class="string">"failed to set bridge addr: %v"</span>, err)</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> gws.gws != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">if</span> err = enableIPForward(gws.family); err != <span class="literal">nil</span> &#123;</span><br><span class="line">					<span class="keyword">return</span> fmt.Errorf(<span class="string">"failed to enable forwarding: %v"</span>, err)</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> n.IPMasq &#123;</span><br><span class="line">		chain := utils.FormatChainName(n.Name, args.ContainerID)</span><br><span class="line">		comment := utils.FormatComment(n.Name, args.ContainerID)</span><br><span class="line">		<span class="keyword">for</span> _, ipc := <span class="keyword">range</span> result.IPs &#123;</span><br><span class="line">			<span class="keyword">if</span> err = ip.SetupIPMasq(ip.Network(&amp;ipc.Address), chain, comment); err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> err</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	br, err = bridgeByName(n.BrName)</span><br><span class="line"></span><br><span class="line">	brInterface.Mac = br.Attrs().HardwareAddr.String()</span><br><span class="line"></span><br><span class="line">	result.DNS = n.DNS</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> types.PrintResult(result, cniVersion)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">cmdAdd</span><span class="token punctuation">(</span>args <span class="token operator">*</span>skel<span class="token punctuation">.</span>CmdArgs<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	n<span class="token punctuation">,</span> cniVersion<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">loadNetConf</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>StdinData<span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> n<span class="token punctuation">.</span>IsDefaultGW <span class="token punctuation">&#123;</span>
+		n<span class="token punctuation">.</span>IsGW <span class="token operator">=</span> <span class="token boolean">true</span>
+	<span class="token punctuation">&#125;</span>
+
+	br<span class="token punctuation">,</span> brInterface<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">setupBridge</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	netns<span class="token punctuation">,</span> err <span class="token operator">:=</span> ns<span class="token punctuation">.</span><span class="token function">GetNS</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>Netns<span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> netns<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	hostInterface<span class="token punctuation">,</span> containerInterface<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">setupVeth</span><span class="token punctuation">(</span>netns<span class="token punctuation">,</span> br<span class="token punctuation">,</span> args<span class="token punctuation">.</span>IfName<span class="token punctuation">,</span> n<span class="token punctuation">.</span>MTU<span class="token punctuation">,</span> n<span class="token punctuation">.</span>HairpinMode<span class="token punctuation">)</span>
+
+	r<span class="token punctuation">,</span> err <span class="token operator">:=</span> ipam<span class="token punctuation">.</span><span class="token function">ExecAdd</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>IPAM<span class="token punctuation">.</span>Type<span class="token punctuation">,</span> args<span class="token punctuation">.</span>StdinData<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	result<span class="token punctuation">,</span> err <span class="token operator">:=</span> current<span class="token punctuation">.</span><span class="token function">NewResultFromResult</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>IPs<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> errors<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token string">"IPAM plugin returned missing IP config"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	result<span class="token punctuation">.</span>Interfaces <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>current<span class="token punctuation">.</span>Interface<span class="token punctuation">&#123;</span>brInterface<span class="token punctuation">,</span> hostInterface<span class="token punctuation">,</span> containerInterface<span class="token punctuation">&#125;</span>
+
+	gwsV4<span class="token punctuation">,</span> gwsV6<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">calcGateways</span><span class="token punctuation">(</span>result<span class="token punctuation">,</span> n<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> netns<span class="token punctuation">.</span><span class="token function">Do</span><span class="token punctuation">(</span><span class="token keyword">func</span><span class="token punctuation">(</span><span class="token boolean">_</span> ns<span class="token punctuation">.</span>NetNS<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+		contVeth<span class="token punctuation">,</span> err <span class="token operator">:=</span> net<span class="token punctuation">.</span><span class="token function">InterfaceByName</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>IfName<span class="token punctuation">)</span>
+
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> ipc <span class="token operator">:=</span> <span class="token keyword">range</span> result<span class="token punctuation">.</span>IPs <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> ipc<span class="token punctuation">.</span>Version <span class="token operator">==</span> <span class="token string">"6"</span> <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span>n<span class="token punctuation">.</span>HairpinMode <span class="token operator">||</span> n<span class="token punctuation">.</span>PromiscMode<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">if</span> err <span class="token operator">:=</span> <span class="token function">disableIPV6DAD</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>IfName<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					<span class="token keyword">return</span> err
+				<span class="token punctuation">&#125;</span>
+				<span class="token keyword">break</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> ipam<span class="token punctuation">.</span><span class="token function">ConfigureIface</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>IfName<span class="token punctuation">,</span> result<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> err
+		<span class="token punctuation">&#125;</span>
+
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> ipc <span class="token operator">:=</span> <span class="token keyword">range</span> result<span class="token punctuation">.</span>IPs <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> ipc<span class="token punctuation">.</span>Version <span class="token operator">==</span> <span class="token string">"4"</span> <span class="token punctuation">&#123;</span>
+				<span class="token boolean">_</span> <span class="token operator">=</span> arping<span class="token punctuation">.</span><span class="token function">GratuitousArpOverIface</span><span class="token punctuation">(</span>ipc<span class="token punctuation">.</span>Address<span class="token punctuation">.</span>IP<span class="token punctuation">,</span> <span class="token operator">*</span>contVeth<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> n<span class="token punctuation">.</span>IsGW <span class="token punctuation">&#123;</span>
+		<span class="token keyword">var</span> firstV4Addr net<span class="token punctuation">.</span>IP
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> gws <span class="token operator">:=</span> <span class="token keyword">range</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>gwInfo<span class="token punctuation">&#123;</span>gwsV4<span class="token punctuation">,</span> gwsV6<span class="token punctuation">&#125;</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> gw <span class="token operator">:=</span> <span class="token keyword">range</span> gws<span class="token punctuation">.</span>gws <span class="token punctuation">&#123;</span>
+				<span class="token keyword">if</span> gw<span class="token punctuation">.</span>IP<span class="token punctuation">.</span><span class="token function">To4</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> firstV4Addr <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					firstV4Addr <span class="token operator">=</span> gw<span class="token punctuation">.</span>IP
+				<span class="token punctuation">&#125;</span>
+
+				err <span class="token operator">=</span> <span class="token function">ensureBridgeAddr</span><span class="token punctuation">(</span>br<span class="token punctuation">,</span> gws<span class="token punctuation">.</span>family<span class="token punctuation">,</span> <span class="token operator">&amp;</span>gw<span class="token punctuation">,</span> n<span class="token punctuation">.</span>ForceAddress<span class="token punctuation">)</span>
+				<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"failed to set bridge addr: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token punctuation">&#125;</span>
+
+			<span class="token keyword">if</span> gws<span class="token punctuation">.</span>gws <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">if</span> err <span class="token operator">=</span> <span class="token function">enableIPForward</span><span class="token punctuation">(</span>gws<span class="token punctuation">.</span>family<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"failed to enable forwarding: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> n<span class="token punctuation">.</span>IPMasq <span class="token punctuation">&#123;</span>
+		chain <span class="token operator">:=</span> utils<span class="token punctuation">.</span><span class="token function">FormatChainName</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> args<span class="token punctuation">.</span>ContainerID<span class="token punctuation">)</span>
+		comment <span class="token operator">:=</span> utils<span class="token punctuation">.</span><span class="token function">FormatComment</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> args<span class="token punctuation">.</span>ContainerID<span class="token punctuation">)</span>
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> ipc <span class="token operator">:=</span> <span class="token keyword">range</span> result<span class="token punctuation">.</span>IPs <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> err <span class="token operator">=</span> ip<span class="token punctuation">.</span><span class="token function">SetupIPMasq</span><span class="token punctuation">(</span>ip<span class="token punctuation">.</span><span class="token function">Network</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>ipc<span class="token punctuation">.</span>Address<span class="token punctuation">)</span><span class="token punctuation">,</span> chain<span class="token punctuation">,</span> comment<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">return</span> err
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	br<span class="token punctuation">,</span> err <span class="token operator">=</span> <span class="token function">bridgeByName</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>BrName<span class="token punctuation">)</span>
+
+	brInterface<span class="token punctuation">.</span>Mac <span class="token operator">=</span> br<span class="token punctuation">.</span><span class="token function">Attrs</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>HardwareAddr<span class="token punctuation">.</span><span class="token function">String</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	result<span class="token punctuation">.</span>DNS <span class="token operator">=</span> n<span class="token punctuation">.</span>DNS
+
+	<span class="token keyword">return</span> types<span class="token punctuation">.</span><span class="token function">PrintResult</span><span class="token punctuation">(</span>result<span class="token punctuation">,</span> cniVersion<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2018/01/23/cni-bridge-host-local/#more" rel="contents">
@@ -836,18 +1110,25 @@ PG正在互联过程中。</code></pre>
     
     
     
-      <footer class="post-footer">
+
+    <footer class="post-footer">
         <div class="post-eof"></div>
-      </footer>
+      
+    </footer>
   </article>
-  
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/01/22/cni-spec/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -865,33 +1146,35 @@ PG正在互联过程中。</code></pre>
             <a href="/2018/01/22/cni-spec/" class="post-title-link" itemprop="url">容器网络接口(CNI) Plugin SPEC介绍</a>
         </h2>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2018年1月22日 9:47 9:47:22" itemprop="dateCreated datePublished" datetime="2018-01-22T09:47:22+08:00">2018年1月22日 9:47</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
-                </span>
-            </span>
+      <time title="创建时间：2018年1月22日 9:47 9:47:22" itemprop="dateCreated datePublished" datetime="2018-01-22T09:47:22+08:00">2018年1月22日 9:47</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
 
-          
+  
+</div>
 
         </div>
       </header>
@@ -900,9 +1183,7 @@ PG正在互联过程中。</code></pre>
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
-          <p>本文主要介绍一下容器网络接口(CNI) 的SPEC，主要参考<a href="https://github.com/containernetworking/cni/blob/spec-v0.3.1/SPEC.md" target="_blank" rel="noopener">SPEC v0.3.1</a>，以及目前<a href="https://github.com/containernetworking/cni/blob/525880d8bc1cdb7250c59a1296c1a7427305af74/SPEC.md" target="_blank" rel="noopener">最新的SPEC</a>，目前新SPEC针对v0.3.1版本改动不是很大，特别是相关接口输入输出方面，因此可以看作是一样的。</p>
+          <p>本文主要介绍一下容器网络接口(CNI) 的SPEC，主要参考<a target="_blank" rel="noopener" href="https://github.com/containernetworking/cni/blob/spec-v0.3.1/SPEC.md">SPEC v0.3.1</a>，以及目前<a target="_blank" rel="noopener" href="https://github.com/containernetworking/cni/blob/525880d8bc1cdb7250c59a1296c1a7427305af74/SPEC.md">最新的SPEC</a>，目前新SPEC针对v0.3.1版本改动不是很大，特别是相关接口输入输出方面，因此可以看作是一样的。</p>
 <h2 id="总览"><a href="#总览" class="headerlink" title="总览"></a>总览</h2><p>所有的CNI Plugin，都必须实现为可以被容器管理系统（如rtk、Kubernetes等）调用的可执行文件。<br>CNI插件负责将网络接口插入容器网络命名空间（例如veth pair的其中一端），并在主机上进行任何必要的改变（例如将veth pair的另一端连接到网桥）。然后应该将IP分配给接口，并通过调用适当的IPAM插件将与“IP地址管理”部分一致的IP地址分配给该网络接口，并设置好对应的路由。</p>
 <h2 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h2><p>所有的CNI Plugin必须实现以下操作：</p>
 <ul>
@@ -945,7 +1226,10 @@ PG正在互联过程中。</code></pre>
 <li><p>Parameters: NONE.</p>
 </li>
 <li><p>Result: information about the CNI spec versions supported by the plugin</p>
-  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;cniVersion&quot;: &quot;0.3.1&quot;, &#x2F;&#x2F; the version of the CNI spec in use for this output</span><br><span class="line">  &quot;supportedVersions&quot;: [ &quot;0.1.0&quot;, &quot;0.2.0&quot;, &quot;0.3.0&quot;, &quot;0.3.1&quot; ] &#x2F;&#x2F; the list of CNI spec versions that this plugin supports</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+  <pre class="line-numbers language-none"><code class="language-none">&#123;
+  &quot;cniVersion&quot;: &quot;0.3.1&quot;, &#x2F;&#x2F; the version of the CNI spec in use for this output
+  &quot;supportedVersions&quot;: [ &quot;0.1.0&quot;, &quot;0.2.0&quot;, &quot;0.3.0&quot;, &quot;0.3.1&quot; ] &#x2F;&#x2F; the list of CNI spec versions that this plugin supports
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2018/01/22/cni-spec/#more" rel="contents">
@@ -960,18 +1244,25 @@ PG正在互联过程中。</code></pre>
     
     
     
-      <footer class="post-footer">
+
+    <footer class="post-footer">
         <div class="post-eof"></div>
-      </footer>
+      
+    </footer>
   </article>
-  
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/11/20/rpmbuild-not-strip/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -989,33 +1280,35 @@ PG正在互联过程中。</code></pre>
             <a href="/2017/11/20/rpmbuild-not-strip/" class="post-title-link" itemprop="url">使用rpmbuild打包时不对文件进行strip操作</a>
         </h2>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2017年11月20日 15:01 15:01:25" itemprop="dateCreated datePublished" datetime="2017-11-20T15:01:25+08:00">2017年11月20日 15:01</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%95%88%E7%8E%87%E9%85%8D%E7%BD%AE/" itemprop="url" rel="index"><span itemprop="name">效率配置</span></a>
-                </span>
-            </span>
+      <time title="创建时间：2017年11月20日 15:01 15:01:25" itemprop="dateCreated datePublished" datetime="2017-11-20T15:01:25+08:00">2017年11月20日 15:01</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%95%88%E7%8E%87%E9%85%8D%E7%BD%AE/" itemprop="url" rel="index"><span itemprop="name">效率配置</span></a>
+        </span>
+    </span>
 
-          
+  
+</div>
 
         </div>
       </header>
@@ -1024,12 +1317,20 @@ PG正在互联过程中。</code></pre>
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
           <p>默认情况下，在使用rpmbuild打包时，会对安装的所有文件进行strip操作，去除文件的一些调试信息，并将这些调试信息放到debuginfo包中，但在很多时候，我们并不需要rpmbuild帮我们执行strip，也不需要生成debuginfo包，所以我们可以修改一下spec文件，关闭这些选项。</p>
 <p>针对文件的strip操作是在<code>__os_install_post</code>这个宏中定义的，我们可以运行一下<code>rpmbuild --showrc</code>看一下原始的<code>__os_install_post</code>做了哪些操作：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">-14: __os_install_post</span><br><span class="line">    /usr/lib/rpm/redhat/brp-compress</span><br><span class="line">    %&#123;!?__debug_package:/usr/lib/rpm/redhat/brp-strip %&#123;__strip&#125;&#125;</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-static-archive %&#123;__strip&#125;</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-comment-note %&#123;__strip&#125; %&#123;__objdump&#125;</span><br><span class="line">    /usr/lib/rpm/brp-python-bytecompile</span><br><span class="line">    /usr/lib/rpm/redhat/brp-python-hardlink</span><br><span class="line">    %&#123;!?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars&#125;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>可以看到在打包时会对文件进行一系列操作，比如压缩，strip，编译Python脚本等，所以，我们只需要在spec文件中，加上<code>%define __os_install_post %{nil}</code>，将<code>__os_install_post</code>设置为空，这样在打包的时候，就不会执行上面的这些操作了，也就不会对文件进行strip操作了。同样的，如果不需要生成debuginfo包，只需要再加上<code>%define debug_package  %{nil}</code>就可以了。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">..</span>.
+-14: __os_install_post
+    /usr/lib/rpm/redhat/brp-compress
+    %<span class="token punctuation">&#123;</span><span class="token operator">!</span>?__debug_package:/usr/lib/rpm/redhat/brp-strip %<span class="token punctuation">&#123;</span>__strip<span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>
+    /usr/lib/rpm/redhat/brp-strip-static-archive %<span class="token punctuation">&#123;</span>__strip<span class="token punctuation">&#125;</span>
+    /usr/lib/rpm/redhat/brp-strip-comment-note %<span class="token punctuation">&#123;</span>__strip<span class="token punctuation">&#125;</span> %<span class="token punctuation">&#123;</span>__objdump<span class="token punctuation">&#125;</span>
+    /usr/lib/rpm/brp-python-bytecompile
+    /usr/lib/rpm/redhat/brp-python-hardlink
+    %<span class="token punctuation">&#123;</span><span class="token operator">!</span>?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars<span class="token punctuation">&#125;</span>
+<span class="token punctuation">..</span>.
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到在打包时会对文件进行一系列操作，比如压缩，strip，编译Python脚本等，所以，我们只需要在spec文件中，加上<code>%define __os_install_post %&#123;nil&#125;</code>，将<code>__os_install_post</code>设置为空，这样在打包的时候，就不会执行上面的这些操作了，也就不会对文件进行strip操作了。同样的，如果不需要生成debuginfo包，只需要再加上<code>%define debug_package  %&#123;nil&#125;</code>就可以了。</p>
 
       
     </div>
@@ -1037,13 +1338,16 @@ PG正在互联过程中。</code></pre>
     
     
     
-      <footer class="post-footer">
+
+    <footer class="post-footer">
         <div class="post-eof"></div>
-      </footer>
+      
+    </footer>
   </article>
-  
-  
-  
+</div>
+
+
+
 
 
   
@@ -1053,8 +1357,7 @@ PG正在互联过程中。</code></pre>
 
 
 
-          </div>
-          
+      
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -1063,7 +1366,7 @@ PG正在互联过程中。</code></pre>
       activeClass = localStorage.getItem('comments_active') || activeClass;
     }
     if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
       if (activeTab) {
         activeTab.click();
       }
@@ -1072,117 +1375,31 @@ PG正在互联过程中。</code></pre>
   if (CONFIG.comments.storage) {
     window.addEventListener('tabs:click', event => {
       if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
+      const commentClass = event.target.classList[1];
       localStorage.setItem('comments_active', commentClass);
     });
   }
 </script>
 
-        </div>
-          
-  
-  <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
-  </div>
-
-  <aside class="sidebar">
-    <div class="sidebar-inner">
-
-      <ul class="sidebar-nav motion-element">
-        <li class="sidebar-nav-toc">
-          文章目录
-        </li>
-        <li class="sidebar-nav-overview">
-          站点概览
-        </li>
-      </ul>
-
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-      </div>
-      <!--/noindex-->
-
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-  <p class="site-author-name" itemprop="name">Chen Fu</p>
-  <div class="site-description" itemprop="description"></div>
-</div>
-<div class="site-state-wrap motion-element">
-  <nav class="site-state">
-      <div class="site-state-item site-state-posts">
-          <a href="/archives/">
-        
-          <span class="site-state-item-count">77</span>
-          <span class="site-state-item-name">日志</span>
-        </a>
-      </div>
-      <div class="site-state-item site-state-categories">
-            <a href="/categories/">
-          
-        <span class="site-state-item-count">11</span>
-        <span class="site-state-item-name">分类</span></a>
-      </div>
-      <div class="site-state-item site-state-tags">
-            <a href="/tags/">
-          
-        <span class="site-state-item-count">170</span>
-        <span class="site-state-item-name">标签</span></a>
-      </div>
-  </nav>
-</div>
-
-
-  <div class="links-of-blogroll motion-element">
-    <div class="links-of-blogroll-title">
-      <i class="fa fa-fw fa-link"></i>
-      Links
     </div>
-    <ul class="links-of-blogroll-list">
-        <li class="links-of-blogroll-item">
-          <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
-        </li>
-        <li class="links-of-blogroll-item">
-          <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
-        </li>
-        <li class="links-of-blogroll-item">
-          <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
-        </li>
-    </ul>
-  </div>
+  </main>
 
-      </div>
+  <footer class="footer">
+    <div class="footer-inner">
+      
 
-    </div>
-  </aside>
-  <div id="sidebar-dimmer"></div>
-
-
-      </div>
-    </main>
-
-    <footer class="footer">
-      <div class="footer-inner">
-        
-
-        
+      
 
 <div class="copyright">
   
   &copy; 
   <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
-    <i class="fa fa-user"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
-  </div>
-
-        
 <div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
@@ -1191,7 +1408,6 @@ PG正在互联过程中。</code></pre>
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-divider">|</span>
     <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
@@ -1201,31 +1417,15 @@ PG正在互联过程中。</code></pre>
       </span>
     </span>
 </div>
-
-
-
-
-
-
-
-
-      </div>
-    </footer>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
   </div>
 
+    </div>
+  </footer>
+
   
-  <script src="/lib/anime.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
   
 
@@ -1243,13 +1443,26 @@ PG正在互联过程中。</code></pre>
 
 
 
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
   
 
   
-  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/quicklink@2.0.0/dist/quicklink.umd.js"></script>
   <script>
       window.addEventListener('load', () => {
-      quicklink({
+      quicklink.listen({
         timeout : 3000,
         priority: true,
         ignores : [uri => uri.includes('#'),uri => uri === 'https://www.ichenfu.com/page/4/',]

@@ -4,26 +4,31 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
-<script id="hexo-configurations">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+
+<script class="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
 
-  <meta name="description" content="服务器的Apache进程突然无法启动了，在错误日志中，有如下信息: 1234[Mon Feb 13 14:54:10 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.8173) (5)[Mon Feb 13 14:55:0">
+  <meta name="description" content="服务器的Apache进程突然无法启动了，在错误日志中，有如下信息: [Mon Feb 13 14:54:10 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.8173) (5) [Mon Feb 13 14:55:02 2">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Apache: No space left on device: Couldn&#39;t create accept lock">
 <meta property="og:url" content="https://www.ichenfu.com/2017/02/15/apache-no-space-left-on-device-couldnt-create-accept-lock/index.html">
 <meta property="og:site_name" content="C0reFast记事本">
-<meta property="og:description" content="服务器的Apache进程突然无法启动了，在错误日志中，有如下信息: 1234[Mon Feb 13 14:54:10 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.8173) (5)[Mon Feb 13 14:55:0">
+<meta property="og:description" content="服务器的Apache进程突然无法启动了，在错误日志中，有如下信息: [Mon Feb 13 14:54:10 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.8173) (5) [Mon Feb 13 14:55:02 2">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2017-02-15T06:40:48.000Z">
 <meta property="article:modified_time" content="2020-10-12T01:50:42.280Z">
@@ -33,10 +38,11 @@
 <meta property="article:tag" content="Semaphores">
 <meta name="twitter:card" content="summary">
 
+
 <link rel="canonical" href="https://www.ichenfu.com/2017/02/15/apache-no-space-left-on-device-couldnt-create-accept-lock/">
 
 
-<script id="page-configurations">
+<script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
@@ -65,24 +71,36 @@
 
   <noscript>
   <style>
-  .use-motion .brand,
+  body { margin-top: 2rem; }
+
   .use-motion .menu-item,
-  .sidebar-inner,
+  .use-motion .sidebar,
   .use-motion .post-block,
   .use-motion .pagination,
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
 
   .use-motion .site-title,
-  .use-motion .site-subtitle {
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
     opacity: initial;
     top: initial;
   }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
   </style>
 </noscript>
 
@@ -90,25 +108,25 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container">
-    <div class="headband"></div>
+  <div class="headband"></div>
 
+  <main class="main">
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="切换导航栏">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
     </div>
   </div>
 
   <div class="site-meta">
 
     <a href="/" class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
+      <i class="logo-line"></i>
       <h1 class="site-title">C0reFast记事本</h1>
-      <span class="logo-line-after"><i></i></span>
+      <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
   </div>
@@ -121,32 +139,31 @@
 
 
 
-
 <nav class="site-nav">
-  <ul id="menu" class="menu">
+  <ul class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
   </ul>
@@ -156,201 +173,18 @@
 
 
 </div>
-    </header>
-
-    
-  <div class="back-to-top">
-    <i class="fa fa-arrow-up"></i>
-    <span>0%</span>
-  </div>
-
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content post posts-expand">
-            
-
-    
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/02/15/apache-no-space-left-on-device-couldnt-create-accept-lock/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chen Fu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Apache: No space left on device: Couldn't create accept lock
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2017年2月15日 14:40 14:40:48" itemprop="dateCreated datePublished" datetime="2017-02-15T14:40:48+08:00">2017年2月15日 14:40</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">源码分析</span></a>
-                </span>
-            </span>
-
-          
-            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span id="busuanzi_value_page_pv"></span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <p>服务器的Apache进程突然无法启动了，在错误日志中，有如下信息:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[Mon Feb 13 14:54:10 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.8173) (5)</span><br><span class="line">[Mon Feb 13 14:55:02 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.8823) (5)</span><br><span class="line">[Mon Feb 13 14:56:01 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.9113) (5)</span><br><span class="line">[Mon Feb 13 14:57:01 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.9765) (5)</span><br></pre></td></tr></table></figure>
-<p>看了一下磁盘，空间并没有被占满，于是搜索了一下，找到了办法。<a id="more"></a></p>
-<p>使用 <code>ipcs -s</code> 查看一下当前的系统信号量占用情况：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">[root@phpruntime ~]<span class="comment"># ipcs -s</span></span><br><span class="line"></span><br><span class="line">------ Semaphore Arrays --------</span><br><span class="line">key        semid      owner      perms      nsems</span><br><span class="line">0x00000000 0          root       600        1</span><br><span class="line">0x00000000 32769      root       600        1</span><br><span class="line">0x00000000 688130     nobody     600        1</span><br><span class="line">0x00000000 720899     nobody     600        1</span><br><span class="line">0x00000000 753668     nobody     600        1</span><br><span class="line">0x00000000 786437     nobody     600        1</span><br><span class="line">0x00000000 819206     nobody     600        1</span><br><span class="line">0x00000000 851975     nobody     600        1</span><br><span class="line">0x7a03096d 587137032  root       600        13</span><br><span class="line">0x00000000 1114121    nobody     600        1</span><br><span class="line">0x00000000 1212426    nobody     600        1</span><br><span class="line">0x00000000 1146891    nobody     600        1</span><br><span class="line">0x00000000 1081356    nobody     600        1</span><br><span class="line">0x00000000 1179661    nobody     600        1</span><br><span class="line">0x00000000 1245198    nobody     600        1</span><br><span class="line">0x00000000 586940431  nobody     600        1</span><br><span class="line">0x00000000 586973200  nobody     600        1</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>其中nobody用户占用的信号量总数非常多，超过了100个，而我们的Apache也是运行在nobody下的，应该是信号量没有正确释放导致的，手动释放一下：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> `ipcs -s|awk <span class="string">'/nobody/ &#123;print $2&#125;'</span>`; <span class="keyword">do</span> (ipcrm -s <span class="variable">$i</span>); <span class="keyword">done</span></span><br></pre></td></tr></table></figure>
-<p>释放结束后，Apache便可以正常启动了。</p>
-<p>具体到Semaphore，也就是信号量，有一个内核参数可以修改：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@yq138.phpruntime ~]<span class="comment"># cat /proc/sys/kernel/sem</span></span><br><span class="line">250     32000   32      128</span><br></pre></td></tr></table></figure>
-
-<p>上面的4个数字分别代表SEMMSL, SEMMNS, SEMOPM, SEMMNI这4个属性。</p>
-<ul>
-<li>SEMMSL：用于控制每个信号集的最大信号数量。(defines the maximum number of semaphores per semaphore set.)</li>
-<li>SEMMNS：用于控制整个 Linux 系统中信号（不是信号集）的最大数。(defines the total number of semaphores (not semaphore sets) for the entire Linux system)</li>
-<li>SEMOPM：用于控制每次semop系统调用最大可以调用的信号数量 。(defines the maximum number of semaphore operations that can be performed per semop(2) system call (semaphore call))</li>
-<li>SEMMNI：用于控制整个 Linux 系统中信号集的最大数量。(defines the maximum number of semaphore sets for the entire Linux system.)</li>
-</ul>
-<p>可以通过调整这4个数值来解决上面问题，但是是治标不治本的，因为问题发生的原因不是信号量资源不够用，而是因为没有正确释放。这里顺便看了看httpd的代码：</p>
-<p>在prefork模式中，需要创建一个fork的锁，调用的是apr_proc_mutex_create这个函数。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">ap_mpm_run</span><span class="params">(<span class="keyword">apr_pool_t</span> *_pconf, <span class="keyword">apr_pool_t</span> *plog, server_rec *s)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> index;</span><br><span class="line">    <span class="keyword">int</span> remaining_children_to_start;</span><br><span class="line">    <span class="keyword">apr_status_t</span> rv;</span><br><span class="line"></span><br><span class="line">    ap_log_pid(pconf, ap_pid_fname);</span><br><span class="line"></span><br><span class="line">    first_server_limit = server_limit;</span><br><span class="line">    <span class="keyword">if</span> (changed_limit_at_restart) &#123;</span><br><span class="line">        ap_log_error(APLOG_MARK, APLOG_WARNING, <span class="number">0</span>, s,</span><br><span class="line">                     <span class="string">"WARNING: Attempt to change ServerLimit "</span></span><br><span class="line">                     <span class="string">"ignored during restart"</span>);</span><br><span class="line">        changed_limit_at_restart = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Initialize cross-process accept lock */</span></span><br><span class="line">    ap_lock_fname = apr_psprintf(_pconf, <span class="string">"%s.%"</span> APR_PID_T_FMT,</span><br><span class="line">                                 ap_server_root_relative(_pconf, ap_lock_fname),</span><br><span class="line">                                 ap_my_pid);</span><br><span class="line">    <span class="comment">// 调用apr_proc_mutex_create创建accept_mutex</span></span><br><span class="line">    rv = apr_proc_mutex_create(&amp;accept_mutex, ap_lock_fname,</span><br><span class="line">                               ap_accept_lock_mech, _pconf);</span><br><span class="line">    <span class="keyword">if</span> (rv != APR_SUCCESS) &#123;</span><br><span class="line">        ap_log_error(APLOG_MARK, APLOG_EMERG, rv, s,</span><br><span class="line">                     <span class="string">"Couldn't create accept lock (%s) (%d)"</span>,</span><br><span class="line">                     ap_lock_fname, ap_accept_lock_mech);</span><br><span class="line">        mpm_state = AP_MPMQ_STOPPING;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 省略....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>调用时，传入了一个参数 <code>ap_accept_lock_mech</code>，这个参数可以通过配置文件的 <code>AcceptMutex</code> 这个配置项进行配置，默认如果不配置的话，会使用 <code>APR_LOCK_DEFAULT</code>这个默认方式。</p>
-<p><code>apr_proc_mutex_create</code> 是apr库的一部分，apr库在不同平台有不同的实现，我们就看针对unix系统的实现。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">apr_status_t</span> <span class="title">proc_mutex_create</span><span class="params">(<span class="keyword">apr_proc_mutex_t</span> *new_mutex, apr_lockmech_e mech, <span class="keyword">const</span> <span class="keyword">char</span> *fname)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">apr_status_t</span> rv;</span><br><span class="line">    <span class="comment">// 根据mech选择合适的实现</span></span><br><span class="line">    <span class="keyword">if</span> ((rv = proc_mutex_choose_method(new_mutex, mech)) != APR_SUCCESS) &#123;</span><br><span class="line">        <span class="keyword">return</span> rv;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    new_mutex-&gt;meth = new_mutex-&gt;inter_meth;</span><br><span class="line">    <span class="comment">// 调用对应的实现</span></span><br><span class="line">    <span class="keyword">if</span> ((rv = new_mutex-&gt;meth-&gt;create(new_mutex, fname)) != APR_SUCCESS) &#123;</span><br><span class="line">        <span class="keyword">return</span> rv;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> APR_SUCCESS;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// apr_proc_mutex_create 实现</span></span><br><span class="line">APR_DECLARE(<span class="keyword">apr_status_t</span>) apr_proc_mutex_create(<span class="keyword">apr_proc_mutex_t</span> **mutex,</span><br><span class="line">                                                <span class="keyword">const</span> <span class="keyword">char</span> *fname,</span><br><span class="line">                                                apr_lockmech_e mech,</span><br><span class="line">                                                <span class="keyword">apr_pool_t</span> *pool)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">apr_proc_mutex_t</span> *new_mutex;</span><br><span class="line">    <span class="keyword">apr_status_t</span> rv;</span><br><span class="line"></span><br><span class="line">    new_mutex = apr_pcalloc(pool, <span class="keyword">sizeof</span>(<span class="keyword">apr_proc_mutex_t</span>));</span><br><span class="line">    new_mutex-&gt;pool = pool;</span><br><span class="line">    <span class="comment">// 调用上面的proc_mutex_create</span></span><br><span class="line">    <span class="keyword">if</span> ((rv = proc_mutex_create(new_mutex, mech, fname)) != APR_SUCCESS)</span><br><span class="line">        <span class="keyword">return</span> rv;</span><br><span class="line"></span><br><span class="line">    *mutex = new_mutex;</span><br><span class="line">    <span class="keyword">return</span> APR_SUCCESS;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>在 <code>proc_mutex_choose_method</code> 选择对应实现的时候，会根据传入的<code>mech</code>参数进行选择，当参数为<code>APR_LOCK_DEFAULT</code>时：</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">apr_status_t</span> <span class="title">proc_mutex_choose_method</span><span class="params">(<span class="keyword">apr_proc_mutex_t</span> *new_mutex, apr_lockmech_e mech)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 如果指定了某个确定的选项，则直接使用对应的实现。</span></span><br><span class="line">    <span class="keyword">switch</span> (mech) &#123;</span><br><span class="line">    <span class="keyword">case</span> APR_LOCK_FCNTL:</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> APR_HAS_FCNTL_SERIALIZE</span></span><br><span class="line">        new_mutex-&gt;inter_meth = &amp;mutex_fcntl_methods;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">        <span class="keyword">return</span> APR_ENOTIMPL;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> APR_LOCK_FLOCK:</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> APR_HAS_FLOCK_SERIALIZE</span></span><br><span class="line">        new_mutex-&gt;inter_meth = &amp;mutex_flock_methods;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">        <span class="keyword">return</span> APR_ENOTIMPL;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> APR_LOCK_SYSVSEM:</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> APR_HAS_SYSVSEM_SERIALIZE</span></span><br><span class="line">        new_mutex-&gt;inter_meth = &amp;mutex_sysv_methods;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">        <span class="keyword">return</span> APR_ENOTIMPL;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> APR_LOCK_POSIXSEM:</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> APR_HAS_POSIXSEM_SERIALIZE</span></span><br><span class="line">        new_mutex-&gt;inter_meth = &amp;mutex_posixsem_methods;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">        <span class="keyword">return</span> APR_ENOTIMPL;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> APR_LOCK_PROC_PTHREAD:</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> APR_HAS_PROC_PTHREAD_SERIALIZE</span></span><br><span class="line">        new_mutex-&gt;inter_meth = &amp;mutex_proc_pthread_methods;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">        <span class="keyword">return</span> APR_ENOTIMPL;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="comment">// 默认选择，和编译环境相关，当前环境中选择的是&amp;mutex_sysv_methods。</span></span><br><span class="line">    <span class="keyword">case</span> APR_LOCK_DEFAULT:</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> APR_USE_FLOCK_SERIALIZE</span></span><br><span class="line">        new_mutex-&gt;inter_meth = &amp;mutex_flock_methods;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">elif</span> APR_USE_SYSVSEM_SERIALIZE</span></span><br><span class="line">        new_mutex-&gt;inter_meth = &amp;mutex_sysv_methods;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">elif</span> APR_USE_FCNTL_SERIALIZE</span></span><br><span class="line">        new_mutex-&gt;inter_meth = &amp;mutex_fcntl_methods;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">elif</span> APR_USE_PROC_PTHREAD_SERIALIZE</span></span><br><span class="line">        new_mutex-&gt;inter_meth = &amp;mutex_proc_pthread_methods;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">elif</span> APR_USE_POSIXSEM_SERIALIZE</span></span><br><span class="line">        new_mutex-&gt;inter_meth = &amp;mutex_posixsem_methods;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">        <span class="keyword">return</span> APR_ENOTIMPL;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">return</span> APR_ENOTIMPL;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> APR_SUCCESS;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>系统选择了sysv的实现，所以create的具体实现是：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">static apr_status_t proc_mutex_sysv_create(apr_proc_mutex_t *new_mutex,</span><br><span class="line">                                           const char *fname)</span><br><span class="line">&#123;</span><br><span class="line">    union semun ick;</span><br><span class="line">    apr_status_t rv;</span><br><span class="line">    </span><br><span class="line">    new_mutex-&gt;interproc = apr_palloc(new_mutex-&gt;pool, sizeof(*new_mutex-&gt;interproc));</span><br><span class="line">    // 调用semget获得信号</span><br><span class="line">    new_mutex-&gt;interproc-&gt;filedes = semget(IPC_PRIVATE, 1, IPC_CREAT | 0600);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (new_mutex-&gt;interproc-&gt;filedes &lt; 0) &#123;</span><br><span class="line">        rv = errno;</span><br><span class="line">        proc_mutex_sysv_cleanup(new_mutex);</span><br><span class="line">        <span class="built_in">return</span> rv;</span><br><span class="line">    &#125;</span><br><span class="line">    ick.val = 1;</span><br><span class="line">    <span class="keyword">if</span> (semctl(new_mutex-&gt;interproc-&gt;filedes, 0, SETVAL, ick) &lt; 0) &#123;</span><br><span class="line">        rv = errno;</span><br><span class="line">        proc_mutex_sysv_cleanup(new_mutex);</span><br><span class="line">        <span class="built_in">return</span> rv;</span><br><span class="line">    &#125;</span><br><span class="line">    new_mutex-&gt;curr_locked = 0;</span><br><span class="line">    // 注册清理函数</span><br><span class="line">    apr_pool_cleanup_register(new_mutex-&gt;pool,</span><br><span class="line">                              (void *)new_mutex, apr_proc_mutex_cleanup, </span><br><span class="line">                              apr_pool_cleanup_null);</span><br><span class="line">    <span class="built_in">return</span> APR_SUCCESS;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>所以实际的情况是，Apache在启动的时候申请了信号集，但是并没有正常的在退出的时候执行清理，导致了信号集的堆积，当超过了系统的上限，就会导致申请失败，Apache无法启动。</p>
-<p>而我们的系统在Apache相关的扩展或者依赖有更新时，会使用非常暴力的 <code>kill -9</code> 强制让Apache退出的方式以便加快更新速度，由于是 <code>kill -9</code>，程序直接就退出了，没有执行清理操作，<br>所以才会导致没释放的信号集越来越多，最终导致出现问题。</p>
-<p>解决方法也比较简单，不使用 <code>kill -9</code>的方式杀死Apache进程，让进程自然退出就好了。</p>
-
-    </div>
-
-    
-    
-    <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
-  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
-  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
-</div>
-
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/Apache/" rel="tag"># Apache</a>
-              <a href="/tags/AcceptLock/" rel="tag"># AcceptLock</a>
-              <a href="/tags/Semaphores/" rel="tag"># Semaphores</a>
-          </div>
-
         
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/2017/02/09/ceph-osd-manual-deployment/" rel="prev" title="纯手动部署Ceph之OSD部署">
-      <i class="fa fa-chevron-left"></i> 纯手动部署Ceph之OSD部署
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/2017/02/20/xfs-per-directory-quota/" rel="next" title="在XFS文件系统上实现针对目录的配额限制">
-      在XFS文件系统上实现针对目录的配额限制 <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-
-
-          </div>
-          
-    <div class="comments" id="gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
   
   <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
   </div>
 
   <aside class="sidebar">
-    <div class="sidebar-inner">
 
-      <ul class="sidebar-nav motion-element">
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
         </li>
@@ -359,17 +193,18 @@
         </li>
       </ul>
 
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-      </div>
-      <!--/noindex-->
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+        </section>
+        <!--/noindex-->
 
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <p class="site-author-name" itemprop="name">Chen Fu</p>
   <div class="site-description" itemprop="description"></div>
 </div>
-<div class="site-state-wrap motion-element">
+<div class="site-state-wrap site-overview-item animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
@@ -394,9 +229,8 @@
 </div>
 
 
-  <div class="links-of-blogroll motion-element">
-    <div class="links-of-blogroll-title">
-      <i class="fa fa-fw fa-link"></i>
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
       Links
     </div>
     <ul class="links-of-blogroll-list">
@@ -412,37 +246,393 @@
     </ul>
   </div>
 
+        </section>
       </div>
-
     </div>
   </aside>
-  <div id="sidebar-dimmer"></div>
+  <div class="sidebar-dimmer"></div>
 
 
-      </div>
-    </main>
+    </header>
 
-    <footer class="footer">
-      <div class="footer-inner">
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/02/15/apache-no-space-left-on-device-couldnt-create-accept-lock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Apache: No space left on device: Couldn't create accept lock
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017年2月15日 14:40 14:40:48" itemprop="dateCreated datePublished" datetime="2017-02-15T14:40:48+08:00">2017年2月15日 14:40</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">源码分析</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>服务器的Apache进程突然无法启动了，在错误日志中，有如下信息:</p>
+<pre class="line-numbers language-none"><code class="language-none">[Mon Feb 13 14:54:10 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.8173) (5)
+[Mon Feb 13 14:55:02 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.8823) (5)
+[Mon Feb 13 14:56:01 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.9113) (5)
+[Mon Feb 13 14:57:01 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.9765) (5)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>看了一下磁盘，空间并没有被占满，于是搜索了一下，找到了办法。<a id="more"></a></p>
+<p>使用 <code>ipcs -s</code> 查看一下当前的系统信号量占用情况：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@phpruntime ~<span class="token punctuation">]</span><span class="token comment"># ipcs -s</span>
+
+------ Semaphore Arrays --------
+key        semid      owner      perms      nsems
+0x00000000 <span class="token number">0</span>          root       <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">32769</span>      root       <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">688130</span>     nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">720899</span>     nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">753668</span>     nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">786437</span>     nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">819206</span>     nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">851975</span>     nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x7a03096d <span class="token number">587137032</span>  root       <span class="token number">600</span>        <span class="token number">13</span>
+0x00000000 <span class="token number">1114121</span>    nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">1212426</span>    nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">1146891</span>    nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">1081356</span>    nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">1179661</span>    nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">1245198</span>    nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">586940431</span>  nobody     <span class="token number">600</span>        <span class="token number">1</span>
+0x00000000 <span class="token number">586973200</span>  nobody     <span class="token number">600</span>        <span class="token number">1</span>
+<span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其中nobody用户占用的信号量总数非常多，超过了100个，而我们的Apache也是运行在nobody下的，应该是信号量没有正确释放导致的，手动释放一下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token keyword">for</span> <span class="token for-or-select variable">i</span> <span class="token keyword">in</span> <span class="token variable"><span class="token variable">`</span>ipcs -s<span class="token operator">|</span><span class="token function">awk</span> <span class="token string">'/nobody/ &#123;print <span class="token variable">$2</span>&#125;'</span><span class="token variable">`</span></span><span class="token punctuation">;</span> <span class="token keyword">do</span> <span class="token punctuation">(</span>ipcrm -s <span class="token variable">$i</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token keyword">done</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>释放结束后，Apache便可以正常启动了。</p>
+<p>具体到Semaphore，也就是信号量，有一个内核参数可以修改：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@yq138.phpruntime ~<span class="token punctuation">]</span><span class="token comment"># cat /proc/sys/kernel/sem</span>
+<span class="token number">250</span>     <span class="token number">32000</span>   <span class="token number">32</span>      <span class="token number">128</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>上面的4个数字分别代表SEMMSL, SEMMNS, SEMOPM, SEMMNI这4个属性。</p>
+<ul>
+<li>SEMMSL：用于控制每个信号集的最大信号数量。(defines the maximum number of semaphores per semaphore set.)</li>
+<li>SEMMNS：用于控制整个 Linux 系统中信号（不是信号集）的最大数。(defines the total number of semaphores (not semaphore sets) for the entire Linux system)</li>
+<li>SEMOPM：用于控制每次semop系统调用最大可以调用的信号数量 。(defines the maximum number of semaphore operations that can be performed per semop(2) system call (semaphore call))</li>
+<li>SEMMNI：用于控制整个 Linux 系统中信号集的最大数量。(defines the maximum number of semaphore sets for the entire Linux system.)</li>
+</ul>
+<p>可以通过调整这4个数值来解决上面问题，但是是治标不治本的，因为问题发生的原因不是信号量资源不够用，而是因为没有正确释放。这里顺便看了看httpd的代码：</p>
+<p>在prefork模式中，需要创建一个fork的锁，调用的是apr_proc_mutex_create这个函数。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">ap_mpm_run</span><span class="token punctuation">(</span>apr_pool_t <span class="token operator">*</span>_pconf<span class="token punctuation">,</span> apr_pool_t <span class="token operator">*</span>plog<span class="token punctuation">,</span> server_rec <span class="token operator">*</span>s<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> index<span class="token punctuation">;</span>
+    <span class="token keyword">int</span> remaining_children_to_start<span class="token punctuation">;</span>
+    apr_status_t rv<span class="token punctuation">;</span>
+
+    <span class="token function">ap_log_pid</span><span class="token punctuation">(</span>pconf<span class="token punctuation">,</span> ap_pid_fname<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    first_server_limit <span class="token operator">=</span> server_limit<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>changed_limit_at_restart<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">ap_log_error</span><span class="token punctuation">(</span>APLOG_MARK<span class="token punctuation">,</span> APLOG_WARNING<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> s<span class="token punctuation">,</span>
+                     <span class="token string">"WARNING: Attempt to change ServerLimit "</span>
+                     <span class="token string">"ignored during restart"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        changed_limit_at_restart <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* Initialize cross-process accept lock */</span>
+    ap_lock_fname <span class="token operator">=</span> <span class="token function">apr_psprintf</span><span class="token punctuation">(</span>_pconf<span class="token punctuation">,</span> <span class="token string">"%s.%"</span> APR_PID_T_FMT<span class="token punctuation">,</span>
+                                 <span class="token function">ap_server_root_relative</span><span class="token punctuation">(</span>_pconf<span class="token punctuation">,</span> ap_lock_fname<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                 ap_my_pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 调用apr_proc_mutex_create创建accept_mutex</span>
+    rv <span class="token operator">=</span> <span class="token function">apr_proc_mutex_create</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>accept_mutex<span class="token punctuation">,</span> ap_lock_fname<span class="token punctuation">,</span>
+                               ap_accept_lock_mech<span class="token punctuation">,</span> _pconf<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>rv <span class="token operator">!=</span> APR_SUCCESS<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">ap_log_error</span><span class="token punctuation">(</span>APLOG_MARK<span class="token punctuation">,</span> APLOG_EMERG<span class="token punctuation">,</span> rv<span class="token punctuation">,</span> s<span class="token punctuation">,</span>
+                     <span class="token string">"Couldn't create accept lock (%s) (%d)"</span><span class="token punctuation">,</span>
+                     ap_lock_fname<span class="token punctuation">,</span> ap_accept_lock_mech<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        mpm_state <span class="token operator">=</span> AP_MPMQ_STOPPING<span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// 省略....</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>调用时，传入了一个参数 <code>ap_accept_lock_mech</code>，这个参数可以通过配置文件的 <code>AcceptMutex</code> 这个配置项进行配置，默认如果不配置的话，会使用 <code>APR_LOCK_DEFAULT</code>这个默认方式。</p>
+<p><code>apr_proc_mutex_create</code> 是apr库的一部分，apr库在不同平台有不同的实现，我们就看针对unix系统的实现。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">static</span> apr_status_t <span class="token function">proc_mutex_create</span><span class="token punctuation">(</span>apr_proc_mutex_t <span class="token operator">*</span>new_mutex<span class="token punctuation">,</span> apr_lockmech_e mech<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>fname<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    apr_status_t rv<span class="token punctuation">;</span>
+    <span class="token comment">// 根据mech选择合适的实现</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>rv <span class="token operator">=</span> <span class="token function">proc_mutex_choose_method</span><span class="token punctuation">(</span>new_mutex<span class="token punctuation">,</span> mech<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> APR_SUCCESS<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> rv<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    new_mutex<span class="token operator">-></span>meth <span class="token operator">=</span> new_mutex<span class="token operator">-></span>inter_meth<span class="token punctuation">;</span>
+    <span class="token comment">// 调用对应的实现</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>rv <span class="token operator">=</span> new_mutex<span class="token operator">-></span>meth<span class="token operator">-></span><span class="token function">create</span><span class="token punctuation">(</span>new_mutex<span class="token punctuation">,</span> fname<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> APR_SUCCESS<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> rv<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">return</span> APR_SUCCESS<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token comment">// apr_proc_mutex_create 实现</span>
+<span class="token function">APR_DECLARE</span><span class="token punctuation">(</span>apr_status_t<span class="token punctuation">)</span> <span class="token function">apr_proc_mutex_create</span><span class="token punctuation">(</span>apr_proc_mutex_t <span class="token operator">*</span><span class="token operator">*</span>mutex<span class="token punctuation">,</span>
+                                                <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>fname<span class="token punctuation">,</span>
+                                                apr_lockmech_e mech<span class="token punctuation">,</span>
+                                                apr_pool_t <span class="token operator">*</span>pool<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    apr_proc_mutex_t <span class="token operator">*</span>new_mutex<span class="token punctuation">;</span>
+    apr_status_t rv<span class="token punctuation">;</span>
+
+    new_mutex <span class="token operator">=</span> <span class="token function">apr_pcalloc</span><span class="token punctuation">(</span>pool<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>apr_proc_mutex_t<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    new_mutex<span class="token operator">-></span>pool <span class="token operator">=</span> pool<span class="token punctuation">;</span>
+    <span class="token comment">// 调用上面的proc_mutex_create</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>rv <span class="token operator">=</span> <span class="token function">proc_mutex_create</span><span class="token punctuation">(</span>new_mutex<span class="token punctuation">,</span> mech<span class="token punctuation">,</span> fname<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> APR_SUCCESS<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> rv<span class="token punctuation">;</span>
+
+    <span class="token operator">*</span>mutex <span class="token operator">=</span> new_mutex<span class="token punctuation">;</span>
+    <span class="token keyword">return</span> APR_SUCCESS<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在 <code>proc_mutex_choose_method</code> 选择对应实现的时候，会根据传入的<code>mech</code>参数进行选择，当参数为<code>APR_LOCK_DEFAULT</code>时：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">static</span> apr_status_t <span class="token function">proc_mutex_choose_method</span><span class="token punctuation">(</span>apr_proc_mutex_t <span class="token operator">*</span>new_mutex<span class="token punctuation">,</span> apr_lockmech_e mech<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">// 如果指定了某个确定的选项，则直接使用对应的实现。</span>
+    <span class="token keyword">switch</span> <span class="token punctuation">(</span>mech<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">case</span> APR_LOCK_FCNTL<span class="token operator">:</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression">APR_HAS_FCNTL_SERIALIZE</span></span>
+        new_mutex<span class="token operator">-></span>inter_meth <span class="token operator">=</span> <span class="token operator">&amp;</span>mutex_fcntl_methods<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">else</span></span>
+        <span class="token keyword">return</span> APR_ENOTIMPL<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token keyword">case</span> APR_LOCK_FLOCK<span class="token operator">:</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression">APR_HAS_FLOCK_SERIALIZE</span></span>
+        new_mutex<span class="token operator">-></span>inter_meth <span class="token operator">=</span> <span class="token operator">&amp;</span>mutex_flock_methods<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">else</span></span>
+        <span class="token keyword">return</span> APR_ENOTIMPL<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token keyword">case</span> APR_LOCK_SYSVSEM<span class="token operator">:</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression">APR_HAS_SYSVSEM_SERIALIZE</span></span>
+        new_mutex<span class="token operator">-></span>inter_meth <span class="token operator">=</span> <span class="token operator">&amp;</span>mutex_sysv_methods<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">else</span></span>
+        <span class="token keyword">return</span> APR_ENOTIMPL<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token keyword">case</span> APR_LOCK_POSIXSEM<span class="token operator">:</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression">APR_HAS_POSIXSEM_SERIALIZE</span></span>
+        new_mutex<span class="token operator">-></span>inter_meth <span class="token operator">=</span> <span class="token operator">&amp;</span>mutex_posixsem_methods<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">else</span></span>
+        <span class="token keyword">return</span> APR_ENOTIMPL<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token keyword">case</span> APR_LOCK_PROC_PTHREAD<span class="token operator">:</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression">APR_HAS_PROC_PTHREAD_SERIALIZE</span></span>
+        new_mutex<span class="token operator">-></span>inter_meth <span class="token operator">=</span> <span class="token operator">&amp;</span>mutex_proc_pthread_methods<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">else</span></span>
+        <span class="token keyword">return</span> APR_ENOTIMPL<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token comment">// 默认选择，和编译环境相关，当前环境中选择的是&amp;mutex_sysv_methods。</span>
+    <span class="token keyword">case</span> APR_LOCK_DEFAULT<span class="token operator">:</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression">APR_USE_FLOCK_SERIALIZE</span></span>
+        new_mutex<span class="token operator">-></span>inter_meth <span class="token operator">=</span> <span class="token operator">&amp;</span>mutex_flock_methods<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">elif</span> <span class="token expression">APR_USE_SYSVSEM_SERIALIZE</span></span>
+        new_mutex<span class="token operator">-></span>inter_meth <span class="token operator">=</span> <span class="token operator">&amp;</span>mutex_sysv_methods<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">elif</span> <span class="token expression">APR_USE_FCNTL_SERIALIZE</span></span>
+        new_mutex<span class="token operator">-></span>inter_meth <span class="token operator">=</span> <span class="token operator">&amp;</span>mutex_fcntl_methods<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">elif</span> <span class="token expression">APR_USE_PROC_PTHREAD_SERIALIZE</span></span>
+        new_mutex<span class="token operator">-></span>inter_meth <span class="token operator">=</span> <span class="token operator">&amp;</span>mutex_proc_pthread_methods<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">elif</span> <span class="token expression">APR_USE_POSIXSEM_SERIALIZE</span></span>
+        new_mutex<span class="token operator">-></span>inter_meth <span class="token operator">=</span> <span class="token operator">&amp;</span>mutex_posixsem_methods<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">else</span></span>
+        <span class="token keyword">return</span> APR_ENOTIMPL<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token keyword">default</span><span class="token operator">:</span>
+        <span class="token keyword">return</span> APR_ENOTIMPL<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> APR_SUCCESS<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>系统选择了sysv的实现，所以create的具体实现是：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">static apr_status_t proc_mutex_sysv_create<span class="token punctuation">(</span>apr_proc_mutex_t *new_mutex,
+                                           const char *fname<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    union semun ick<span class="token punctuation">;</span>
+    apr_status_t rv<span class="token punctuation">;</span>
+    
+    new_mutex-<span class="token operator">></span>interproc <span class="token operator">=</span> apr_palloc<span class="token punctuation">(</span>new_mutex-<span class="token operator">></span>pool, sizeof<span class="token punctuation">(</span>*new_mutex-<span class="token operator">></span>interproc<span class="token punctuation">))</span><span class="token punctuation">;</span>
+    // 调用semget获得信号
+    new_mutex-<span class="token operator">></span>interproc-<span class="token operator">></span>filedes <span class="token operator">=</span> semget<span class="token punctuation">(</span>IPC_PRIVATE, <span class="token number">1</span>, IPC_CREAT <span class="token operator">|</span> 0600<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>new_mutex-<span class="token operator">></span>interproc-<span class="token operator">></span>filedes <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        rv <span class="token operator">=</span> errno<span class="token punctuation">;</span>
+        proc_mutex_sysv_cleanup<span class="token punctuation">(</span>new_mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token builtin class-name">return</span> rv<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    ick.val <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>semctl<span class="token punctuation">(</span>new_mutex-<span class="token operator">></span>interproc-<span class="token operator">></span>filedes, <span class="token number">0</span>, SETVAL, ick<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        rv <span class="token operator">=</span> errno<span class="token punctuation">;</span>
+        proc_mutex_sysv_cleanup<span class="token punctuation">(</span>new_mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token builtin class-name">return</span> rv<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    new_mutex-<span class="token operator">></span>curr_locked <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    // 注册清理函数
+    apr_pool_cleanup_register<span class="token punctuation">(</span>new_mutex-<span class="token operator">></span>pool,
+                              <span class="token punctuation">(</span>void *<span class="token punctuation">)</span>new_mutex, apr_proc_mutex_cleanup, 
+                              apr_pool_cleanup_null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token builtin class-name">return</span> APR_SUCCESS<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>所以实际的情况是，Apache在启动的时候申请了信号集，但是并没有正常的在退出的时候执行清理，导致了信号集的堆积，当超过了系统的上限，就会导致申请失败，Apache无法启动。</p>
+<p>而我们的系统在Apache相关的扩展或者依赖有更新时，会使用非常暴力的 <code>kill -9</code> 强制让Apache退出的方式以便加快更新速度，由于是 <code>kill -9</code>，程序直接就退出了，没有执行清理操作，<br>所以才会导致没释放的信号集越来越多，最终导致出现问题。</p>
+<p>解决方法也比较简单，不使用 <code>kill -9</code>的方式杀死Apache进程，让进程自然退出就好了。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Apache/" rel="tag"># Apache</a>
+              <a href="/tags/AcceptLock/" rel="tag"># AcceptLock</a>
+              <a href="/tags/Semaphores/" rel="tag"># Semaphores</a>
+          </div>
+
         
 
-        
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/02/09/ceph-osd-manual-deployment/" rel="prev" title="纯手动部署Ceph之OSD部署">
+                  <i class="fa fa-chevron-left"></i> 纯手动部署Ceph之OSD部署
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/02/20/xfs-per-directory-quota/" rel="next" title="在XFS文件系统上实现针对目录的配额限制">
+                  在XFS文件系统上实现针对目录的配额限制 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
 
 <div class="copyright">
   
   &copy; 
   <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
-    <i class="fa fa-user"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
-  </div>
-
-        
 <div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
@@ -451,7 +641,6 @@
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-divider">|</span>
     <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
@@ -461,31 +650,15 @@
       </span>
     </span>
 </div>
-
-
-
-
-
-
-
-
-      </div>
-    </footer>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
   </div>
 
+    </div>
+  </footer>
+
   
-  <script src="/lib/anime.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
   
 
@@ -503,15 +676,28 @@
 
 
 
+
+
+
   
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
 
   
 
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
 
 <script>
-NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
-  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
     var gitalk = new Gitalk({
       clientID    : 'd69b2454aff0c42e46ed',
       clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',

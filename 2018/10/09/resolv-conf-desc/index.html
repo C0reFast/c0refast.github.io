@@ -4,18 +4,23 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.1">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
-<script id="hexo-configurations">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+
+<script class="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
 
   <meta name="description" content="先说说背景，为什么会要了解一下&#x2F;etc&#x2F;resolv.conf配置，起因是一个跑在k8s集群的一个业务出现问题，仔细排查后，发现其中一个Pod的域名解析有问题，域名login.example.com被解析到了一个IP，而这个IP地址是另一个范域名*.ichenfu.com的解析，经过一番调查，最终发现是同事在配置一台机器上的kubelet时填错了clusterDomain的配置，将原本需要配置为c">
@@ -32,10 +37,11 @@
 <meta property="article:tag" content="resolv.conf">
 <meta name="twitter:card" content="summary">
 
+
 <link rel="canonical" href="https://www.ichenfu.com/2018/10/09/resolv-conf-desc/">
 
 
-<script id="page-configurations">
+<script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
@@ -64,24 +70,36 @@
 
   <noscript>
   <style>
-  .use-motion .brand,
+  body { margin-top: 2rem; }
+
   .use-motion .menu-item,
-  .sidebar-inner,
+  .use-motion .sidebar,
   .use-motion .post-block,
   .use-motion .pagination,
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
 
   .use-motion .site-title,
-  .use-motion .site-subtitle {
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
     opacity: initial;
     top: initial;
   }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
   </style>
 </noscript>
 
@@ -89,25 +107,25 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container">
-    <div class="headband"></div>
+  <div class="headband"></div>
 
+  <main class="main">
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="切换导航栏">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
     </div>
   </div>
 
   <div class="site-meta">
 
     <a href="/" class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
+      <i class="logo-line"></i>
       <h1 class="site-title">C0reFast记事本</h1>
-      <span class="logo-line-after"><i></i></span>
+      <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
   </div>
@@ -120,32 +138,31 @@
 
 
 
-
 <nav class="site-nav">
-  <ul id="menu" class="menu">
+  <ul class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
   </ul>
@@ -155,193 +172,18 @@
 
 
 </div>
-    </header>
-
-    
-  <div class="back-to-top">
-    <i class="fa fa-arrow-up"></i>
-    <span>0%</span>
-  </div>
-
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content post posts-expand">
-            
-
-    
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/10/09/resolv-conf-desc/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chen Fu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          /etc/resolv.conf search和ndots配置
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2018年10月9日 18:05 18:05:05" itemprop="dateCreated datePublished" datetime="2018-10-09T18:05:05+08:00">2018年10月9日 18:05</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux%E9%83%A8%E7%BD%B2/" itemprop="url" rel="index"><span itemprop="name">Linux部署</span></a>
-                </span>
-            </span>
-
-          
-            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span id="busuanzi_value_page_pv"></span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <p>先说说背景，为什么会要了解一下<code>/etc/resolv.conf</code>配置，起因是一个跑在k8s集群的一个业务出现问题，仔细排查后，发现其中一个Pod的域名解析有问题，域名<code>login.example.com</code>被解析到了一个IP，而这个IP地址是另一个范域名<code>*.ichenfu.com</code>的解析，经过一番调查，最终发现是同事在配置一台机器上的<code>kubelet</code>时填错了<code>clusterDomain</code>的配置，将原本需要配置为<code>c2.ichenfu.com</code>的配置写成了<code>c1.ichenfu.com</code>，那么问题来了，为什么这么配置会导致DNS解析到一个错误的，而且是完全不相干的地址的呢？下面就慢慢分析一下。</p>
-<p>首先还原一下场景，默认情况下，<code>kubelet</code>启动Pod的时候，会将DNS配置注入到Pod中，出问题的Pod里<code>/etc/resove.conf</code>内容如下：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">nameserver 10.254.0.2</span><br><span class="line">search default.svc.c1.ichenfu.com svc.c1.ichenfu.com c1.ichenfu.com localdomain</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
-<a id="more"></a>
-
-<p>而提供k8s DNS解析服务的coredns的配置文件如下：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">.:53 &#123;</span><br><span class="line">        errors</span><br><span class="line">        health</span><br><span class="line">        kubernetes cluster.local c2.ichenfu.com <span class="keyword">in</span>-addr.arpa ip6.arpa &#123;</span><br><span class="line">          pods insecure</span><br><span class="line">          upstream</span><br><span class="line">          fallthrough <span class="keyword">in</span>-addr.arpa ip6.arpa</span><br><span class="line">        &#125;</span><br><span class="line">        prometheus :9153</span><br><span class="line">        proxy . /etc/resolv.conf</span><br><span class="line">        cache 30</span><br><span class="line">        reload</span><br><span class="line">        loadbalance</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-<p>需要解释一下Coredns的配置文件，大致的逻辑是接受所有的请求，并启用kubernetes插件，当请求属于<code>cluster.local</code>和<code>c2.ichenfu.com</code>两个域时，查询k8s数据，返回对应记录，对于没有记录的其他域，代理给本地的DNS进行查询。</p>
-<p>问题来了，针对<code>login.example.com</code>的解析请求，为啥最终是<code>*.ichenfu.com</code>这条规则作出响应？</p>
-<p>最根本的原因是Pod中<code>resove.conf</code>的配置，其中<code>search default.svc.c1.ichenfu.com svc.c1.ichenfu.com c1.ichenfu.com localdomain</code>和<code>options ndots:5</code>这两行配置表明，所有查询中，如果<code>.</code>的个数少于5个，则会根据<code>search</code>中配置的列表依次在对应域中先进行搜索，如果没有返回，则最后再直接查询域名本身。<br>所以针对<code>login.example.com</code>的情况是，先查询<code>login.example.com.default.svc.c1.ichenfu.com</code>，再查询<code>login.example.com.svc.c1.ichenfu.com</code>，再查询<code>login.example.com.c1.ichenfu.com</code>，然后<code>login.example.com.localdomain</code>，如果上面列表都没有解析返回，则最后再查询<code>login.example.com</code>，很显然，正常情况下，经过4次多余的查询之后，最终也会获得正确的结果，但是针对这次的情况，由于配置出问题，导致在第一次查询的时候，<code>login.example.com.default.svc.c1.ichenfu.com</code>这个域名并不在coredns所配置的<code>cluster.local</code>和<code>c2.ichenfu.com</code>域中，直接转发到本地DNS，走正常的递归查询逻辑，而最终命中<code>*.ichenfu.com</code>这条规则。</p>
-<p>将配置文件修改之后，问题就解决了。</p>
-<p>最后再来看看到底<code>resolv.conf</code>相关配置的具体说明：</p>
-<blockquote><p><strong>search</strong> Search list for host-name lookup.</p>
-<p>The search list is normally determined from the local domain name; by default, it contains only the local domain name. This may be changed by listing the desired domain search path following the search keyword with spaces or tabs separating the names. Resolver queries having fewer than ndots dots (default is 1) in them will be attempted using each component of the search path in turn until a match is found. For environments with multiple subdomains please read options ndots:n below to avoid man-in-the-middle attacks and unnecessary traffic for the root-dns-servers. Note that this process may be slow and will generate a lot of network traffic if the servers for the listed domains are not local, and that queries will time out if no server is available for one of the domains.<br>The search list is currently limited to six domains with a total of 256 characters.</p>
-<p><strong>options</strong> option …</p>
-<p>where option is one of the following:</p>
-<p><strong>ndots</strong>:n</p>
-<p>sets a threshold for the number of dots which must appear in a name given to res_query(3) (see resolver(3)) before an initial absolute query will be made. The default for n is 1, meaning that if there are any dots in a name, the name will be tried first as an absolute name before any search list elements are appended to it. The value for this option is silently capped to 15.</p>
-</blockquote>
-<p>至少文档里是这么说了，那么实际呢，是不是真的就是这样？使用<code>host</code>命令测试一下：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">/ <span class="comment"># host -v www.baidu.com</span></span><br><span class="line">Trying <span class="string">"www.baidu.com.default.svc.c1.ichenfu.com"</span></span><br><span class="line">Trying <span class="string">"www.baidu.com.svc.c1.ichenfu.com"</span></span><br><span class="line">Trying <span class="string">"www.baidu.com.c1.ichenfu.com"</span></span><br><span class="line">Trying <span class="string">"www.baidu.com.localdomain"</span></span><br><span class="line">Trying <span class="string">"www.baidu.com"</span></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-
-<p>确实是这样。如此一来，在默认配置情况下，在容器内部解析域名的成本还是很高的，大部分的域名都不会有5个<code>.</code>，也就意味着大部分外部域名DNS解析请求都需要5次才能解析成功。<br>所以业务部署的时候，就需要根据情况，强制注入一个外部DNS了。</p>
-<p>参考：</p>
-<ol>
-<li><a href="https://linux.die.net/man/5/resolv.conf" target="_blank" rel="noopener">https://linux.die.net/man/5/resolv.conf</a></li>
-</ol>
-
-    </div>
-
-    
-    
-    <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
-  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
-  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
-</div>
-
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/DNS/" rel="tag"># DNS</a>
-              <a href="/tags/resolv-conf/" rel="tag"># resolv.conf</a>
-          </div>
-
         
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/2018/09/09/packet-flow-in-netfilter/" rel="prev" title="netfilter数据流图">
-      <i class="fa fa-chevron-left"></i> netfilter数据流图
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/2018/11/08/python-generate-random-string/" rel="next" title="一行Python生成随机字符串">
-      一行Python生成随机字符串 <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-
-
-          </div>
-          
-    <div class="comments" id="gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
   
   <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
   </div>
 
   <aside class="sidebar">
-    <div class="sidebar-inner">
 
-      <ul class="sidebar-nav motion-element">
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
         </li>
@@ -350,17 +192,18 @@
         </li>
       </ul>
 
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-      </div>
-      <!--/noindex-->
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+        </section>
+        <!--/noindex-->
 
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <p class="site-author-name" itemprop="name">Chen Fu</p>
   <div class="site-description" itemprop="description"></div>
 </div>
-<div class="site-state-wrap motion-element">
+<div class="site-state-wrap site-overview-item animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
@@ -385,9 +228,8 @@
 </div>
 
 
-  <div class="links-of-blogroll motion-element">
-    <div class="links-of-blogroll-title">
-      <i class="fa fa-fw fa-link"></i>
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
       Links
     </div>
     <ul class="links-of-blogroll-list">
@@ -403,37 +245,231 @@
     </ul>
   </div>
 
+        </section>
       </div>
-
     </div>
   </aside>
-  <div id="sidebar-dimmer"></div>
+  <div class="sidebar-dimmer"></div>
 
 
-      </div>
-    </main>
+    </header>
 
-    <footer class="footer">
-      <div class="footer-inner">
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/10/09/resolv-conf-desc/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          /etc/resolv.conf search和ndots配置
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018年10月9日 18:05 18:05:05" itemprop="dateCreated datePublished" datetime="2018-10-09T18:05:05+08:00">2018年10月9日 18:05</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux%E9%83%A8%E7%BD%B2/" itemprop="url" rel="index"><span itemprop="name">Linux部署</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>先说说背景，为什么会要了解一下<code>/etc/resolv.conf</code>配置，起因是一个跑在k8s集群的一个业务出现问题，仔细排查后，发现其中一个Pod的域名解析有问题，域名<code>login.example.com</code>被解析到了一个IP，而这个IP地址是另一个范域名<code>*.ichenfu.com</code>的解析，经过一番调查，最终发现是同事在配置一台机器上的<code>kubelet</code>时填错了<code>clusterDomain</code>的配置，将原本需要配置为<code>c2.ichenfu.com</code>的配置写成了<code>c1.ichenfu.com</code>，那么问题来了，为什么这么配置会导致DNS解析到一个错误的，而且是完全不相干的地址的呢？下面就慢慢分析一下。</p>
+<p>首先还原一下场景，默认情况下，<code>kubelet</code>启动Pod的时候，会将DNS配置注入到Pod中，出问题的Pod里<code>/etc/resove.conf</code>内容如下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">nameserver <span class="token number">10.254</span>.0.2
+search default.svc.c1.ichenfu.com svc.c1.ichenfu.com c1.ichenfu.com localdomain
+options ndots:5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<a id="more"></a>
+
+<p>而提供k8s DNS解析服务的coredns的配置文件如下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">.:53 <span class="token punctuation">&#123;</span>
+        errors
+        health
+        kubernetes cluster.local c2.ichenfu.com in-addr.arpa ip6.arpa <span class="token punctuation">&#123;</span>
+          pods insecure
+          upstream
+          fallthrough in-addr.arpa ip6.arpa
+        <span class="token punctuation">&#125;</span>
+        prometheus :9153
+        proxy <span class="token builtin class-name">.</span> /etc/resolv.conf
+        cache <span class="token number">30</span>
+        reload
+        loadbalance
+    <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>需要解释一下Coredns的配置文件，大致的逻辑是接受所有的请求，并启用kubernetes插件，当请求属于<code>cluster.local</code>和<code>c2.ichenfu.com</code>两个域时，查询k8s数据，返回对应记录，对于没有记录的其他域，代理给本地的DNS进行查询。</p>
+<p>问题来了，针对<code>login.example.com</code>的解析请求，为啥最终是<code>*.ichenfu.com</code>这条规则作出响应？</p>
+<p>最根本的原因是Pod中<code>resove.conf</code>的配置，其中<code>search default.svc.c1.ichenfu.com svc.c1.ichenfu.com c1.ichenfu.com localdomain</code>和<code>options ndots:5</code>这两行配置表明，所有查询中，如果<code>.</code>的个数少于5个，则会根据<code>search</code>中配置的列表依次在对应域中先进行搜索，如果没有返回，则最后再直接查询域名本身。<br>所以针对<code>login.example.com</code>的情况是，先查询<code>login.example.com.default.svc.c1.ichenfu.com</code>，再查询<code>login.example.com.svc.c1.ichenfu.com</code>，再查询<code>login.example.com.c1.ichenfu.com</code>，然后<code>login.example.com.localdomain</code>，如果上面列表都没有解析返回，则最后再查询<code>login.example.com</code>，很显然，正常情况下，经过4次多余的查询之后，最终也会获得正确的结果，但是针对这次的情况，由于配置出问题，导致在第一次查询的时候，<code>login.example.com.default.svc.c1.ichenfu.com</code>这个域名并不在coredns所配置的<code>cluster.local</code>和<code>c2.ichenfu.com</code>域中，直接转发到本地DNS，走正常的递归查询逻辑，而最终命中<code>*.ichenfu.com</code>这条规则。</p>
+<p>将配置文件修改之后，问题就解决了。</p>
+<p>最后再来看看到底<code>resolv.conf</code>相关配置的具体说明：</p>
+<blockquote><p><strong>search</strong> Search list for host-name lookup.</p>
+<p>The search list is normally determined from the local domain name; by default, it contains only the local domain name. This may be changed by listing the desired domain search path following the search keyword with spaces or tabs separating the names. Resolver queries having fewer than ndots dots (default is 1) in them will be attempted using each component of the search path in turn until a match is found. For environments with multiple subdomains please read options ndots:n below to avoid man-in-the-middle attacks and unnecessary traffic for the root-dns-servers. Note that this process may be slow and will generate a lot of network traffic if the servers for the listed domains are not local, and that queries will time out if no server is available for one of the domains.<br>The search list is currently limited to six domains with a total of 256 characters.</p>
+<p><strong>options</strong> option …</p>
+<p>where option is one of the following:</p>
+<p><strong>ndots</strong>:n</p>
+<p>sets a threshold for the number of dots which must appear in a name given to res_query(3) (see resolver(3)) before an initial absolute query will be made. The default for n is 1, meaning that if there are any dots in a name, the name will be tried first as an absolute name before any search list elements are appended to it. The value for this option is silently capped to 15.</p>
+</blockquote>
+<p>至少文档里是这么说了，那么实际呢，是不是真的就是这样？使用<code>host</code>命令测试一下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">/ <span class="token comment"># host -v www.baidu.com</span>
+Trying <span class="token string">"www.baidu.com.default.svc.c1.ichenfu.com"</span>
+Trying <span class="token string">"www.baidu.com.svc.c1.ichenfu.com"</span>
+Trying <span class="token string">"www.baidu.com.c1.ichenfu.com"</span>
+Trying <span class="token string">"www.baidu.com.localdomain"</span>
+Trying <span class="token string">"www.baidu.com"</span>
+<span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>确实是这样。如此一来，在默认配置情况下，在容器内部解析域名的成本还是很高的，大部分的域名都不会有5个<code>.</code>，也就意味着大部分外部域名DNS解析请求都需要5次才能解析成功。<br>所以业务部署的时候，就需要根据情况，强制注入一个外部DNS了。</p>
+<p>参考：</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://linux.die.net/man/5/resolv.conf">https://linux.die.net/man/5/resolv.conf</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/DNS/" rel="tag"># DNS</a>
+              <a href="/tags/resolv-conf/" rel="tag"># resolv.conf</a>
+          </div>
+
         
 
-        
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/09/09/packet-flow-in-netfilter/" rel="prev" title="netfilter数据流图">
+                  <i class="fa fa-chevron-left"></i> netfilter数据流图
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/11/08/python-generate-random-string/" rel="next" title="一行Python生成随机字符串">
+                  一行Python生成随机字符串 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
 
 <div class="copyright">
   
   &copy; 
   <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
-    <i class="fa fa-user"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
-  </div>
-
-        
 <div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
@@ -442,7 +478,6 @@
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-divider">|</span>
     <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
@@ -452,31 +487,15 @@
       </span>
     </span>
 </div>
-
-
-
-
-
-
-
-
-      </div>
-    </footer>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
   </div>
 
+    </div>
+  </footer>
+
   
-  <script src="/lib/anime.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
   
 
@@ -494,15 +513,28 @@
 
 
 
+
+
+
   
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
 
   
 
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
 
 <script>
-NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
-  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
     var gitalk = new Gitalk({
       clientID    : 'd69b2454aff0c42e46ed',
       clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',
