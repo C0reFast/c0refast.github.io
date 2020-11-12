@@ -3008,7 +3008,8 @@ ul.breadcrumb li:last-child {
     padding: 10px 12px;
   }
 }
-.highlight,
-pre {
-  line-height: 1.4;
+pre[class*="language-"],
+code[class*="language-"] {
+  font-size: 15px;
+  line-height: 1.3;
 }
