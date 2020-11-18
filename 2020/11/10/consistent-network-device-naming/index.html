@@ -31,7 +31,7 @@
 <meta property="og:description" content="针对网卡名字这个问题，其实之前也讨论过一次，主要是如何利用udev去重命名网卡，里面提到了新的一致性命名规则，但是没有细说。 当然肯定是遇到问题了，所以针对网卡命名的细节，需要再探讨一下。 其实目前大家还是更熟悉老的那种eth0,eth1…那种命名，目前我们大部分生产环境里也是这么用的。但是随着网卡数量越来越多（在我们使用的SR-IOV场景，加上VF虚拟网卡，机器上已经有超过16个网卡）这种命名规">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-11-10T12:11:41.000Z">
-<meta property="article:modified_time" content="2020-11-11T08:48:29.130Z">
+<meta property="article:modified_time" content="2020-11-18T02:21:13.050Z">
 <meta property="article:author" content="Chen Fu">
 <meta property="article:tag" content="udev">
 <meta property="article:tag" content="一致网络设备命名">
@@ -309,7 +309,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020年11月11日 16:48 16:48:29" itemprop="dateModified" datetime="2020-11-11T16:48:29+08:00">2020年11月11日 16:48</time>
+        <time title="修改时间：2020年11月18日 10:21 10:21:13" itemprop="dateModified" datetime="2020-11-18T10:21:13+08:00">2020年11月18日 10:21</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -340,7 +340,7 @@
     <div class="post-body" itemprop="articleBody">
         <p>针对网卡名字这个问题，其实之前也讨论过一次，主要是如何利用udev去重命名网卡，里面提到了新的一致性命名规则，但是没有细说。</p>
 <p>当然肯定是遇到问题了，所以针对网卡命名的细节，需要再探讨一下。</p>
-<p>其实目前大家还是更熟悉老的那种eth0,eth1…那种命名，目前我们大部分生产环境里也是这么用的。但是随着网卡数量越来越多（在我们使用的SR-IOV场景，加上VF虚拟网卡，机器上已经有超过16个网卡）这种命名规则已经不适应现代的硬件和操作系统了，所以最近我们也老的命名方式，切换到操作系统默认的<a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/7/html/networking_guide/ch-consistent_network_device_naming">一致网络设备命名</a>。</p>
+<p>其实目前大家还是更熟悉老的那种eth0,eth1…那种命名，目前我们大部分生产环境里也是这么用的。但是随着网卡数量越来越多（在我们使用的SR-IOV场景，加上VF虚拟网卡，机器上已经有超过16个网卡）这种命名规则已经不适应现代的硬件和操作系统了，所以最近我们也从老的命名方式，切换到操作系统默认的<a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/7/html/networking_guide/ch-consistent_network_device_naming">一致网络设备命名</a>。</p>
 <p>不过因此也带来了一些问题，发现不同厂商，或者不同机器会有命名不一致的情况，举个例子：</p>
 <p>这是某台机器的网卡名字：</p>
 <a id="more"></a>
@@ -544,6 +544,10 @@ IMPORT<span class="token punctuation">&#123;</span>builtin<span class="token pun
                 <span class="token punctuation">&#125;</span>
                 <span class="token keyword">if</span> <span class="token punctuation">(</span>hotplug_slot <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span>
                         <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token comment">// 如果没有，则继续查询网卡的父设备</span>
+                <span class="token comment">// 需要注意的是，新老版本的udev在这里的行为有些区别，高版本里会继续看网卡的父设备，</span>
+                <span class="token comment">// 但是在CentOS 7使用的v219版本里，并不会去查找网卡的父设备，</span>
+                <span class="token comment">// 所以会发现网卡名称在CentOS 8和CentOS 7之间也有可能会有一定的区别。</span>
                 <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">sd_device_get_parent_with_subsystem_devtype</span><span class="token punctuation">(</span>hotplug_slot_dev<span class="token punctuation">,</span> <span class="token string">"pci"</span><span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>hotplug_slot_dev<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
                         <span class="token keyword">break</span><span class="token punctuation">;</span>
                 <span class="token function">rewinddir</span><span class="token punctuation">(</span>dir<span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -566,7 +570,7 @@ IMPORT<span class="token punctuation">&#123;</span>builtin<span class="token pun
         <span class="token punctuation">&#125;</span>
 
         <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>噢，发现区别了，<code>ens2f0</code>的网卡是插在热拔插2插槽的。再确认一下，看看机器上是不是有对应文件：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># cat /sys/bus/pci/slots/2/address</span>
