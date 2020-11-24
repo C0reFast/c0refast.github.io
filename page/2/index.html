@@ -202,7 +202,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">77</span>
+          <span class="site-state-item-count">78</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -215,7 +215,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">170</span>
+        <span class="site-state-item-count">172</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -263,6 +263,96 @@
       
 
       
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/01/07/block-ips-outside-china-with-iptables-and-ipset/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/01/07/block-ips-outside-china-with-iptables-and-ipset/" class="post-title-link" itemprop="url">使用iptables结合ipset封锁国外的异常IP访问</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020年1月7日 22:14 22:14:20" itemprop="dateCreated datePublished" datetime="2020-01-07T22:14:20+08:00">2020年1月7日 22:14</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%95%88%E7%8E%87%E9%85%8D%E7%BD%AE/" itemprop="url" rel="index"><span itemprop="name">效率配置</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>最近遇到了网站不断被一些国外的IP扫描的问题，想了想，决定将所有非国内的客户端全部封锁，只允许国内的用户进行访问。</p>
+<p>首先需要找到所有国内的IP段，这个比较简单，<code>ipip.net</code>的github提供了一个<a target="_blank" rel="noopener" href="https://github.com/17mon/china_ip_list">china_ip_list</a>项目，记录了目前所有国内的IP地址段，每月更新。<br>这个列表可以通过<code>wget https://raw.githubusercontent.com/17mon/china_ip_list/master/china_ip_list.txt</code>直接进行下载。</p>
+<p>有了IP列表，接下来的事情相对简单不少，虽然理论上可以通过iptables针对文件里的每一个IP段添加规则，但是这样会添加几千条规则，不是最优解，所以就借助ipset和iptables进行封锁。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/01/07/block-ips-outside-china-with-iptables-and-ipset/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
     
 
 
@@ -1044,115 +1134,6 @@ mount: <span class="token function">mount</span> mon1.ichenfu.com:6789,mon2.iche
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/07/18/linux-rlimits/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2019/05/22/merge-commits-with-git-rebase/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chen Fu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2019/05/22/merge-commits-with-git-rebase/" class="post-title-link" itemprop="url">利用Git的Rebase功能合并一系列commits</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2019年5月22日 17:24 17:24:13" itemprop="dateCreated datePublished" datetime="2019-05-22T17:24:13+08:00">2019年5月22日 17:24</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/%E6%95%88%E7%8E%87%E9%85%8D%E7%BD%AE/" itemprop="url" rel="index"><span itemprop="name">效率配置</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>工作中如果使用Git作为版本管理工具的话，应该经常会遇到因为各种原因一下提交了很多个commit的情况，比如添加一个功能，测试出问题继续commit修改，最后<code>git log</code>看提交历史就会变成这样：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># git log</span>
-commit 9995aafb7a597d9a7fcf9a341a731324813c5aad <span class="token punctuation">(</span>HEAD -<span class="token operator">></span> master<span class="token punctuation">)</span>
-<span class="token punctuation">..</span>.
-    Commit <span class="token number">4</span>
-
-commit 54062e7317fa19a228d8f4f63236467317c17672
-<span class="token punctuation">..</span>.
-    Commit <span class="token number">3</span>
-
-commit 1571ee6b861315ec46875fbececd46c9daaa5d04
-<span class="token punctuation">..</span>.
-    Commit <span class="token number">2</span>
-
-commit ae95aac116af934742e1dd2eca435a0d6e70b77f
-<span class="token punctuation">..</span>.
-    Commit <span class="token number">1</span>
-
-commit 3f0373c3afb9e9ffd6174b8244ec3e936d3583e0
-<span class="token punctuation">..</span>.
-    init<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>这样看起来不那么美观，也会一定程度上污染主分支，如果遇到问题，需要看diff的时候，也会不那么方便，所以介绍一个利用<code>git rebase</code>命令合并一系列commit的方法。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2019/05/22/merge-commits-with-git-rebase/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>

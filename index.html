@@ -202,7 +202,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">77</span>
+          <span class="site-state-item-count">78</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -215,7 +215,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">170</span>
+        <span class="site-state-item-count">172</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -263,6 +263,105 @@
       
 
       
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/11/24/multi-nics-policy-routing/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/11/24/multi-nics-policy-routing/" class="post-title-link" itemprop="url">多网卡环境下利用策略路由实现网络流量同进同出</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020年11月24日 9:46 9:46:08" itemprop="dateCreated datePublished" datetime="2020-11-24T09:46:08+08:00">2020年11月24日 9:46</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年11月24日 14:49 14:49:40" itemprop="dateModified" datetime="2020-11-24T14:49:40+08:00">2020年11月24日 14:49</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>当一台机器有超过1块网卡，并且配置的IP地址不在一个段里的时候，会出现在外部只有一个IP地址能够ping通的情况，举个最简单的例子：</p>
+<p>一个有2块网卡的机器：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test<span class="token punctuation">]</span><span class="token comment"># ip addr</span>
+<span class="token number">2</span>: enp24s0f0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq state UP group default qlen <span class="token number">1000</span>
+    link/ether <span class="token number">11</span>:11:11:11:11:11 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">192.168</span>.100.10/24 brd <span class="token number">192.168</span>.100.255 scope global enp24s0f1
+       valid_lft forever preferred_lft forever
+<span class="token number">3</span>: enp24s0f1: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq state UP group default qlen <span class="token number">1000</span>
+    link/ether <span class="token number">22</span>:22:22:22:22:22 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">192.168</span>.200.10/24 brd <span class="token number">192.168</span>.200.255 scope global enp24s0f1
+       valid_lft forever preferred_lft forever<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到两块网卡，分别配置了<code>192.168.100.10</code>和<code>192.168.200.10</code>这两个IP，再看看机器的默认路由：
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/11/24/multi-nics-policy-routing/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
     
 
 
@@ -1062,96 +1161,6 @@ Error setting new values. Common errors:
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/02/26/cpu-power-management/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/01/07/block-ips-outside-china-with-iptables-and-ipset/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chen Fu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/01/07/block-ips-outside-china-with-iptables-and-ipset/" class="post-title-link" itemprop="url">使用iptables结合ipset封锁国外的异常IP访问</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2020年1月7日 22:14 22:14:20" itemprop="dateCreated datePublished" datetime="2020-01-07T22:14:20+08:00">2020年1月7日 22:14</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/%E6%95%88%E7%8E%87%E9%85%8D%E7%BD%AE/" itemprop="url" rel="index"><span itemprop="name">效率配置</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>最近遇到了网站不断被一些国外的IP扫描的问题，想了想，决定将所有非国内的客户端全部封锁，只允许国内的用户进行访问。</p>
-<p>首先需要找到所有国内的IP段，这个比较简单，<code>ipip.net</code>的github提供了一个<a target="_blank" rel="noopener" href="https://github.com/17mon/china_ip_list">china_ip_list</a>项目，记录了目前所有国内的IP地址段，每月更新。<br>这个列表可以通过<code>wget https://raw.githubusercontent.com/17mon/china_ip_list/master/china_ip_list.txt</code>直接进行下载。</p>
-<p>有了IP列表，接下来的事情相对简单不少，虽然理论上可以通过iptables针对文件里的每一个IP段添加规则，但是这样会添加几千条规则，不是最优解，所以就借助ipset和iptables进行封锁。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/01/07/block-ips-outside-china-with-iptables-and-ipset/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
