@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="今天有一件小事，勾起了我的好奇心。有个同事反馈说，我们虚拟的CPU主频较低，对性能有影响，于是就问了一下，怎么看主频的，很简单，看看lscpu里的Model name:字段就行了： [root@]# lscpu Architecture:          x86_64 CPU op-mode(s):        32-bit, 64-bit Byte Order:            Lit">
+<meta property="og:type" content="article">
+<meta property="og:title" content="&#x2F;proc&#x2F;cpuinfo里的CPU型号怎么来的？">
+<meta property="og:url" content="https://www.ichenfu.com/2020/12/17/cpuinfo-model-name/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="今天有一件小事，勾起了我的好奇心。有个同事反馈说，我们虚拟的CPU主频较低，对性能有影响，于是就问了一下，怎么看主频的，很简单，看看lscpu里的Model name:字段就行了： [root@]# lscpu Architecture:          x86_64 CPU op-mode(s):        32-bit, 64-bit Byte Order:            Lit">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-12-17T13:20:09.000Z">
+<meta property="article:modified_time" content="2020-12-18T01:55:25.880Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="cpuinfo">
+<meta property="article:tag" content="cpuid">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2020/12/17/cpuinfo-model-name/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>/proc/cpuinfo里的CPU型号怎么来的？ | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-47062085-1');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">C0reFast记事本</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">174</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+        </li>
+    </ul>
+  </div>
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/12/17/cpuinfo-model-name/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          /proc/cpuinfo里的CPU型号怎么来的？
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020年12月17日 21:20 21:20:09" itemprop="dateCreated datePublished" datetime="2020-12-17T21:20:09+08:00">2020年12月17日 21:20</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020年12月18日 9:55 9:55:25" itemprop="dateModified" datetime="2020-12-18T09:55:25+08:00">2020年12月18日 9:55</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>今天有一件小事，勾起了我的好奇心。有个同事反馈说，我们虚拟的CPU主频较低，对性能有影响，于是就问了一下，怎么看主频的，很简单，看看<code>lscpu</code>里的<code>Model name:</code>字段就行了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@<span class="token punctuation">]</span><span class="token comment"># lscpu</span>
+Architecture:          x86_64
+CPU op-mode<span class="token punctuation">(</span>s<span class="token punctuation">)</span>:        <span class="token number">32</span>-bit, <span class="token number">64</span>-bit
+Byte Order:            Little Endian
+<span class="token punctuation">..</span>.
+Vendor ID:             GenuineIntel
+CPU family:            <span class="token number">6</span>
+Model:                 <span class="token number">85</span>
+Model name:            Intel<span class="token punctuation">(</span>R<span class="token punctuation">)</span> Xeon<span class="token punctuation">(</span>R<span class="token punctuation">)</span> Gold 6240R CPU @ <span class="token number">2</span>.40GHz
+Stepping:              <span class="token number">7</span>
+CPU MHz:               <span class="token number">2394.374</span>
+BogoMIPS:              <span class="token number">4788.74</span>
+Hypervisor vendor:     KVM
+Virtualization type:   full
+<span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到这台机器的<code>Model name:</code>是<code>Intel(R) Xeon(R) Gold 6240R CPU @ 2.40GHz</code>，@符号后面就是2.40GHz，也就是这颗CPU的基础频率，其实之前写过一个文章<a href="https://www.ichenfu.com/2020/07/17/cpu-idle-time-managment/">再谈CPU的电源管理（如何做到稳定全核睿频？）</a>，我们线上实际也是跑在睿频频率上的。实际这个@后面的频率并不能反映证实频率。</p>
+<p>那么问题来了。这个<code>Model name</code>到底从哪读的？<a id="more"></a></p>
+<p>其实如果有些基础的可能一开始就能猜到会不会是用<code>cpuid</code>指令去读取的，但是不着急，一点点跟着找找看看。</p>
+<p>首先lscpu命令大部分数据都是从<code>/proc/cpuinfo</code>文件读取的，所以我们先看看这个文件：</p>
+<pre class="line-numbers language-none"><code class="language-none">[root@dbl-10-41-23-123.dblvm.master-node.kubernetes ~]# cat &#x2F;proc&#x2F;cpuinfo
+processor       : 0
+vendor_id       : GenuineIntel
+cpu family      : 6
+model           : 85
+model name      : Intel(R) Xeon(R) Gold 6240R CPU @ 2.40GHz
+stepping        : 7
+microcode       : 0x500002c
+cpu MHz         : 3199.951
+cache size      : 36608 KB
+physical id     : 0
+siblings        : 48
+core id         : 0
+cpu cores       : 24
+apicid          : 0
+initial apicid  : 0
+fpu             : yes
+fpu_exception   : yes
+cpuid level     : 22
+wp              : yes
+...<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>确实也有model name，那么这个文件咋来的呢？一般情况下，<code>/proc</code>下面的文件都是内核虚拟出来的，那么直接找找这个文件的<a target="_blank" rel="noopener" href="https://elixir.bootlin.com/linux/v5.10.1/source/fs/proc/cpuinfo.c">内核代码</a>就知道了：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">extern</span> <span class="token keyword">const</span> <span class="token keyword">struct</span> <span class="token class-name">seq_operations</span> cpuinfo_op<span class="token punctuation">;</span>
+<span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">cpuinfo_open</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">inode</span> <span class="token operator">*</span>inode<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">file</span> <span class="token operator">*</span>file<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token function">arch_freq_prepare_all</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">return</span> <span class="token function">seq_open</span><span class="token punctuation">(</span>file<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cpuinfo_op<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>再顺着找下cpuinfo_op的实现，需要说明的是，这个实现不同的平台长的不太一样，我们就看<a target="_blank" rel="noopener" href="https://elixir.bootlin.com/linux/v5.10.1/source/arch/x86/kernel/cpu/proc.c#L61">x86的实现</a>就行了，毕竟我们现在用的就是x86：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">show_cpuinfo</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">seq_file</span> <span class="token operator">*</span>m<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span>v<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">struct</span> <span class="token class-name">cpuinfo_x86</span> <span class="token operator">*</span>c <span class="token operator">=</span> v<span class="token punctuation">;</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">int</span> cpu<span class="token punctuation">;</span>
+	<span class="token keyword">int</span> i<span class="token punctuation">;</span>
+
+	cpu <span class="token operator">=</span> c<span class="token operator">-></span>cpu_index<span class="token punctuation">;</span>
+	<span class="token function">seq_printf</span><span class="token punctuation">(</span>m<span class="token punctuation">,</span> <span class="token string">"processor\t: %u\n"</span>
+		   <span class="token string">"vendor_id\t: %s\n"</span>
+		   <span class="token string">"cpu family\t: %d\n"</span>
+		   <span class="token string">"model\t\t: %u\n"</span>
+		   <span class="token string">"model name\t: %s\n"</span><span class="token punctuation">,</span>
+		   cpu<span class="token punctuation">,</span>
+		   c<span class="token operator">-></span>x86_vendor_id<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">?</span> c<span class="token operator">-></span>x86_vendor_id <span class="token operator">:</span> <span class="token string">"unknown"</span><span class="token punctuation">,</span>
+		   c<span class="token operator">-></span>x86<span class="token punctuation">,</span>
+		   c<span class="token operator">-></span>x86_model<span class="token punctuation">,</span>
+		   c<span class="token operator">-></span>x86_model_id<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">?</span> c<span class="token operator">-></span>x86_model_id <span class="token operator">:</span> <span class="token string">"unknown"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>下面的代码不用管，最关键的model name是从<code>x86_model_id</code>里读到的，那么就简单了啊，看看谁去填充<code>x86_model_id</code>不就可以了么？</p>
+<p>有工具的帮助，还是很容易找到的：代码在<a target="_blank" rel="noopener" href="https://elixir.bootlin.com/linux/v5.10.1/source/arch/x86/kernel/cpu/common.c#L646">arch/x86/kernel/cpu/common.c#L646</a>：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">get_model_name</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">cpuinfo_x86</span> <span class="token operator">*</span>c<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">int</span> <span class="token operator">*</span>v<span class="token punctuation">;</span>
+	<span class="token keyword">char</span> <span class="token operator">*</span>p<span class="token punctuation">,</span> <span class="token operator">*</span>q<span class="token punctuation">,</span> <span class="token operator">*</span>s<span class="token punctuation">;</span>
+
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>c<span class="token operator">-></span>extended_cpuid_level <span class="token operator">&lt;</span> <span class="token number">0x80000004</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span><span class="token punctuation">;</span>
+
+	v <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">int</span> <span class="token operator">*</span><span class="token punctuation">)</span>c<span class="token operator">-></span>x86_model_id<span class="token punctuation">;</span>
+	<span class="token function">cpuid</span><span class="token punctuation">(</span><span class="token number">0x80000002</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>v<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>v<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>v<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>v<span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token function">cpuid</span><span class="token punctuation">(</span><span class="token number">0x80000003</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>v<span class="token punctuation">[</span><span class="token number">4</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>v<span class="token punctuation">[</span><span class="token number">5</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>v<span class="token punctuation">[</span><span class="token number">6</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>v<span class="token punctuation">[</span><span class="token number">7</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token function">cpuid</span><span class="token punctuation">(</span><span class="token number">0x80000004</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>v<span class="token punctuation">[</span><span class="token number">8</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>v<span class="token punctuation">[</span><span class="token number">9</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>v<span class="token punctuation">[</span><span class="token number">10</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>v<span class="token punctuation">[</span><span class="token number">11</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	c<span class="token operator">-></span>x86_model_id<span class="token punctuation">[</span><span class="token number">48</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+	<span class="token comment">/* Trim whitespace */</span>
+	p <span class="token operator">=</span> q <span class="token operator">=</span> s <span class="token operator">=</span> <span class="token operator">&amp;</span>c<span class="token operator">-></span>x86_model_id<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">*</span>p <span class="token operator">==</span> <span class="token string">' '</span><span class="token punctuation">)</span>
+		p<span class="token operator">++</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">*</span>p<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token comment">/* Note the last non-whitespace index */</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">isspace</span><span class="token punctuation">(</span><span class="token operator">*</span>p<span class="token punctuation">)</span><span class="token punctuation">)</span>
+			s <span class="token operator">=</span> q<span class="token punctuation">;</span>
+
+		<span class="token operator">*</span>q<span class="token operator">++</span> <span class="token operator">=</span> <span class="token operator">*</span>p<span class="token operator">++</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token operator">*</span><span class="token punctuation">(</span>s <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token string">'\0'</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>哦，确实和上面的猜想差不多，用了cpuid这个指令，从<code>0x80000002</code>读到<code>0x80000004</code>。但是仔细看这里有个小细节：x86_model_id的定义原本是<code>char x86_model_id[64];</code>是一个char类型数组，而cpuid的定义呢如下：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">inline</span> <span class="token keyword">void</span> <span class="token function">cpuid</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">int</span> op<span class="token punctuation">,</span>
+			 <span class="token keyword">unsigned</span> <span class="token keyword">int</span> <span class="token operator">*</span>eax<span class="token punctuation">,</span> <span class="token keyword">unsigned</span> <span class="token keyword">int</span> <span class="token operator">*</span>ebx<span class="token punctuation">,</span>
+			 <span class="token keyword">unsigned</span> <span class="token keyword">int</span> <span class="token operator">*</span>ecx<span class="token punctuation">,</span> <span class="token keyword">unsigned</span> <span class="token keyword">int</span> <span class="token operator">*</span>edx<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token operator">*</span>eax <span class="token operator">=</span> op<span class="token punctuation">;</span>
+	<span class="token operator">*</span>ecx <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token function">__cpuid</span><span class="token punctuation">(</span>eax<span class="token punctuation">,</span> ebx<span class="token punctuation">,</span> ecx<span class="token punctuation">,</span> edx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>几个返回值是<code>unsigned int *</code>类型，从名字就可以看出来，EAX，EBX，ECX，EDX这几个寄存器都是32位的。所以呢，在代码里先强制把x86_model_id转换成(unsigned int *)，这样相当于一次操作4个字节内容。</p>
+<p>从<a target="_blank" rel="noopener" href="http://www.flounder.com/cpuid_explorer2.htm#CPUID(0x80000002)">The CPUID Explorer</a>了解到：CPUID(0x80000002)..CPUID(0x80000004):就是Processor brand string。</p>
+<p>既然看到这里，我们也自己试试呗，看看能不能自己读取并解析出来，我们也用<code>cpuid</code>命令获取寄存器里的原始内容：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@<span class="token punctuation">]</span><span class="token comment"># cpuid --one-cpu --raw --leaf=0x80000002</span>
+CPU:
+   0x80000002 0x00: <span class="token assign-left variable">eax</span><span class="token operator">=</span>0x65746e49 <span class="token assign-left variable">ebx</span><span class="token operator">=</span>0x2952286c <span class="token assign-left variable">ecx</span><span class="token operator">=</span>0x6f655820 <span class="token assign-left variable">edx</span><span class="token operator">=</span>0x2952286e
+<span class="token punctuation">[</span>root@<span class="token punctuation">]</span><span class="token comment"># cpuid --one-cpu --raw --leaf=0x80000003</span>
+CPU:
+   0x80000003 0x00: <span class="token assign-left variable">eax</span><span class="token operator">=</span>0x6c6f4720 <span class="token assign-left variable">ebx</span><span class="token operator">=</span>0x32362064 <span class="token assign-left variable">ecx</span><span class="token operator">=</span>0x20523034 <span class="token assign-left variable">edx</span><span class="token operator">=</span>0x20555043
+<span class="token punctuation">[</span>root@<span class="token punctuation">]</span><span class="token comment"># cpuid --one-cpu --raw --leaf=0x80000004</span>
+CPU:
+   0x80000004 0x00: <span class="token assign-left variable">eax</span><span class="token operator">=</span>0x2e322040 <span class="token assign-left variable">ebx</span><span class="token operator">=</span>0x48473034 <span class="token assign-left variable">ecx</span><span class="token operator">=</span>0x0000007a <span class="token assign-left variable">edx</span><span class="token operator">=</span>0x00000000<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>需要说明的是，因为x86是<code>Little Endian</code>架构，也就是从寄存器读出来的int值是反过来的，那么<code>0x65746e49</code>实际应该表示成<code>0x496e7465</code>，我们一个个字节拼一下，再打印出来，看看对不对：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">python3
+<span class="token operator">>></span><span class="token operator">></span> x <span class="token operator">=</span> <span class="token string">'<span class="token entity" title="\x49">\x49</span><span class="token entity" title="\x6e">\x6e</span><span class="token entity" title="\x74">\x74</span><span class="token entity" title="\x65">\x65</span><span class="token entity" title="\x6c">\x6c</span><span class="token entity" title="\x28">\x28</span><span class="token entity" title="\x52">\x52</span><span class="token entity" title="\x29">\x29</span><span class="token entity" title="\x20">\x20</span><span class="token entity" title="\x58">\x58</span><span class="token entity" title="\x65">\x65</span><span class="token entity" title="\x6f">\x6f</span><span class="token entity" title="\x6e">\x6e</span><span class="token entity" title="\x28">\x28</span><span class="token entity" title="\x52">\x52</span><span class="token entity" title="\x29">\x29</span><span class="token entity" title="\x20">\x20</span><span class="token entity" title="\x47">\x47</span><span class="token entity" title="\x6f">\x6f</span><span class="token entity" title="\x6c">\x6c</span><span class="token entity" title="\x64">\x64</span><span class="token entity" title="\x20">\x20</span><span class="token entity" title="\x36">\x36</span><span class="token entity" title="\x32">\x32</span><span class="token entity" title="\x34">\x34</span><span class="token entity" title="\x30">\x30</span><span class="token entity" title="\x52">\x52</span><span class="token entity" title="\x20">\x20</span><span class="token entity" title="\x43">\x43</span><span class="token entity" title="\x50">\x50</span><span class="token entity" title="\x55">\x55</span><span class="token entity" title="\x20">\x20</span><span class="token entity" title="\x40">\x40</span><span class="token entity" title="\x20">\x20</span><span class="token entity" title="\x32">\x32</span><span class="token entity" title="\x2e">\x2e</span><span class="token entity" title="\x34">\x34</span><span class="token entity" title="\x30">\x30</span><span class="token entity" title="\x47">\x47</span><span class="token entity" title="\x48">\x48</span><span class="token entity" title="\x7a">\x7a</span><span class="token entity" title="\x00">\x00</span>'</span>
+<span class="token operator">>></span><span class="token operator">></span> print<span class="token punctuation">(</span>x<span class="token punctuation">)</span>
+Intel<span class="token punctuation">(</span>R<span class="token punctuation">)</span> Xeon<span class="token punctuation">(</span>R<span class="token punctuation">)</span> Gold 6240R CPU @ <span class="token number">2</span>.40GHz<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>嘿嘿，没问题！</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/cpuinfo/" rel="tag"># cpuinfo</a>
+              <a href="/tags/cpuid/" rel="tag"># cpuid</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/11/24/multi-nics-policy-routing/" rel="prev" title="多网卡环境下利用策略路由实现网络流量同进同出">
+                  <i class="fa fa-chevron-left"></i> 多网卡环境下利用策略路由实现网络流量同进同出
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'd69b2454aff0c42e46ed',
+      clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',
+      repo        : 'c0refast.github.io',
+      owner       : 'C0reFast',
+      admin       : ['C0reFast'],
+      id          : 'faa94de792733dc93af486651c8b83e3',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
