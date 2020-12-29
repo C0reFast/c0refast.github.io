@@ -4,6 +4,6 @@
 #RewriteRule (.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 ExpiresActive On
-ExpiresDefault "access plus 1 days"
+ExpiresDefault "access plus 12 hours"
 
 SetOutputFilter DEFLATE
