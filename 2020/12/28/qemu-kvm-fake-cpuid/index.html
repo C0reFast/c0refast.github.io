@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.2.0">
+<meta name="generator" content="Hexo 5.4.0">
 
 
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
@@ -16,14 +16,13 @@
 
 
 
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.2/css/all.min.css">
 
 <script class="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
-
-  <meta name="description" content="在上一篇Blog：&#x2F;proc&#x2F;cpuinfo里的CPU型号怎么来的？里，可以知道Linux系统是根据CPUID指令来显示具体的CPU型号的。所以很自然的一个想法：是不是可以自定义显示的内容呢？ 答案显而易见，必然是可以的。但是如果要改物理CPU的寄存器，那确实会有些困难，不过没关系，我们还有虚拟机嘛，理论上虚拟机可以虚拟这些东西，那改动起来应该也是比较方便的。 想要修改这些寄存器，首先得先看看CP">
+<meta name="description" content="在上一篇Blog：&#x2F;proc&#x2F;cpuinfo里的CPU型号怎么来的？里，可以知道Linux系统是根据CPUID指令来显示具体的CPU型号的。所以很自然的一个想法：是不是可以自定义显示的内容呢？ 答案显而易见，必然是可以的。但是如果要改物理CPU的寄存器，那确实会有些困难，不过没关系，我们还有虚拟机嘛，理论上虚拟机可以虚拟这些东西，那改动起来应该也是比较方便的。 想要修改这些寄存器，首先得先看看CP">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Qemu-KVM的CPUID初始化和自定义CPU Model显示">
 <meta property="og:url" content="https://www.ichenfu.com/2020/12/28/qemu-kvm-fake-cpuid/index.html">
@@ -32,7 +31,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://www.ichenfu.com/images/lscpu_fake.png">
 <meta property="article:published_time" content="2020-12-28T12:07:58.000Z">
-<meta property="article:modified_time" content="2020-12-28T10:06:25.730Z">
+<meta property="article:modified_time" content="2021-02-18T01:05:55.460Z">
 <meta property="article:author" content="Chen Fu">
 <meta property="article:tag" content="Qemu">
 <meta property="article:tag" content="KVM">
@@ -53,8 +52,7 @@
     lang   : 'zh-CN'
   };
 </script>
-
-  <title>Qemu-KVM的CPUID初始化和自定义CPU Model显示 | C0reFast记事本</title>
+<title>Qemu-KVM的CPUID初始化和自定义CPU Model显示 | C0reFast记事本</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
     <script>
@@ -65,8 +63,6 @@
         gtag('config', 'UA-47062085-1');
       }
     </script>
-
-
 
 
 
@@ -116,7 +112,7 @@
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
-    <div class="toggle" aria-label="切换导航栏">
+    <div class="toggle" aria-label="切换导航栏" role="button">
         <span class="toggle-line"></span>
         <span class="toggle-line"></span>
         <span class="toggle-line"></span>
@@ -143,31 +139,11 @@
 
 <nav class="site-nav">
   <ul class="main-menu menu">
-        <li class="menu-item menu-item-home">
-
-    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
-
-  </li>
-        <li class="menu-item menu-item-categories">
-
-    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
-
-  </li>
-        <li class="menu-item menu-item-archives">
-
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
-
-  </li>
-        <li class="menu-item menu-item-tags">
-
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
-
-  </li>
-        <li class="menu-item menu-item-about">
-
-    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
-
-  </li>
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
   </ul>
 </nav>
 
@@ -177,7 +153,7 @@
 </div>
         
   
-  <div class="toggle sidebar-toggle">
+  <div class="toggle sidebar-toggle" role="button">
     <span class="toggle-line"></span>
     <span class="toggle-line"></span>
     <span class="toggle-line"></span>
@@ -197,11 +173,11 @@
 
       <div class="sidebar-panel-container">
         <!--noindex-->
-        <section class="post-toc-wrap sidebar-panel">
-        </section>
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
         <!--/noindex-->
 
-        <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview-wrap sidebar-panel">
           <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <p class="site-author-name" itemprop="name">Chen Fu</p>
   <div class="site-description" itemprop="description"></div>
@@ -211,7 +187,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">80</span>
+          <span class="site-state-item-count">82</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -224,7 +200,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">177</span>
+        <span class="site-state-item-count">181</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -248,7 +224,7 @@
     </ul>
   </div>
 
-        </section>
+        </div>
       </div>
     </div>
   </aside>
@@ -258,7 +234,7 @@
     </header>
 
     
-  <div class="back-to-top">
+  <div class="back-to-top" role="button">
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
@@ -269,9 +245,7 @@
 
 
     <div class="main-inner post posts-expand">
-      
 
-      
 
   
 
@@ -312,7 +286,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020年12月28日 18:06 18:06:25" itemprop="dateModified" datetime="2020-12-28T18:06:25+08:00">2020年12月28日 18:06</time>
+        <time title="修改时间：2021年2月18日 9:05 9:05:55" itemprop="dateModified" datetime="2021-02-18T09:05:55+08:00">2021年2月18日 9:05</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -497,7 +471,7 @@
         env<span class="token operator">-></span>cpuid_model<span class="token punctuation">[</span>i <span class="token operator">>></span> <span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">|=</span> c <span class="token operator">&lt;&lt;</span> <span class="token punctuation">(</span><span class="token number">8</span> <span class="token operator">*</span> <span class="token punctuation">(</span>i <span class="token operator">&amp;</span> <span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
     <span class="token punctuation">&#125;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>稍微有些区别，因为<code>x86_cpuid_set_model_id</code>函数参是一个CPU，但是问题不大，我们稍微修改一下逻辑，新建个函数<code>set_fake_cpuid_model</code>，把cpuid_model修改成<code>Intel(R) Xeon(R) A Really Fast CPU @ 10.0 GHz</code>:</p>
+<p>稍微有些区别，因为<code>x86_cpuid_set_model_id</code>函数参是一个X86CPU类型，但是问题不大，我们稍微修改一下逻辑，新建个函数<code>set_fake_cpuid_model</code>，把cpuid_model修改成<code>Intel(R) Xeon(R) A Really Fast CPU @ 10.0 GHz</code>:</p>
 <pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">set_fake_cpuid_model</span><span class="token punctuation">(</span>uint32_t fake_cpuid_model<span class="token punctuation">[</span><span class="token number">12</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
 <span class="token punctuation">&#123;</span>
     <span class="token comment">// 这里修改成任何想填的信息</span>
@@ -542,7 +516,7 @@
     <span class="token comment">// ...</span>
     <span class="token punctuation">&#125;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>虽然比较暴力了点，但是作为测试的话，先实现测试的功能就好。如果确实需要有类似的逻辑，理论上放到<code>X86CPU</code>结构体初始化的地方，或者干脆自定义一个CPU类型，会比较友好。</p>
+<p>虽然暴力了点，但是作为测试的话，先实现测试的功能就好。如果确实需要有类似的逻辑，理论上放到<code>X86CPU</code>结构体初始化的地方，或者干脆自定义一个CPU类型，会比较友好。</p>
 <p>最后，编译，运行！<br><img src="/images/lscpu_fake.png" alt="lscpu"></p>
 
     </div>
@@ -571,6 +545,9 @@
                 </a>
             </div>
             <div class="post-nav-item">
+                <a href="/2021/02/16/networkmanager-tutorial/" rel="next" title="NetworkManager简单教程">
+                  NetworkManager简单教程 <i class="fa fa-chevron-right"></i>
+                </a>
             </div>
           </div>
     </footer>
@@ -582,8 +559,7 @@
 
 
 
-      
-    <div class="comments" id="gitalk-container"></div>
+    <div class="comments gitalk-container"></div>
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -606,20 +582,16 @@
     });
   }
 </script>
-
-    </div>
+</div>
   </main>
 
   <footer class="footer">
     <div class="footer-inner">
-      
 
-      
 
 <div class="copyright">
-  
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
@@ -650,22 +622,10 @@
   </footer>
 
   
-  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
 <script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
   
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -679,18 +639,11 @@
 
 
 
-
-
-
-  
-
-  
-
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
 
 <script>
-NexT.utils.loadComments('#gitalk-container', () => {
-  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
+NexT.utils.loadComments('.gitalk-container', () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
     var gitalk = new Gitalk({
       clientID    : 'd69b2454aff0c42e46ed',
       clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',
@@ -698,10 +651,11 @@ NexT.utils.loadComments('#gitalk-container', () => {
       owner       : 'C0reFast',
       admin       : ['C0reFast'],
       id          : '1b95ac6db78a4f2eb0360cbc046a23e8',
+      proxy       : 'https://cors-anywhere.herokuapp.com/https://github.com/login/oauth/access_token',
         language: 'zh-CN',
       distractionFreeMode: true
     });
-    gitalk.render('gitalk-container');
+    gitalk.render(document.querySelector('.gitalk-container'));
   }, window.Gitalk);
 });
 </script>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.2.0">
+<meta name="generator" content="Hexo 5.4.0">
 
 
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
@@ -16,14 +16,13 @@
 
 
 
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.2/css/all.min.css">
 
 <script class="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","scheme":"Gemini","version":"8.0.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
-
-  <meta name="description" content="最近公司有个Ceph集群出了点问题，于是也参与了修复的过程，过程中最让人头疼的就是一堆不明所以的状态了，所以看了看文档，也找了一些参考，整理了一下Ceph PG的一些状态以及相关的概念说明，做了一个中英文的对照版本： Placement Group States（PG状态）当检查一个集群的状态时（执行ceph -w或者ceph -s），Ceph会汇报当前PG的状态，每个PG会有一个或多个状态，最优">
+<meta name="description" content="最近公司有个Ceph集群出了点问题，于是也参与了修复的过程，过程中最让人头疼的就是一堆不明所以的状态了，所以看了看文档，也找了一些参考，整理了一下Ceph PG的一些状态以及相关的概念说明，做了一个中英文的对照版本： Placement Group States（PG状态）当检查一个集群的状态时（执行ceph -w或者ceph -s），Ceph会汇报当前PG的状态，每个PG会有一个或多个状态，最优">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Ceph中一些PG相关的状态说明和基本概念说明">
 <meta property="og:url" content="https://www.ichenfu.com/2018/07/06/ceph-pg-states-concepts/index.html">
@@ -51,8 +50,7 @@
     lang   : 'zh-CN'
   };
 </script>
-
-  <title>Ceph中一些PG相关的状态说明和基本概念说明 | C0reFast记事本</title>
+<title>Ceph中一些PG相关的状态说明和基本概念说明 | C0reFast记事本</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
     <script>
@@ -63,8 +61,6 @@
         gtag('config', 'UA-47062085-1');
       }
     </script>
-
-
 
 
 
@@ -114,7 +110,7 @@
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
-    <div class="toggle" aria-label="切换导航栏">
+    <div class="toggle" aria-label="切换导航栏" role="button">
         <span class="toggle-line"></span>
         <span class="toggle-line"></span>
         <span class="toggle-line"></span>
@@ -141,31 +137,11 @@
 
 <nav class="site-nav">
   <ul class="main-menu menu">
-        <li class="menu-item menu-item-home">
-
-    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
-
-  </li>
-        <li class="menu-item menu-item-categories">
-
-    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
-
-  </li>
-        <li class="menu-item menu-item-archives">
-
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
-
-  </li>
-        <li class="menu-item menu-item-tags">
-
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
-
-  </li>
-        <li class="menu-item menu-item-about">
-
-    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
-
-  </li>
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
   </ul>
 </nav>
 
@@ -175,7 +151,7 @@
 </div>
         
   
-  <div class="toggle sidebar-toggle">
+  <div class="toggle sidebar-toggle" role="button">
     <span class="toggle-line"></span>
     <span class="toggle-line"></span>
     <span class="toggle-line"></span>
@@ -195,12 +171,12 @@
 
       <div class="sidebar-panel-container">
         <!--noindex-->
-        <section class="post-toc-wrap sidebar-panel">
+        <div class="post-toc-wrap sidebar-panel">
             <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Placement-Group-States%EF%BC%88PG%E7%8A%B6%E6%80%81%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">Placement Group States（PG状态）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#creating"><span class="nav-number">1.0.1.</span> <span class="nav-text">creating</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#activating"><span class="nav-number">1.0.2.</span> <span class="nav-text">activating</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#active"><span class="nav-number">1.0.3.</span> <span class="nav-text">active</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#clean"><span class="nav-number">1.0.4.</span> <span class="nav-text">clean</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#down"><span class="nav-number">1.0.5.</span> <span class="nav-text">down</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#scrubbing"><span class="nav-number">1.0.6.</span> <span class="nav-text">scrubbing</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#deep"><span class="nav-number">1.0.7.</span> <span class="nav-text">deep</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#degraded"><span class="nav-number">1.0.8.</span> <span class="nav-text">degraded</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#inconsistent"><span class="nav-number">1.0.9.</span> <span class="nav-text">inconsistent</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#peering"><span class="nav-number">1.0.10.</span> <span class="nav-text">peering</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#repair"><span class="nav-number">1.0.11.</span> <span class="nav-text">repair</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#recovering"><span class="nav-number">1.0.12.</span> <span class="nav-text">recovering</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#forced-recovery"><span class="nav-number">1.0.13.</span> <span class="nav-text">forced_recovery</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#recovery-wait"><span class="nav-number">1.0.14.</span> <span class="nav-text">recovery_wait</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#recovery-toofull"><span class="nav-number">1.0.15.</span> <span class="nav-text">recovery_toofull</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#recovery-unfound"><span class="nav-number">1.0.16.</span> <span class="nav-text">recovery_unfound</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#backfilling"><span class="nav-number">1.0.17.</span> <span class="nav-text">backfilling</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#forced-backfill"><span class="nav-number">1.0.18.</span> <span class="nav-text">forced_backfill</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#backfill-wait"><span class="nav-number">1.0.19.</span> <span class="nav-text">backfill_wait</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#backfill-toofull"><span class="nav-number">1.0.20.</span> <span class="nav-text">backfill_toofull</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#backfill-unfound"><span class="nav-number">1.0.21.</span> <span class="nav-text">backfill_unfound</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#incomplete"><span class="nav-number">1.0.22.</span> <span class="nav-text">incomplete</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#stale"><span class="nav-number">1.0.23.</span> <span class="nav-text">stale</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#remapped"><span class="nav-number">1.0.24.</span> <span class="nav-text">remapped</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#undersized"><span class="nav-number">1.0.25.</span> <span class="nav-text">undersized</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#peered"><span class="nav-number">1.0.26.</span> <span class="nav-text">peered</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#snaptrim"><span class="nav-number">1.0.27.</span> <span class="nav-text">snaptrim</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#snaptrim-Wait"><span class="nav-number">1.0.28.</span> <span class="nav-text">snaptrim_Wait</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#snaptrim-Error"><span class="nav-number">1.0.29.</span> <span class="nav-text">snaptrim_Error</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Placement-Group-Concepts%EF%BC%88PG%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">Placement Group Concepts（PG相关概念）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Peering-%E5%BB%BA%E7%AB%8B%E4%BA%92%E8%81%94"><span class="nav-number">2.0.1.</span> <span class="nav-text">Peering (建立互联)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Acting-Set-%E5%9C%A8%E4%BB%BB%E9%9B%86%E5%90%88"><span class="nav-number">2.0.2.</span> <span class="nav-text">Acting Set (在任集合)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Up-Set-%E5%BD%93%E9%80%89%E9%9B%86%E5%90%88"><span class="nav-number">2.0.3.</span> <span class="nav-text">Up Set (当选集合)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Current-Interval-or-Past-Interval"><span class="nav-number">2.0.4.</span> <span class="nav-text">Current Interval or Past Interval</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Primary-%E4%B8%BB-OSD"><span class="nav-number">2.0.5.</span> <span class="nav-text">Primary (主 OSD)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Replica-%E5%89%AF%E6%9C%AC-OSD"><span class="nav-number">2.0.6.</span> <span class="nav-text">Replica (副本 OSD)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Stray-%E5%BD%B7%E5%BE%A8-OSD"><span class="nav-number">2.0.7.</span> <span class="nav-text">Stray (彷徨 OSD)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Recovery-%E6%81%A2%E5%A4%8D"><span class="nav-number">2.0.8.</span> <span class="nav-text">Recovery (恢复)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#PG-Info-PG-%E4%BF%A1%E6%81%AF"><span class="nav-number">2.0.9.</span> <span class="nav-text">PG Info (PG 信息)</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#PG-Log-PG-%E6%97%A5%E5%BF%97"><span class="nav-number">2.0.9.1.</span> <span class="nav-text">PG Log (PG 日志)</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Missing-Set-%E7%BC%BA%E5%A4%B1%E9%9B%86%E5%90%88"><span class="nav-number">2.0.10.</span> <span class="nav-text">Missing Set (缺失集合)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Authoritative-History-%E6%9D%83%E5%A8%81%E5%8E%86%E5%8F%B2"><span class="nav-number">2.0.11.</span> <span class="nav-text">Authoritative History (权威历史)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Epoch-%E5%85%83%E7%89%88%E6%9C%AC"><span class="nav-number">2.0.12.</span> <span class="nav-text">Epoch (元版本)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Last-Epoch-Start-%E6%9C%80%E6%96%B0%E8%B5%B7%E5%A7%8B%E5%85%83%E7%89%88%E6%9C%AC"><span class="nav-number">2.0.13.</span> <span class="nav-text">Last Epoch Start (最新起始元版本)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#up-thru-%E9%A2%86%E5%AF%BC%E6%8B%8D%E6%9D%BF"><span class="nav-number">2.0.14.</span> <span class="nav-text">up_thru (领导拍板)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Last-Epoch-Clean-%E6%9C%80%E6%96%B0%E5%B9%B2%E5%87%80%E5%85%83%E7%89%88%E6%9C%AC"><span class="nav-number">2.0.15.</span> <span class="nav-text">Last Epoch Clean (最新干净元版本)</span></a></li></ol></li></ol></li></ol></div>
-        </section>
+        </div>
         <!--/noindex-->
 
-        <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview-wrap sidebar-panel">
           <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <p class="site-author-name" itemprop="name">Chen Fu</p>
   <div class="site-description" itemprop="description"></div>
@@ -210,7 +186,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">80</span>
+          <span class="site-state-item-count">82</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -223,7 +199,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">177</span>
+        <span class="site-state-item-count">181</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -247,7 +223,7 @@
     </ul>
   </div>
 
-        </section>
+        </div>
       </div>
     </div>
   </aside>
@@ -257,7 +233,7 @@
     </header>
 
     
-  <div class="back-to-top">
+  <div class="back-to-top" role="button">
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
@@ -268,9 +244,7 @@
 
 
     <div class="main-inner post posts-expand">
-      
 
-      
 
   
 
@@ -564,8 +538,7 @@ is deemed to have been completed.
 
 
 
-      
-    <div class="comments" id="gitalk-container"></div>
+    <div class="comments gitalk-container"></div>
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -588,20 +561,16 @@ is deemed to have been completed.
     });
   }
 </script>
-
-    </div>
+</div>
   </main>
 
   <footer class="footer">
     <div class="footer-inner">
-      
 
-      
 
 <div class="copyright">
-  
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
@@ -632,22 +601,10 @@ is deemed to have been completed.
   </footer>
 
   
-  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
 <script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
   
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -661,18 +618,11 @@ is deemed to have been completed.
 
 
 
-
-
-
-  
-
-  
-
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
 
 <script>
-NexT.utils.loadComments('#gitalk-container', () => {
-  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
+NexT.utils.loadComments('.gitalk-container', () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
     var gitalk = new Gitalk({
       clientID    : 'd69b2454aff0c42e46ed',
       clientSecret: 'c75c92c12145ec72b10844ef682eb7ea3c42c7b8',
@@ -680,10 +630,11 @@ NexT.utils.loadComments('#gitalk-container', () => {
       owner       : 'C0reFast',
       admin       : ['C0reFast'],
       id          : '8c9496a88d70c6532a4123944bf12687',
+      proxy       : 'https://cors-anywhere.herokuapp.com/https://github.com/login/oauth/access_token',
         language: 'zh-CN',
       distractionFreeMode: true
     });
-    gitalk.render('gitalk-container');
+    gitalk.render(document.querySelector('.gitalk-container'));
   }, window.Gitalk);
 });
 </script>
