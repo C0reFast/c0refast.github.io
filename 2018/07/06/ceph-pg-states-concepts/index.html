@@ -16,12 +16,9 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/all.min.css">
 
-<script class="hexo-configurations">
-    var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
-  </script>
+<script class="next-config" data-name="main" type="application/json">{&quot;hostname&quot;:&quot;www.ichenfu.com&quot;,&quot;root&quot;:&quot;&#x2F;&quot;,&quot;images&quot;:&quot;&#x2F;images&quot;,&quot;scheme&quot;:&quot;Gemini&quot;,&quot;version&quot;:&quot;8.4.0&quot;,&quot;exturl&quot;:false,&quot;sidebar&quot;:{&quot;position&quot;:&quot;right&quot;,&quot;display&quot;:&quot;post&quot;,&quot;padding&quot;:18,&quot;offset&quot;:12,&quot;onmobile&quot;:false},&quot;copycode&quot;:false,&quot;bookmark&quot;:{&quot;enable&quot;:false,&quot;color&quot;:&quot;#222&quot;,&quot;save&quot;:&quot;auto&quot;},&quot;fancybox&quot;:false,&quot;mediumzoom&quot;:false,&quot;lazyload&quot;:false,&quot;pangu&quot;:false,&quot;comments&quot;:{&quot;style&quot;:&quot;tabs&quot;,&quot;active&quot;:null,&quot;storage&quot;:true,&quot;lazyload&quot;:false,&quot;nav&quot;:null},&quot;motion&quot;:{&quot;enable&quot;:false,&quot;async&quot;:false,&quot;transition&quot;:{&quot;post_block&quot;:&quot;fadeIn&quot;,&quot;post_header&quot;:&quot;slideDownIn&quot;,&quot;post_body&quot;:&quot;slideDownIn&quot;,&quot;coll_header&quot;:&quot;slideLeftIn&quot;,&quot;sidebar&quot;:&quot;slideUpIn&quot;}},&quot;prism&quot;:false,&quot;i18n&quot;:{&quot;placeholder&quot;:&quot;搜索...&quot;,&quot;empty&quot;:&quot;没有找到任何搜索结果：${query}&quot;,&quot;hits_time&quot;:&quot;找到 ${hits} 个搜索结果（用时 ${time} 毫秒）&quot;,&quot;hits&quot;:&quot;找到 ${hits} 个搜索结果&quot;}}</script>
 <meta name="description" content="最近公司有个Ceph集群出了点问题，于是也参与了修复的过程，过程中最让人头疼的就是一堆不明所以的状态了，所以看了看文档，也找了一些参考，整理了一下Ceph PG的一些状态以及相关的概念说明，做了一个中英文的对照版本： Placement Group States（PG状态）当检查一个集群的状态时（执行ceph -w或者ceph -s），Ceph会汇报当前PG的状态，每个PG会有一个或多个状态，最优">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Ceph中一些PG相关的状态说明和基本概念说明">
@@ -41,65 +38,22 @@
 <link rel="canonical" href="https://www.ichenfu.com/2018/07/06/ceph-pg-states-concepts/">
 
 
-<script class="page-configurations">
-  // https://hexo.io/docs/variables.html
-  CONFIG.page = {
-    sidebar: "",
-    isHome : false,
-    isPost : true,
-    lang   : 'zh-CN'
-  };
-</script>
-<title>Ceph中一些PG相关的状态说明和基本概念说明 | C0reFast记事本</title>
+
+<script class="next-config" data-name="page" type="application/json">{&quot;sidebar&quot;:&quot;&quot;,&quot;isHome&quot;:false,&quot;isPost&quot;:true,&quot;lang&quot;:&quot;zh-CN&quot;,&quot;comments&quot;:true,&quot;permalink&quot;:&quot;https:&#x2F;&#x2F;www.ichenfu.com&#x2F;2018&#x2F;07&#x2F;06&#x2F;ceph-pg-states-concepts&#x2F;&quot;,&quot;path&quot;:&quot;2018&#x2F;07&#x2F;06&#x2F;ceph-pg-states-concepts&#x2F;&quot;,&quot;title&quot;:&quot;Ceph中一些PG相关的状态说明和基本概念说明&quot;}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">&quot;&quot;</script>
+<title>Ceph中一些PG相关的状态说明和基本概念说明 | C0reFast记事本</title><script src="/js/config.js"></script>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
-    <script>
-      if (CONFIG.hostname === location.hostname) {
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-47062085-1');
-      }
-    </script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{&quot;tracking_id&quot;:&quot;UA-47062085-1&quot;,&quot;only_pageview&quot;:false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
 
 
 
 
   <noscript>
-  <style>
-  body { margin-top: 2rem; }
-
-  .use-motion .menu-item,
-  .use-motion .sidebar,
-  .use-motion .post-block,
-  .use-motion .pagination,
-  .use-motion .comments,
-  .use-motion .post-header,
-  .use-motion .post-body,
-  .use-motion .collection-header {
-    visibility: visible;
-  }
-
-  .use-motion .header,
-  .use-motion .site-brand-container .toggle,
-  .use-motion .footer { opacity: initial; }
-
-  .use-motion .site-title,
-  .use-motion .site-subtitle,
-  .use-motion .custom-logo-image {
-    opacity: initial;
-    top: initial;
-  }
-
-  .use-motion .logo-line {
-    transform: scaleX(1);
-  }
-
-  .search-pop-overlay, .sidebar-nav { display: none; }
-  .sidebar-panel { display: block; }
-  </style>
-</noscript>
-
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
 <link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
 </head>
 
@@ -186,7 +140,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">83</span>
+          <span class="site-state-item-count">84</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -199,7 +153,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">182</span>
+        <span class="site-state-item-count">183</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -233,7 +187,7 @@
     </header>
 
     
-  <div class="back-to-top" role="button">
+  <div class="back-to-top" role="button" aria-label="返回顶部">
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
@@ -298,7 +252,7 @@
     </span>
 
   
-    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
@@ -317,125 +271,162 @@
         <p>最近公司有个Ceph集群出了点问题，于是也参与了修复的过程，过程中最让人头疼的就是一堆不明所以的状态了，所以看了看文档，也找了一些参考，<br>整理了一下Ceph PG的一些状态以及相关的概念说明，做了一个中英文的对照版本：</p>
 <h2 id="Placement-Group-States（PG状态）"><a href="#Placement-Group-States（PG状态）" class="headerlink" title="Placement Group States（PG状态）"></a>Placement Group States（PG状态）</h2><p>当检查一个集群的状态时（执行<code>ceph -w</code>或者<code>ceph -s</code>），Ceph会汇报当前PG的状态，每个PG会有一个或多个状态，最优的PG状态是<code>active + clean</code>。<br>下面是所有PG状态的具体解释：</p>
 <h4 id="creating"><a href="#creating" class="headerlink" title="creating"></a><em>creating</em></h4><pre><code>Ceph is still creating the placement group.
-Ceph 仍在创建PG。</code></pre>
+Ceph 仍在创建PG。
+</code></pre>
 <h4 id="activating"><a href="#activating" class="headerlink" title="activating"></a><em>activating</em></h4><pre><code>The placement group is peered but not yet active.
-PG已经互联，但是还没有active。</code></pre>
+PG已经互联，但是还没有active。
+</code></pre>
 <h4 id="active"><a href="#active" class="headerlink" title="active"></a><em>active</em></h4><pre><code>Ceph will process requests to the placement group.
-Ceph 可处理到此PG的请求。</code></pre>
+Ceph 可处理到此PG的请求。
+</code></pre>
 <h4 id="clean"><a href="#clean" class="headerlink" title="clean"></a><em>clean</em></h4><pre><code>Ceph replicated all objects in the placement group the correct
 number of times.
-PG内所有的对象都被正确的复制了对应的份数。</code></pre>
+PG内所有的对象都被正确的复制了对应的份数。
+</code></pre>
 <h4 id="down"><a href="#down" class="headerlink" title="down"></a><em>down</em></h4><pre><code>A replica with necessary data is down, so the placement group is
 offline.
-一个包含必备数据的副本离线，所以PG也离线了。</code></pre>
+一个包含必备数据的副本离线，所以PG也离线了。
+</code></pre>
 <h4 id="scrubbing"><a href="#scrubbing" class="headerlink" title="scrubbing"></a><em>scrubbing</em></h4><pre><code>Ceph is checking the placement group metadata for inconsistencies.
-Ceph 正在检查PG metadata的一致性。</code></pre>
+Ceph 正在检查PG metadata的一致性。
+</code></pre>
 <h4 id="deep"><a href="#deep" class="headerlink" title="deep"></a><em>deep</em></h4><pre><code>Ceph is checking the placement group data against stored checksums.
-Ceph 正在检查PG数据和checksums的一致性。</code></pre>
+Ceph 正在检查PG数据和checksums的一致性。
+</code></pre>
 <h4 id="degraded"><a href="#degraded" class="headerlink" title="degraded"></a><em>degraded</em></h4><pre><code>Ceph has not replicated some objects in the placement group the
 correct number of times yet.
-PG中的一些对象还没有被复制到规定的份数。</code></pre>
+PG中的一些对象还没有被复制到规定的份数。
+</code></pre>
 <h4 id="inconsistent"><a href="#inconsistent" class="headerlink" title="inconsistent"></a><em>inconsistent</em></h4><pre><code>Ceph detects inconsistencies in the one or more replicas of an
 object in the placement group (e.g. objects are the wrong size,
 objects are missing from one replica *after* recovery finished,
 etc.).
-Ceph检测到PG中对象的一份或多份数据不一致（比如对象大学不一直，或者恢复成功后对象依然没有等）</code></pre>
+Ceph检测到PG中对象的一份或多份数据不一致（比如对象大学不一直，或者恢复成功后对象依然没有等）
+</code></pre>
 <h4 id="peering"><a href="#peering" class="headerlink" title="peering"></a><em>peering</em></h4><pre><code>The placement group is undergoing the peering process
-PG正在互联过程中。</code></pre>
-<a id="more"></a>
+PG正在互联过程中。
+</code></pre>
+<span id="more"></span>
 
 <h4 id="repair"><a href="#repair" class="headerlink" title="repair"></a><em>repair</em></h4><pre><code>Ceph is checking the placement group and repairing any
 inconsistencies it finds (if possible).
-Ceph正在检查PG并且修复所有发现的不一致情况（如果有的话）。</code></pre>
+Ceph正在检查PG并且修复所有发现的不一致情况（如果有的话）。
+</code></pre>
 <h4 id="recovering"><a href="#recovering" class="headerlink" title="recovering"></a><em>recovering</em></h4><pre><code>Ceph is migrating/synchronizing objects and their replicas.
-Ceph正在迁移/同步对象和其副本。</code></pre>
+Ceph正在迁移/同步对象和其副本。
+</code></pre>
 <h4 id="forced-recovery"><a href="#forced-recovery" class="headerlink" title="forced_recovery"></a><em>forced_recovery</em></h4><pre><code>High recovery priority of that PG is enforced by user.
-用户指定的PG高优先级恢复</code></pre>
+用户指定的PG高优先级恢复
+</code></pre>
 <h4 id="recovery-wait"><a href="#recovery-wait" class="headerlink" title="recovery_wait"></a><em>recovery_wait</em></h4><pre><code>The placement group is waiting in line to start recover.
-PG正在等待恢复被调度执行。</code></pre>
+PG正在等待恢复被调度执行。
+</code></pre>
 <h4 id="recovery-toofull"><a href="#recovery-toofull" class="headerlink" title="recovery_toofull"></a><em>recovery_toofull</em></h4><pre><code>A recovery operation is waiting because the destination OSD is over
 its full ratio.
-恢复操作因为目标OSD容量超过指标而挂起。</code></pre>
+恢复操作因为目标OSD容量超过指标而挂起。
+</code></pre>
 <h4 id="recovery-unfound"><a href="#recovery-unfound" class="headerlink" title="recovery_unfound"></a><em>recovery_unfound</em></h4><pre><code>Recovery stopped due to unfound objects.
-恢复因为没有找到对应对象而停止。</code></pre>
+恢复因为没有找到对应对象而停止。
+</code></pre>
 <h4 id="backfilling"><a href="#backfilling" class="headerlink" title="backfilling"></a><em>backfilling</em></h4><pre><code>Ceph is scanning and synchronizing the entire contents of a
 placement group instead of inferring what contents need to be
 synchronized from the logs of recent operations. Backfill is a
 special case of recovery.
-Ceph正常扫描并同步整个PG的数据，而不是从最近的操作日志中推断需要同步的数据，Backfill（回填）是恢复的一个特殊状态。</code></pre>
+Ceph正常扫描并同步整个PG的数据，而不是从最近的操作日志中推断需要同步的数据，Backfill（回填）是恢复的一个特殊状态。
+</code></pre>
 <h4 id="forced-backfill"><a href="#forced-backfill" class="headerlink" title="forced_backfill"></a><em>forced_backfill</em></h4><pre><code>High backfill priority of that PG is enforced by user.
-用户指定的高优先级backfill。</code></pre>
+用户指定的高优先级backfill。
+</code></pre>
 <h4 id="backfill-wait"><a href="#backfill-wait" class="headerlink" title="backfill_wait"></a><em>backfill_wait</em></h4><pre><code>The placement group is waiting in line to start backfill.
-PG正在等待backfill被调度执行。</code></pre>
+PG正在等待backfill被调度执行。
+</code></pre>
 <h4 id="backfill-toofull"><a href="#backfill-toofull" class="headerlink" title="backfill_toofull"></a><em>backfill_toofull</em></h4><pre><code>A backfill operation is waiting because the destination OSD is over
 its full ratio.
-backfill操作因为目标OSD容量超过指标而挂起。</code></pre>
+backfill操作因为目标OSD容量超过指标而挂起。
+</code></pre>
 <h4 id="backfill-unfound"><a href="#backfill-unfound" class="headerlink" title="backfill_unfound"></a><em>backfill_unfound</em></h4><pre><code>Backfill stopped due to unfound objects.
-Backfill因为没有找到对应对象而停止。</code></pre>
+Backfill因为没有找到对应对象而停止。
+</code></pre>
 <h4 id="incomplete"><a href="#incomplete" class="headerlink" title="incomplete"></a><em>incomplete</em></h4><pre><code>Ceph detects that a placement group is missing information about
 writes that may have occurred, or does not have any healthy copies.
 If you see this state, try to start any failed OSDs that may contain
 the needed information. In the case of an erasure coded pool
 temporarily reducing min\_size may allow recovery.
 Ceph 探测到某一PG可能丢失了写入信息，或者没有健康的副本。如果你看到了这个状态，尝试启动有可能包含所需信息的失败OSD，
-如果是erasure coded pool的话，临时调整一下`min_size`也可能完成恢复。</code></pre>
+如果是erasure coded pool的话，临时调整一下`min_size`也可能完成恢复。
+</code></pre>
 <h4 id="stale"><a href="#stale" class="headerlink" title="stale"></a><em>stale</em></h4><pre><code>The placement group is in an unknown state - the monitors have not
 received an update for it since the placement group mapping changed.
-PG状态未知，从PG mapping更新后Monitor一直没有收到更新。</code></pre>
+PG状态未知，从PG mapping更新后Monitor一直没有收到更新。
+</code></pre>
 <h4 id="remapped"><a href="#remapped" class="headerlink" title="remapped"></a><em>remapped</em></h4><pre><code>The placement group is temporarily mapped to a different set of OSDs
 from what CRUSH specified.
-PG被临时分配到了和CRUSH所指定的不同的OSD上。</code></pre>
+PG被临时分配到了和CRUSH所指定的不同的OSD上。
+</code></pre>
 <h4 id="undersized"><a href="#undersized" class="headerlink" title="undersized"></a><em>undersized</em></h4><pre><code>The placement group has fewer copies than the configured pool
 replication level.
-该PG的副本数量小于存储池所配置的副本数量。</code></pre>
+该PG的副本数量小于存储池所配置的副本数量。
+</code></pre>
 <h4 id="peered"><a href="#peered" class="headerlink" title="peered"></a><em>peered</em></h4><pre><code>The placement group has peered, but cannot serve client IO due to
 not having enough copies to reach the pool\&#39;s configured min\_size
 parameter. Recovery may occur in this state, so the pg may heal up
 to min\_size eventually.
 PG已互联，但是不能向客户端提供服务，因为其副本数没达到本存储池的配置值（ min_size 参数）。
-在此状态下恢复会进行，所以此PG最终能达到 min_size 。</code></pre>
+在此状态下恢复会进行，所以此PG最终能达到 min_size 。
+</code></pre>
 <h4 id="snaptrim"><a href="#snaptrim" class="headerlink" title="snaptrim"></a><em>snaptrim</em></h4><pre><code>Trimming snaps.
-正在对快照做Trim操作。</code></pre>
+正在对快照做Trim操作。
+</code></pre>
 <h4 id="snaptrim-Wait"><a href="#snaptrim-Wait" class="headerlink" title="snaptrim_Wait"></a><em>snaptrim_Wait</em></h4><pre><code>Queued to trim snaps.
-Trim操作等待被调度执行</code></pre>
+Trim操作等待被调度执行
+</code></pre>
 <h4 id="snaptrim-Error"><a href="#snaptrim-Error" class="headerlink" title="snaptrim_Error"></a><em>snaptrim_Error</em></h4><pre><code>Error stopped trimming snaps.
-Trim操作因为错误而停止</code></pre>
+Trim操作因为错误而停止
+</code></pre>
 <h2 id="Placement-Group-Concepts（PG相关概念）"><a href="#Placement-Group-Concepts（PG相关概念）" class="headerlink" title="Placement Group Concepts（PG相关概念）"></a>Placement Group Concepts（PG相关概念）</h2><p>When you execute commands like <code>ceph -w</code>, <code>ceph osd dump</code>, and other<br>commands related to placement groups, Ceph may return values using some<br>of the following terms:<br>当执行诸如<code>ceph -w</code>、<code>ceph osd dump</code>及其他和归置组相关的命令时， Ceph 会返回下列术语：</p>
 <h4 id="Peering-建立互联"><a href="#Peering-建立互联" class="headerlink" title="Peering (建立互联)"></a><em>Peering</em> (<em>建立互联</em>)</h4><pre><code>The process of bringing all of the OSDs that store a Placement Group
 (PG) into agreement about the state of all of the objects (and their
 metadata) in that PG. Note that agreeing on the state does not mean
 that they all have the latest contents.
 表示所有存储PG数据的OSD达成对PG中所有对象（和元数据）共识的过程。
-需要注意的是达成共识并不代表他们都拥有最新的数据。</code></pre>
+需要注意的是达成共识并不代表他们都拥有最新的数据。
+</code></pre>
 <h4 id="Acting-Set-在任集合"><a href="#Acting-Set-在任集合" class="headerlink" title="Acting Set (在任集合)"></a><em>Acting Set</em> (<em>在任集合</em>)</h4><pre><code>The ordered list of OSDs who are (or were as of some epoch)
 responsible for a particular placement group.
-一个OSD的有序集合，他们为一个PG（或者一些版本）负责。</code></pre>
+一个OSD的有序集合，他们为一个PG（或者一些版本）负责。
+</code></pre>
 <h4 id="Up-Set-当选集合"><a href="#Up-Set-当选集合" class="headerlink" title="Up Set (当选集合)"></a><em>Up Set</em> (<em>当选集合</em>)</h4><pre><code>The ordered list of OSDs responsible for a particular placement
 group for a particular epoch according to CRUSH. Normally this is
 the same as the *Acting Set*, except when the *Acting Set* has been
 explicitly overridden via `pg_temp` in the OSD Map.
 一列有序OSD ，它们依据 CRUSH 算法为某一PG的特定元版本负责。
-它通常和*Acting Set*相同，除非*Acting Set*被OSD map中的`pg_temp`显式地覆盖了。</code></pre>
+它通常和*Acting Set*相同，除非*Acting Set*被OSD map中的`pg_temp`显式地覆盖了。
+</code></pre>
 <h4 id="Current-Interval-or-Past-Interval"><a href="#Current-Interval-or-Past-Interval" class="headerlink" title="Current Interval or Past Interval"></a><em>Current Interval</em> or <em>Past Interval</em></h4><pre><code>A sequence of OSD map epochs during which the *Acting Set* and *Up
 Set* for particular placement group do not change.
-某一PG所在*Acting Set*和*Up Set*未更改时的一系列OSD map元版本。</code></pre>
+某一PG所在*Acting Set*和*Up Set*未更改时的一系列OSD map元版本。
+</code></pre>
 <h4 id="Primary-主-OSD"><a href="#Primary-主-OSD" class="headerlink" title="Primary (主 OSD)"></a><em>Primary</em> (<em>主 OSD</em>)</h4><pre><code>The member (and by convention first) of the *Acting Set*, that is
 responsible for coordination peering, and is the only OSD that will
 accept client-initiated writes to objects in a placement group.
-*Acting Set*的成员（按惯例为第一个），它负责协调互联，并且是PG内惟一接受客户端初始写入的OSD。</code></pre>
+*Acting Set*的成员（按惯例为第一个），它负责协调互联，并且是PG内惟一接受客户端初始写入的OSD。
+</code></pre>
 <h4 id="Replica-副本-OSD"><a href="#Replica-副本-OSD" class="headerlink" title="Replica (副本 OSD)"></a><em>Replica</em> (<em>副本 OSD</em>)</h4><pre><code>A non-primary OSD in the *Acting Set* for a placement group (and who
 has been recognized as such and *activated* by the primary).
-PG的*Acting Set*内不是主OSD的其它OSD ，它们被同等对待、由主OSD激活。</code></pre>
+PG的*Acting Set*内不是主OSD的其它OSD ，它们被同等对待、由主OSD激活。
+</code></pre>
 <h4 id="Stray-彷徨-OSD"><a href="#Stray-彷徨-OSD" class="headerlink" title="Stray (彷徨 OSD)"></a><em>Stray</em> (<em>彷徨 OSD</em>)</h4><pre><code>An OSD that is not a member of the current *Acting Set*, but has not
 yet been told that it can delete its copies of a particular
 placement group.
-不在PG的当前*Acting Set*中，但是还没有被告知要删除其副本的OSD。</code></pre>
+不在PG的当前*Acting Set*中，但是还没有被告知要删除其副本的OSD。
+</code></pre>
 <h4 id="Recovery-恢复"><a href="#Recovery-恢复" class="headerlink" title="Recovery (恢复)"></a><em>Recovery</em> (<em>恢复</em>)</h4><pre><code>Ensuring that copies of all of the objects in a placement group are
 on all of the OSDs in the *Acting Set*. Once *Peering* has been
 performed, the *Primary* can start accepting write operations, and
 *Recovery* can proceed in the background.
 确保*Acting Set*内、PG中的所有对象的副本都存在于所有OSD上。
-一旦互联完成，主OSD就以接受写操作，且恢复进程可在后台进行。</code></pre>
+一旦互联完成，主OSD就以接受写操作，且恢复进程可在后台进行。
+</code></pre>
 <h4 id="PG-Info-PG-信息"><a href="#PG-Info-PG-信息" class="headerlink" title="PG Info (PG 信息)"></a><em>PG Info</em> (<em>PG 信息</em>)</h4><pre><code>Basic metadata about the placement group\&#39;s creation epoch, the
 version for the most recent write to the placement group, *last
 epoch started*, *last epoch clean*, and the beginning of the
@@ -445,26 +436,32 @@ placement group exists (or once existed) also has a lower bound on
 *last epoch clean* or *last epoch started*.
 基本元数据，关于PG创建元版本、PG的最新写版本、最近的开始元版本（last epoch started）、
 最近的干净元版本（last epoch clean）、和当前间隔（current interval）的起点。 
-OSD间关于PG的任何通讯都包含PG Info，这样任何知道PG存在（或曾经存在）的OSD也必定有last epoch clean或last epoch started的下限。</code></pre>
+OSD间关于PG的任何通讯都包含PG Info，这样任何知道PG存在（或曾经存在）的OSD也必定有last epoch clean或last epoch started的下限。
+</code></pre>
 <h5 id="PG-Log-PG-日志"><a href="#PG-Log-PG-日志" class="headerlink" title="PG Log (PG 日志)"></a><em>PG Log</em> (<em>PG 日志</em>)</h5><pre><code>A list of recent updates made to objects in a placement group. Note
 that these logs can be truncated after all OSDs in the *Acting Set*
 have acknowledged up to a certain point.
-PG内对象的一系列最近更新。需要注意的是这些日志在*Acting Set*内的所有OSD确认更新到某点后可以删除。</code></pre>
+PG内对象的一系列最近更新。需要注意的是这些日志在*Acting Set*内的所有OSD确认更新到某点后可以删除。
+</code></pre>
 <h4 id="Missing-Set-缺失集合"><a href="#Missing-Set-缺失集合" class="headerlink" title="Missing Set (缺失集合)"></a><em>Missing Set</em> (<em>缺失集合</em>)</h4><pre><code>Each OSD notes update log entries and if they imply updates to the
 contents of an object, adds that object to a list of needed updates.
 This list is called the *Missing Set* for that `&lt;OSD,PG&gt;`.
 每个OSD都会记录更新日志，而且如果它们包含对象内容的更新，
-会把那个对象加入一个待更新列表，这个列表叫做那个`&lt;OSD,PG&gt;`的*Missing Set*。</code></pre>
+会把那个对象加入一个待更新列表，这个列表叫做那个`&lt;OSD,PG&gt;`的*Missing Set*。
+</code></pre>
 <h4 id="Authoritative-History-权威历史"><a href="#Authoritative-History-权威历史" class="headerlink" title="Authoritative History (权威历史)"></a><em>Authoritative History</em> (<em>权威历史</em>)</h4><pre><code>A complete, and fully ordered set of operations that, if performed,
 would bring an OSD\&#39;s copy of a placement group up to date.
-一个完整、完全有序的操作集合，如果再次执行，可把一个OSD上的PG副本还原到最新。</code></pre>
+一个完整、完全有序的操作集合，如果再次执行，可把一个OSD上的PG副本还原到最新。
+</code></pre>
 <h4 id="Epoch-元版本"><a href="#Epoch-元版本" class="headerlink" title="Epoch (元版本)"></a><em>Epoch</em> (<em>元版本</em>)</h4><pre><code>A (monotonically increasing) OSD map version number
-一个（单调递增的）OSD map版本号。</code></pre>
+一个（单调递增的）OSD map版本号。
+</code></pre>
 <h4 id="Last-Epoch-Start-最新起始元版本"><a href="#Last-Epoch-Start-最新起始元版本" class="headerlink" title="Last Epoch Start (最新起始元版本)"></a><em>Last Epoch Start</em> (<em>最新起始元版本</em>)</h4><pre><code>The last epoch at which all nodes in the *Acting Set* for a
 particular placement group agreed on an *Authoritative History*. At
 this point, *Peering* is deemed to have been successful.
  一最新元版本，在这点上，PG所对应*Acting Set*内的所有节点都对权威历史达成了一致、
- 并且互联被认为成功了。</code></pre>
+ 并且互联被认为成功了。
+</code></pre>
 <h4 id="up-thru-领导拍板"><a href="#up-thru-领导拍板" class="headerlink" title="up_thru (领导拍板)"></a><em>up_thru</em> (<em>领导拍板</em>)</h4><pre><code>Before a *Primary* can successfully complete the *Peering* process,
 it must inform a monitor that is alive through the current OSD map
 *Epoch* by having the monitor set its *up\_thru* in the osd map.
@@ -483,13 +480,15 @@ as the second interval below:
 acting set = [A,B]
 acting set = [A]
 acting set = [] 之后很短时间（例如同时失败、但探测是交叉的）
-acting set = [B] （ B 重启了、但 A 没有）</code></pre>
+acting set = [B] （ B 重启了、但 A 没有）
+</code></pre>
 <h4 id="Last-Epoch-Clean-最新干净元版本"><a href="#Last-Epoch-Clean-最新干净元版本" class="headerlink" title="Last Epoch Clean (最新干净元版本)"></a><em>Last Epoch Clean</em> (<em>最新干净元版本</em>)</h4><pre><code>The last *Epoch* at which all nodes in the *Acting set* for a
 particular placement group were completely up to date (both
 placement group logs and object contents). At this point, *recovery*
 is deemed to have been completed.
 最近的Epoch，这时某一特定PG所在*Acting Set*内的所有节点都全部更新了（包括PG日志和对象内容）。
-在这点上，恢复被认为已完成。</code></pre>
+在这点上，恢复被认为已完成。
+</code></pre>
 <p>参考：</p>
 <ol>
 <li><a target="_blank" rel="noopener" href="https://github.com/ceph/ceph/blob/v14.0.0/doc/rados/operations/pg-states.rst">https://github.com/ceph/ceph/blob/v14.0.0/doc/rados/operations/pg-states.rst</a></li>
@@ -538,29 +537,7 @@ is deemed to have been completed.
 
 
 
-    <div class="comments gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      const commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
+    <div class="comments gitalk-container"></div><script src="/js/comments.js"></script>
 </div>
   </main>
 
@@ -577,7 +554,7 @@ is deemed to have been completed.
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
 <div class="busuanzi-count">
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
       </span>
@@ -585,7 +562,7 @@ is deemed to have been completed.
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
@@ -617,27 +594,10 @@ is deemed to have been completed.
 
 
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
-
-<script>
-NexT.utils.loadComments('.gitalk-container', () => {
-  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
-    var gitalk = new Gitalk({
-      clientID    : '28277c1cf88cb302f885',
-      clientSecret: 'bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280',
-      repo        : 'c0refast.github.io',
-      owner       : 'C0reFast',
-      admin       : ['C0reFast'],
-      id          : '8c9496a88d70c6532a4123944bf12687',
-      proxy       : 'https://cors-anywhere.herokuapp.com/https://github.com/login/oauth/access_token',
-        language: 'zh-CN',
-      distractionFreeMode: true
-    });
-    gitalk.render(document.querySelector('.gitalk-container'));
-  }, window.Gitalk);
-});
-</script>
+<script class="next-config" data-name="gitalk" type="application/json">{&quot;enable&quot;:true,&quot;github_id&quot;:&quot;C0reFast&quot;,&quot;repo&quot;:&quot;c0refast.github.io&quot;,&quot;client_id&quot;:&quot;28277c1cf88cb302f885&quot;,&quot;client_secret&quot;:&quot;bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280&quot;,&quot;admin_user&quot;:&quot;C0reFast&quot;,&quot;distraction_free_mode&quot;:true,&quot;proxy&quot;:&quot;https:&#x2F;&#x2F;cors-anywhere.herokuapp.com&#x2F;https:&#x2F;&#x2F;github.com&#x2F;login&#x2F;oauth&#x2F;access_token&quot;,&quot;language&quot;:&quot;zh-CN&quot;,&quot;js&quot;:&quot;https:&#x2F;&#x2F;cdn.jsdelivr.net&#x2F;npm&#x2F;gitalk@1.7.2&#x2F;dist&#x2F;gitalk.min.js&quot;,&quot;path_md5&quot;:&quot;8c9496a88d70c6532a4123944bf12687&quot;}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
 
 </body>
 </html>

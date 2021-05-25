@@ -16,12 +16,9 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/all.min.css">
 
-<script class="hexo-configurations">
-    var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
-  </script>
+<script class="next-config" data-name="main" type="application/json">{&quot;hostname&quot;:&quot;www.ichenfu.com&quot;,&quot;root&quot;:&quot;&#x2F;&quot;,&quot;images&quot;:&quot;&#x2F;images&quot;,&quot;scheme&quot;:&quot;Gemini&quot;,&quot;version&quot;:&quot;8.4.0&quot;,&quot;exturl&quot;:false,&quot;sidebar&quot;:{&quot;position&quot;:&quot;right&quot;,&quot;display&quot;:&quot;post&quot;,&quot;padding&quot;:18,&quot;offset&quot;:12,&quot;onmobile&quot;:false},&quot;copycode&quot;:false,&quot;bookmark&quot;:{&quot;enable&quot;:false,&quot;color&quot;:&quot;#222&quot;,&quot;save&quot;:&quot;auto&quot;},&quot;fancybox&quot;:false,&quot;mediumzoom&quot;:false,&quot;lazyload&quot;:false,&quot;pangu&quot;:false,&quot;comments&quot;:{&quot;style&quot;:&quot;tabs&quot;,&quot;active&quot;:null,&quot;storage&quot;:true,&quot;lazyload&quot;:false,&quot;nav&quot;:null},&quot;motion&quot;:{&quot;enable&quot;:false,&quot;async&quot;:false,&quot;transition&quot;:{&quot;post_block&quot;:&quot;fadeIn&quot;,&quot;post_header&quot;:&quot;slideDownIn&quot;,&quot;post_body&quot;:&quot;slideDownIn&quot;,&quot;coll_header&quot;:&quot;slideLeftIn&quot;,&quot;sidebar&quot;:&quot;slideUpIn&quot;}},&quot;prism&quot;:false,&quot;i18n&quot;:{&quot;placeholder&quot;:&quot;搜索...&quot;,&quot;empty&quot;:&quot;没有找到任何搜索结果：${query}&quot;,&quot;hits_time&quot;:&quot;找到 ${hits} 个搜索结果（用时 ${time} 毫秒）&quot;,&quot;hits&quot;:&quot;找到 ${hits} 个搜索结果&quot;}}</script>
 <meta name="description" content="本文是Kubernetes DNS-Based Service Discovery的翻译，也就是Kubernetes DNS specification的翻译，目前最新版本号是1.0.1。 0 - 关于此文档本文档是Kubernetes基于DNS的服务发现的规范说明，尽管在Kubernetes中还有其他方式的服务发现协议和机制，但是DNS仍然是最常见而且是最推荐使用的扩展。实际的DNS服务并不一定">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Kubernetes DNS-Based Service Discovery 翻译">
@@ -40,65 +37,22 @@
 <link rel="canonical" href="https://www.ichenfu.com/2018/05/17/kube-dns-spec/">
 
 
-<script class="page-configurations">
-  // https://hexo.io/docs/variables.html
-  CONFIG.page = {
-    sidebar: "",
-    isHome : false,
-    isPost : true,
-    lang   : 'zh-CN'
-  };
-</script>
-<title>Kubernetes DNS-Based Service Discovery 翻译 | C0reFast记事本</title>
+
+<script class="next-config" data-name="page" type="application/json">{&quot;sidebar&quot;:&quot;&quot;,&quot;isHome&quot;:false,&quot;isPost&quot;:true,&quot;lang&quot;:&quot;zh-CN&quot;,&quot;comments&quot;:true,&quot;permalink&quot;:&quot;https:&#x2F;&#x2F;www.ichenfu.com&#x2F;2018&#x2F;05&#x2F;17&#x2F;kube-dns-spec&#x2F;&quot;,&quot;path&quot;:&quot;2018&#x2F;05&#x2F;17&#x2F;kube-dns-spec&#x2F;&quot;,&quot;title&quot;:&quot;Kubernetes DNS-Based Service Discovery 翻译&quot;}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">&quot;&quot;</script>
+<title>Kubernetes DNS-Based Service Discovery 翻译 | C0reFast记事本</title><script src="/js/config.js"></script>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
-    <script>
-      if (CONFIG.hostname === location.hostname) {
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-47062085-1');
-      }
-    </script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{&quot;tracking_id&quot;:&quot;UA-47062085-1&quot;,&quot;only_pageview&quot;:false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
 
 
 
 
   <noscript>
-  <style>
-  body { margin-top: 2rem; }
-
-  .use-motion .menu-item,
-  .use-motion .sidebar,
-  .use-motion .post-block,
-  .use-motion .pagination,
-  .use-motion .comments,
-  .use-motion .post-header,
-  .use-motion .post-body,
-  .use-motion .collection-header {
-    visibility: visible;
-  }
-
-  .use-motion .header,
-  .use-motion .site-brand-container .toggle,
-  .use-motion .footer { opacity: initial; }
-
-  .use-motion .site-title,
-  .use-motion .site-subtitle,
-  .use-motion .custom-logo-image {
-    opacity: initial;
-    top: initial;
-  }
-
-  .use-motion .logo-line {
-    transform: scaleX(1);
-  }
-
-  .search-pop-overlay, .sidebar-nav { display: none; }
-  .sidebar-panel { display: block; }
-  </style>
-</noscript>
-
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
 <link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
 </head>
 
@@ -185,7 +139,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">83</span>
+          <span class="site-state-item-count">84</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -198,7 +152,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">182</span>
+        <span class="site-state-item-count">183</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -232,7 +186,7 @@
     </header>
 
     
-  <div class="back-to-top" role="button">
+  <div class="back-to-top" role="button" aria-label="返回顶部">
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
@@ -297,7 +251,7 @@
     </span>
 
   
-    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
@@ -315,7 +269,7 @@
     <div class="post-body" itemprop="articleBody">
         <p>本文是<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dns/blob/707da5e449f6000e1ce0b92f1a13b966d262dbb2/docs/specification.md">Kubernetes DNS-Based Service Discovery</a>的翻译，也就是Kubernetes DNS specification的翻译，目前最新版本号是1.0.1。</p>
 <h2 id="0-关于此文档"><a href="#0-关于此文档" class="headerlink" title="0 - 关于此文档"></a>0 - 关于此文档</h2><p>本文档是Kubernetes基于DNS的服务发现的规范说明，尽管在Kubernetes中还有其他方式的服务发现协议和机制，但是DNS仍然是最常见而且是最推荐使用的扩展。实际的DNS服务并不一定由由默认的Kube-DNS提供。 本文档旨在为所有实现之间的通用性提供相应的基准。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <h2 id="1-Schema-版本"><a href="#1-Schema-版本" class="headerlink" title="1 - Schema 版本"></a>1 - Schema 版本</h2><p>本文档描述了Schema版本1.0.1。</p>
 <h2 id="2-资源记录"><a href="#2-资源记录" class="headerlink" title="2 - 资源记录"></a>2 - 资源记录</h2><p>所有的基于DNS的Kubernetes服务发现方案必须兼容并提供以下所说明的所有的资源的对应记录（resource records or RRs）。</p>
@@ -417,9 +371,7 @@
 </li>
 <li>返回示例:<pre class="line-numbers language-none"><code class="language-none">headless.default.svc.cluster.local. 4 IN A 10.3.0.1
 headless.default.svc.cluster.local. 4 IN A 10.3.0.2
-headless.default.svc.cluster.local. 4 IN A 10.3.0.3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-</li>
+headless.default.svc.cluster.local. 4 IN A 10.3.0.3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre></li>
 </ul>
 <p>针对每个拥有_hostname_为<code>&lt;hostname&gt;</code>、IP为<code>&lt;endpoint-ip&gt;</code>，状态为_ready_的endpoint，必须有一条<code>A</code>记录，如果名_hostname_的主机有多个IP，则每个IP也会有一个<code>A</code>记录。</p>
 <ul>
@@ -453,9 +405,7 @@ headless.default.svc.cluster.local. 4 IN A 10.3.0.3<span aria-hidden="true" clas
 </li>
 <li>返回示例:<pre class="line-numbers language-none"><code class="language-none">_https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 my-pet.headless.default.svc.cluster.local.
 _https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 my-pet-2.headless.default.svc.cluster.local.
-_https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 438934893.headless.default.svc.cluster.local.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-</li>
+_https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 438934893.headless.default.svc.cluster.local.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre></li>
 </ul>
 <p>服务的<code>A</code>记录有可能随着<code>SRV</code>记录的附加部分一同返回。</p>
 <h4 id="2-4-3-PTR记录"><a href="#2-4-3-PTR记录" class="headerlink" title="2.4.3 - PTR记录"></a>2.4.3 - <code>PTR</code>记录</h4><p>针对一个_hostname_为<code>&lt;hostname&gt;</code>、IP地址为<code>&lt;a&gt;.&lt;b&gt;.&lt;c&gt;.&lt;d&gt;</code>状态为_ready_的endpoint，必须存在下面的<code>PTR</code>记录：</p>
@@ -538,29 +488,7 @@ _https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 438934893.he
 
 
 
-    <div class="comments gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      const commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
+    <div class="comments gitalk-container"></div><script src="/js/comments.js"></script>
 </div>
   </main>
 
@@ -577,7 +505,7 @@ _https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 438934893.he
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
 <div class="busuanzi-count">
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
       </span>
@@ -585,7 +513,7 @@ _https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 438934893.he
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
@@ -617,27 +545,10 @@ _https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 438934893.he
 
 
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
-
-<script>
-NexT.utils.loadComments('.gitalk-container', () => {
-  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
-    var gitalk = new Gitalk({
-      clientID    : '28277c1cf88cb302f885',
-      clientSecret: 'bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280',
-      repo        : 'c0refast.github.io',
-      owner       : 'C0reFast',
-      admin       : ['C0reFast'],
-      id          : '69c6859ad646f8ea80dd08ae27e1f117',
-      proxy       : 'https://cors-anywhere.herokuapp.com/https://github.com/login/oauth/access_token',
-        language: 'zh-CN',
-      distractionFreeMode: true
-    });
-    gitalk.render(document.querySelector('.gitalk-container'));
-  }, window.Gitalk);
-});
-</script>
+<script class="next-config" data-name="gitalk" type="application/json">{&quot;enable&quot;:true,&quot;github_id&quot;:&quot;C0reFast&quot;,&quot;repo&quot;:&quot;c0refast.github.io&quot;,&quot;client_id&quot;:&quot;28277c1cf88cb302f885&quot;,&quot;client_secret&quot;:&quot;bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280&quot;,&quot;admin_user&quot;:&quot;C0reFast&quot;,&quot;distraction_free_mode&quot;:true,&quot;proxy&quot;:&quot;https:&#x2F;&#x2F;cors-anywhere.herokuapp.com&#x2F;https:&#x2F;&#x2F;github.com&#x2F;login&#x2F;oauth&#x2F;access_token&quot;,&quot;language&quot;:&quot;zh-CN&quot;,&quot;js&quot;:&quot;https:&#x2F;&#x2F;cdn.jsdelivr.net&#x2F;npm&#x2F;gitalk@1.7.2&#x2F;dist&#x2F;gitalk.min.js&quot;,&quot;path_md5&quot;:&quot;69c6859ad646f8ea80dd08ae27e1f117&quot;}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
 
 </body>
 </html>

@@ -16,12 +16,9 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/all.min.css">
 
-<script class="hexo-configurations">
-    var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
-  </script>
+<script class="next-config" data-name="main" type="application/json">{&quot;hostname&quot;:&quot;www.ichenfu.com&quot;,&quot;root&quot;:&quot;&#x2F;&quot;,&quot;images&quot;:&quot;&#x2F;images&quot;,&quot;scheme&quot;:&quot;Gemini&quot;,&quot;version&quot;:&quot;8.4.0&quot;,&quot;exturl&quot;:false,&quot;sidebar&quot;:{&quot;position&quot;:&quot;right&quot;,&quot;display&quot;:&quot;post&quot;,&quot;padding&quot;:18,&quot;offset&quot;:12,&quot;onmobile&quot;:false},&quot;copycode&quot;:false,&quot;bookmark&quot;:{&quot;enable&quot;:false,&quot;color&quot;:&quot;#222&quot;,&quot;save&quot;:&quot;auto&quot;},&quot;fancybox&quot;:false,&quot;mediumzoom&quot;:false,&quot;lazyload&quot;:false,&quot;pangu&quot;:false,&quot;comments&quot;:{&quot;style&quot;:&quot;tabs&quot;,&quot;active&quot;:null,&quot;storage&quot;:true,&quot;lazyload&quot;:false,&quot;nav&quot;:null},&quot;motion&quot;:{&quot;enable&quot;:false,&quot;async&quot;:false,&quot;transition&quot;:{&quot;post_block&quot;:&quot;fadeIn&quot;,&quot;post_header&quot;:&quot;slideDownIn&quot;,&quot;post_body&quot;:&quot;slideDownIn&quot;,&quot;coll_header&quot;:&quot;slideLeftIn&quot;,&quot;sidebar&quot;:&quot;slideUpIn&quot;}},&quot;prism&quot;:false,&quot;i18n&quot;:{&quot;placeholder&quot;:&quot;搜索...&quot;,&quot;empty&quot;:&quot;没有找到任何搜索结果：${query}&quot;,&quot;hits_time&quot;:&quot;找到 ${hits} 个搜索结果（用时 ${time} 毫秒）&quot;,&quot;hits&quot;:&quot;找到 ${hits} 个搜索结果&quot;}}</script>
 <meta name="description" content="在上一篇Blog：&#x2F;proc&#x2F;cpuinfo里的CPU型号怎么来的？里，可以知道Linux系统是根据CPUID指令来显示具体的CPU型号的。所以很自然的一个想法：是不是可以自定义显示的内容呢？ 答案显而易见，必然是可以的。但是如果要改物理CPU的寄存器，那确实会有些困难，不过没关系，我们还有虚拟机嘛，理论上虚拟机可以虚拟这些东西，那改动起来应该也是比较方便的。 想要修改这些寄存器，首先得先看看CP">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Qemu-KVM的CPUID初始化和自定义CPU Model显示">
@@ -43,65 +40,22 @@
 <link rel="canonical" href="https://www.ichenfu.com/2020/12/28/qemu-kvm-fake-cpuid/">
 
 
-<script class="page-configurations">
-  // https://hexo.io/docs/variables.html
-  CONFIG.page = {
-    sidebar: "",
-    isHome : false,
-    isPost : true,
-    lang   : 'zh-CN'
-  };
-</script>
-<title>Qemu-KVM的CPUID初始化和自定义CPU Model显示 | C0reFast记事本</title>
+
+<script class="next-config" data-name="page" type="application/json">{&quot;sidebar&quot;:&quot;&quot;,&quot;isHome&quot;:false,&quot;isPost&quot;:true,&quot;lang&quot;:&quot;zh-CN&quot;,&quot;comments&quot;:true,&quot;permalink&quot;:&quot;https:&#x2F;&#x2F;www.ichenfu.com&#x2F;2020&#x2F;12&#x2F;28&#x2F;qemu-kvm-fake-cpuid&#x2F;&quot;,&quot;path&quot;:&quot;2020&#x2F;12&#x2F;28&#x2F;qemu-kvm-fake-cpuid&#x2F;&quot;,&quot;title&quot;:&quot;Qemu-KVM的CPUID初始化和自定义CPU Model显示&quot;}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">&quot;&quot;</script>
+<title>Qemu-KVM的CPUID初始化和自定义CPU Model显示 | C0reFast记事本</title><script src="/js/config.js"></script>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
-    <script>
-      if (CONFIG.hostname === location.hostname) {
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-47062085-1');
-      }
-    </script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{&quot;tracking_id&quot;:&quot;UA-47062085-1&quot;,&quot;only_pageview&quot;:false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
 
 
 
 
   <noscript>
-  <style>
-  body { margin-top: 2rem; }
-
-  .use-motion .menu-item,
-  .use-motion .sidebar,
-  .use-motion .post-block,
-  .use-motion .pagination,
-  .use-motion .comments,
-  .use-motion .post-header,
-  .use-motion .post-body,
-  .use-motion .collection-header {
-    visibility: visible;
-  }
-
-  .use-motion .header,
-  .use-motion .site-brand-container .toggle,
-  .use-motion .footer { opacity: initial; }
-
-  .use-motion .site-title,
-  .use-motion .site-subtitle,
-  .use-motion .custom-logo-image {
-    opacity: initial;
-    top: initial;
-  }
-
-  .use-motion .logo-line {
-    transform: scaleX(1);
-  }
-
-  .search-pop-overlay, .sidebar-nav { display: none; }
-  .sidebar-panel { display: block; }
-  </style>
-</noscript>
-
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
 <link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
 </head>
 
@@ -187,7 +141,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">83</span>
+          <span class="site-state-item-count">84</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -200,7 +154,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">182</span>
+        <span class="site-state-item-count">183</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -234,7 +188,7 @@
     </header>
 
     
-  <div class="back-to-top" role="button">
+  <div class="back-to-top" role="button" aria-label="返回顶部">
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
@@ -299,7 +253,7 @@
     </span>
 
   
-    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
@@ -317,7 +271,7 @@
     <div class="post-body" itemprop="articleBody">
         <p>在上一篇Blog：<a href="https://www.ichenfu.com/2020/12/17/cpuinfo-model-name/">/proc/cpuinfo里的CPU型号怎么来的？</a>里，可以知道Linux系统是根据CPUID指令来显示具体的CPU型号的。所以很自然的一个想法：是不是可以自定义显示的内容呢？</p>
 <p>答案显而易见，必然是可以的。但是如果要改物理CPU的寄存器，那确实会有些困难，不过没关系，我们还有虚拟机嘛，理论上虚拟机可以虚拟这些东西，那改动起来应该也是比较方便的。</p>
-<p>想要修改这些寄存器，首先得先看看CPUID指令在Qemu里是怎么处理的：<a id="more"></a></p>
+<p>想要修改这些寄存器，首先得先看看CPUID指令在Qemu里是怎么处理的：<span id="more"></span></p>
 <p>经过一些搜索，发现KVM提供了一个接口<a target="_blank" rel="noopener" href="https://www.kernel.org/doc/Documentation/virtual/kvm/api.txt">KVM_SET_CPUID2</a>，通过这个接口，可以在用户空间设置需要模拟的CPUID的信息，而我们使用Qemu，肯定是会打开KVM加速的，因此，只需要看看Qemu在这方面是怎么处理的就可以了。</p>
 <p>知道了相关代码的关键字，找相关的逻辑就不难了，在<a target="_blank" rel="noopener" href="https://github.com/qemu/qemu/blob/v5.1.0/target/i386/kvm.c#L1459">target/i386/kvm.c</a>文件里，定义了一个<code>int kvm_arch_init_vcpu(CPUState *cs)</code>函数：</p>
 <pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">kvm_arch_init_vcpu</span><span class="token punctuation">(</span>CPUState <span class="token operator">*</span>cs<span class="token punctuation">)</span>
@@ -559,29 +513,7 @@
 
 
 
-    <div class="comments gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      const commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
+    <div class="comments gitalk-container"></div><script src="/js/comments.js"></script>
 </div>
   </main>
 
@@ -598,7 +530,7 @@
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
 <div class="busuanzi-count">
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
       </span>
@@ -606,7 +538,7 @@
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
@@ -638,27 +570,10 @@
 
 
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
-
-<script>
-NexT.utils.loadComments('.gitalk-container', () => {
-  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
-    var gitalk = new Gitalk({
-      clientID    : '28277c1cf88cb302f885',
-      clientSecret: 'bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280',
-      repo        : 'c0refast.github.io',
-      owner       : 'C0reFast',
-      admin       : ['C0reFast'],
-      id          : '1b95ac6db78a4f2eb0360cbc046a23e8',
-      proxy       : 'https://cors-anywhere.herokuapp.com/https://github.com/login/oauth/access_token',
-        language: 'zh-CN',
-      distractionFreeMode: true
-    });
-    gitalk.render(document.querySelector('.gitalk-container'));
-  }, window.Gitalk);
-});
-</script>
+<script class="next-config" data-name="gitalk" type="application/json">{&quot;enable&quot;:true,&quot;github_id&quot;:&quot;C0reFast&quot;,&quot;repo&quot;:&quot;c0refast.github.io&quot;,&quot;client_id&quot;:&quot;28277c1cf88cb302f885&quot;,&quot;client_secret&quot;:&quot;bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280&quot;,&quot;admin_user&quot;:&quot;C0reFast&quot;,&quot;distraction_free_mode&quot;:true,&quot;proxy&quot;:&quot;https:&#x2F;&#x2F;cors-anywhere.herokuapp.com&#x2F;https:&#x2F;&#x2F;github.com&#x2F;login&#x2F;oauth&#x2F;access_token&quot;,&quot;language&quot;:&quot;zh-CN&quot;,&quot;js&quot;:&quot;https:&#x2F;&#x2F;cdn.jsdelivr.net&#x2F;npm&#x2F;gitalk@1.7.2&#x2F;dist&#x2F;gitalk.min.js&quot;,&quot;path_md5&quot;:&quot;1b95ac6db78a4f2eb0360cbc046a23e8&quot;}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
 
 </body>
 </html>

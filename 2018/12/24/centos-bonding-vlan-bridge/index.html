@@ -16,12 +16,9 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/all.min.css">
 
-<script class="hexo-configurations">
-    var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
-  </script>
+<script class="next-config" data-name="main" type="application/json">{&quot;hostname&quot;:&quot;www.ichenfu.com&quot;,&quot;root&quot;:&quot;&#x2F;&quot;,&quot;images&quot;:&quot;&#x2F;images&quot;,&quot;scheme&quot;:&quot;Gemini&quot;,&quot;version&quot;:&quot;8.4.0&quot;,&quot;exturl&quot;:false,&quot;sidebar&quot;:{&quot;position&quot;:&quot;right&quot;,&quot;display&quot;:&quot;post&quot;,&quot;padding&quot;:18,&quot;offset&quot;:12,&quot;onmobile&quot;:false},&quot;copycode&quot;:false,&quot;bookmark&quot;:{&quot;enable&quot;:false,&quot;color&quot;:&quot;#222&quot;,&quot;save&quot;:&quot;auto&quot;},&quot;fancybox&quot;:false,&quot;mediumzoom&quot;:false,&quot;lazyload&quot;:false,&quot;pangu&quot;:false,&quot;comments&quot;:{&quot;style&quot;:&quot;tabs&quot;,&quot;active&quot;:null,&quot;storage&quot;:true,&quot;lazyload&quot;:false,&quot;nav&quot;:null},&quot;motion&quot;:{&quot;enable&quot;:false,&quot;async&quot;:false,&quot;transition&quot;:{&quot;post_block&quot;:&quot;fadeIn&quot;,&quot;post_header&quot;:&quot;slideDownIn&quot;,&quot;post_body&quot;:&quot;slideDownIn&quot;,&quot;coll_header&quot;:&quot;slideLeftIn&quot;,&quot;sidebar&quot;:&quot;slideUpIn&quot;}},&quot;prism&quot;:false,&quot;i18n&quot;:{&quot;placeholder&quot;:&quot;搜索...&quot;,&quot;empty&quot;:&quot;没有找到任何搜索结果：${query}&quot;,&quot;hits_time&quot;:&quot;找到 ${hits} 个搜索结果（用时 ${time} 毫秒）&quot;,&quot;hits&quot;:&quot;找到 ${hits} 个搜索结果&quot;}}</script>
 <meta name="description" content="由于业务的需要，需要在我们的一台虚拟化机器上，实现如下的配置： 首先，需要将两块网卡设置Bonding并配置交换机对应端口trunk模式;在此基础上，添加宿主机的IP地址，并添加相应的VLAN，最后，还需要添加一个Bridge，用于桥接创建的虚拟机。 由于本身这台机器就是Openstack的宿主机，所以当前的状况是除了所需要的一个Bridge，其他都已经配置完成了，并且由于Openstack的原因">
 <meta property="og:type" content="article">
 <meta property="og:title" content="CentOS系统Bonding+VLAN+Bridge配置">
@@ -44,65 +41,22 @@
 <link rel="canonical" href="https://www.ichenfu.com/2018/12/24/centos-bonding-vlan-bridge/">
 
 
-<script class="page-configurations">
-  // https://hexo.io/docs/variables.html
-  CONFIG.page = {
-    sidebar: "",
-    isHome : false,
-    isPost : true,
-    lang   : 'zh-CN'
-  };
-</script>
-<title>CentOS系统Bonding+VLAN+Bridge配置 | C0reFast记事本</title>
+
+<script class="next-config" data-name="page" type="application/json">{&quot;sidebar&quot;:&quot;&quot;,&quot;isHome&quot;:false,&quot;isPost&quot;:true,&quot;lang&quot;:&quot;zh-CN&quot;,&quot;comments&quot;:true,&quot;permalink&quot;:&quot;https:&#x2F;&#x2F;www.ichenfu.com&#x2F;2018&#x2F;12&#x2F;24&#x2F;centos-bonding-vlan-bridge&#x2F;&quot;,&quot;path&quot;:&quot;2018&#x2F;12&#x2F;24&#x2F;centos-bonding-vlan-bridge&#x2F;&quot;,&quot;title&quot;:&quot;CentOS系统Bonding+VLAN+Bridge配置&quot;}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">&quot;&quot;</script>
+<title>CentOS系统Bonding+VLAN+Bridge配置 | C0reFast记事本</title><script src="/js/config.js"></script>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
-    <script>
-      if (CONFIG.hostname === location.hostname) {
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-47062085-1');
-      }
-    </script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{&quot;tracking_id&quot;:&quot;UA-47062085-1&quot;,&quot;only_pageview&quot;:false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
 
 
 
 
   <noscript>
-  <style>
-  body { margin-top: 2rem; }
-
-  .use-motion .menu-item,
-  .use-motion .sidebar,
-  .use-motion .post-block,
-  .use-motion .pagination,
-  .use-motion .comments,
-  .use-motion .post-header,
-  .use-motion .post-body,
-  .use-motion .collection-header {
-    visibility: visible;
-  }
-
-  .use-motion .header,
-  .use-motion .site-brand-container .toggle,
-  .use-motion .footer { opacity: initial; }
-
-  .use-motion .site-title,
-  .use-motion .site-subtitle,
-  .use-motion .custom-logo-image {
-    opacity: initial;
-    top: initial;
-  }
-
-  .use-motion .logo-line {
-    transform: scaleX(1);
-  }
-
-  .search-pop-overlay, .sidebar-nav { display: none; }
-  .sidebar-panel { display: block; }
-  </style>
-</noscript>
-
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
 <link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
 </head>
 
@@ -188,7 +142,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">83</span>
+          <span class="site-state-item-count">84</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -201,7 +155,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">182</span>
+        <span class="site-state-item-count">183</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -235,7 +189,7 @@
     </header>
 
     
-  <div class="back-to-top" role="button">
+  <div class="back-to-top" role="button" aria-label="返回顶部">
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
@@ -300,7 +254,7 @@
     </span>
 
   
-    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
@@ -319,7 +273,7 @@
         <p>由于业务的需要，需要在我们的一台虚拟化机器上，实现如下的配置：</p>
 <p>首先，需要将两块网卡设置Bonding并配置交换机对应端口trunk模式;在此基础上，添加宿主机的IP地址，并添加相应的VLAN，最后，还需要添加一个Bridge，用于桥接创建的虚拟机。</p>
 <p>由于本身这台机器就是Openstack的宿主机，所以当前的状况是除了所需要的一个Bridge，其他都已经配置完成了，并且由于Openstack的原因，已经有个Bridge virbr0被绑定到bond0上了。<br>但是呢，这个Bridge是给ovs用的，也就是说，桥接在virbr0上的网络需要自己带上VLAN的tag才能正常工作，而我们希望的是再有一个Bridge br0，桥接在br0上不需要管理VLAN，保持和宿主机相同就可以。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <p>一开始有点蒙，因为VLAN和Bridge同属于二层，理论上配置的Bridge，需要将IP配置在Bridge上，但是现在IP配置在了VLAN上，牵扯到谁先谁后的问题，于是就查了查资料，找到<a target="_blank" rel="noopener" href="https://www.centos.org/forums/viewtopic.php?t=63449">这篇帖子</a>，里面提供了一张图，来自于redhat官方：</p>
 <p><img src="/images/bonding_vlan_bridge.png" alt="Multiple Bridge, Multiple VLAN, and Multiple NIC with Bond connection"></p>
@@ -428,29 +382,7 @@ NM_CONTROLLED&#x3D;no<span aria-hidden="true" class="line-numbers-rows"><span></
 
 
 
-    <div class="comments gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      const commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
+    <div class="comments gitalk-container"></div><script src="/js/comments.js"></script>
 </div>
   </main>
 
@@ -467,7 +399,7 @@ NM_CONTROLLED&#x3D;no<span aria-hidden="true" class="line-numbers-rows"><span></
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
 <div class="busuanzi-count">
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
       </span>
@@ -475,7 +407,7 @@ NM_CONTROLLED&#x3D;no<span aria-hidden="true" class="line-numbers-rows"><span></
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
@@ -507,27 +439,10 @@ NM_CONTROLLED&#x3D;no<span aria-hidden="true" class="line-numbers-rows"><span></
 
 
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
-
-<script>
-NexT.utils.loadComments('.gitalk-container', () => {
-  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
-    var gitalk = new Gitalk({
-      clientID    : '28277c1cf88cb302f885',
-      clientSecret: 'bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280',
-      repo        : 'c0refast.github.io',
-      owner       : 'C0reFast',
-      admin       : ['C0reFast'],
-      id          : 'b4279d2663eff57dfd8288df03336040',
-      proxy       : 'https://cors-anywhere.herokuapp.com/https://github.com/login/oauth/access_token',
-        language: 'zh-CN',
-      distractionFreeMode: true
-    });
-    gitalk.render(document.querySelector('.gitalk-container'));
-  }, window.Gitalk);
-});
-</script>
+<script class="next-config" data-name="gitalk" type="application/json">{&quot;enable&quot;:true,&quot;github_id&quot;:&quot;C0reFast&quot;,&quot;repo&quot;:&quot;c0refast.github.io&quot;,&quot;client_id&quot;:&quot;28277c1cf88cb302f885&quot;,&quot;client_secret&quot;:&quot;bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280&quot;,&quot;admin_user&quot;:&quot;C0reFast&quot;,&quot;distraction_free_mode&quot;:true,&quot;proxy&quot;:&quot;https:&#x2F;&#x2F;cors-anywhere.herokuapp.com&#x2F;https:&#x2F;&#x2F;github.com&#x2F;login&#x2F;oauth&#x2F;access_token&quot;,&quot;language&quot;:&quot;zh-CN&quot;,&quot;js&quot;:&quot;https:&#x2F;&#x2F;cdn.jsdelivr.net&#x2F;npm&#x2F;gitalk@1.7.2&#x2F;dist&#x2F;gitalk.min.js&quot;,&quot;path_md5&quot;:&quot;b4279d2663eff57dfd8288df03336040&quot;}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
 
 </body>
 </html>

@@ -16,12 +16,9 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/all.min.css">
 
-<script class="hexo-configurations">
-    var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
-  </script>
+<script class="next-config" data-name="main" type="application/json">{&quot;hostname&quot;:&quot;www.ichenfu.com&quot;,&quot;root&quot;:&quot;&#x2F;&quot;,&quot;images&quot;:&quot;&#x2F;images&quot;,&quot;scheme&quot;:&quot;Gemini&quot;,&quot;version&quot;:&quot;8.4.0&quot;,&quot;exturl&quot;:false,&quot;sidebar&quot;:{&quot;position&quot;:&quot;right&quot;,&quot;display&quot;:&quot;post&quot;,&quot;padding&quot;:18,&quot;offset&quot;:12,&quot;onmobile&quot;:false},&quot;copycode&quot;:false,&quot;bookmark&quot;:{&quot;enable&quot;:false,&quot;color&quot;:&quot;#222&quot;,&quot;save&quot;:&quot;auto&quot;},&quot;fancybox&quot;:false,&quot;mediumzoom&quot;:false,&quot;lazyload&quot;:false,&quot;pangu&quot;:false,&quot;comments&quot;:{&quot;style&quot;:&quot;tabs&quot;,&quot;active&quot;:null,&quot;storage&quot;:true,&quot;lazyload&quot;:false,&quot;nav&quot;:null},&quot;motion&quot;:{&quot;enable&quot;:false,&quot;async&quot;:false,&quot;transition&quot;:{&quot;post_block&quot;:&quot;fadeIn&quot;,&quot;post_header&quot;:&quot;slideDownIn&quot;,&quot;post_body&quot;:&quot;slideDownIn&quot;,&quot;coll_header&quot;:&quot;slideLeftIn&quot;,&quot;sidebar&quot;:&quot;slideUpIn&quot;}},&quot;prism&quot;:false,&quot;i18n&quot;:{&quot;placeholder&quot;:&quot;搜索...&quot;,&quot;empty&quot;:&quot;没有找到任何搜索结果：${query}&quot;,&quot;hits_time&quot;:&quot;找到 ${hits} 个搜索结果（用时 ${time} 毫秒）&quot;,&quot;hits&quot;:&quot;找到 ${hits} 个搜索结果&quot;}}</script>
 <meta name="description" content="在我们内部的系统中，有一个tcp的代理服务，用户所有的网络相关的请求，比如访问外网，或者访问在内网的某些服务，都需要通过这个服务，一方面是实现对外网访问的计费，另外也通过白名单机制，对应用的内网访问进行相应的限制。随着业务量的增加，发现提供服务的机器负载逐渐变高，当流量高峰的时候，经常出现客户端无法连接的情况，本来这个服务也是一个无状态的服务，可以很方便的水平扩容，在添加机器的同时，也尝试去分析一">
 <meta property="og:type" content="article">
 <meta property="og:title" content="一个epoll惊群导致的性能问题">
@@ -44,65 +41,22 @@
 <link rel="canonical" href="https://www.ichenfu.com/2017/05/03/proxy-epoll-thundering-herd/">
 
 
-<script class="page-configurations">
-  // https://hexo.io/docs/variables.html
-  CONFIG.page = {
-    sidebar: "",
-    isHome : false,
-    isPost : true,
-    lang   : 'zh-CN'
-  };
-</script>
-<title>一个epoll惊群导致的性能问题 | C0reFast记事本</title>
+
+<script class="next-config" data-name="page" type="application/json">{&quot;sidebar&quot;:&quot;&quot;,&quot;isHome&quot;:false,&quot;isPost&quot;:true,&quot;lang&quot;:&quot;zh-CN&quot;,&quot;comments&quot;:true,&quot;permalink&quot;:&quot;https:&#x2F;&#x2F;www.ichenfu.com&#x2F;2017&#x2F;05&#x2F;03&#x2F;proxy-epoll-thundering-herd&#x2F;&quot;,&quot;path&quot;:&quot;2017&#x2F;05&#x2F;03&#x2F;proxy-epoll-thundering-herd&#x2F;&quot;,&quot;title&quot;:&quot;一个epoll惊群导致的性能问题&quot;}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">&quot;&quot;</script>
+<title>一个epoll惊群导致的性能问题 | C0reFast记事本</title><script src="/js/config.js"></script>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
-    <script>
-      if (CONFIG.hostname === location.hostname) {
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-47062085-1');
-      }
-    </script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{&quot;tracking_id&quot;:&quot;UA-47062085-1&quot;,&quot;only_pageview&quot;:false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
 
 
 
 
   <noscript>
-  <style>
-  body { margin-top: 2rem; }
-
-  .use-motion .menu-item,
-  .use-motion .sidebar,
-  .use-motion .post-block,
-  .use-motion .pagination,
-  .use-motion .comments,
-  .use-motion .post-header,
-  .use-motion .post-body,
-  .use-motion .collection-header {
-    visibility: visible;
-  }
-
-  .use-motion .header,
-  .use-motion .site-brand-container .toggle,
-  .use-motion .footer { opacity: initial; }
-
-  .use-motion .site-title,
-  .use-motion .site-subtitle,
-  .use-motion .custom-logo-image {
-    opacity: initial;
-    top: initial;
-  }
-
-  .use-motion .logo-line {
-    transform: scaleX(1);
-  }
-
-  .search-pop-overlay, .sidebar-nav { display: none; }
-  .sidebar-panel { display: block; }
-  </style>
-</noscript>
-
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
 <link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
 </head>
 
@@ -188,7 +142,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">83</span>
+          <span class="site-state-item-count">84</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -201,7 +155,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">182</span>
+        <span class="site-state-item-count">183</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -235,7 +189,7 @@
     </header>
 
     
-  <div class="back-to-top" role="button">
+  <div class="back-to-top" role="button" aria-label="返回顶部">
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
@@ -291,7 +245,7 @@
       </span>
 
   
-    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
@@ -307,7 +261,7 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p>在我们内部的系统中，有一个tcp的代理服务，用户所有的网络相关的请求，比如访问外网，或者访问在内网的某些服务，都需要通过这个服务，一方面是实现对外网访问的计费，另外也通过白名单机制，对应用的内网访问进行相应的限制。<br>随着业务量的增加，发现提供服务的机器负载逐渐变高，当流量高峰的时候，经常出现客户端无法连接的情况，本来这个服务也是一个无状态的服务，可以很方便的水平扩容，在添加机器的同时，也尝试去分析一下程序本身的瓶颈，看能否提升一下程序本身的处理能力，通过分析和优化，还是在一定程度上提升了处理能力<a id="more"></a></p>
+        <p>在我们内部的系统中，有一个tcp的代理服务，用户所有的网络相关的请求，比如访问外网，或者访问在内网的某些服务，都需要通过这个服务，一方面是实现对外网访问的计费，另外也通过白名单机制，对应用的内网访问进行相应的限制。<br>随着业务量的增加，发现提供服务的机器负载逐渐变高，当流量高峰的时候，经常出现客户端无法连接的情况，本来这个服务也是一个无状态的服务，可以很方便的水平扩容，在添加机器的同时，也尝试去分析一下程序本身的瓶颈，看能否提升一下程序本身的处理能力，通过分析和优化，还是在一定程度上提升了处理能力<span id="more"></span></p>
 <p>首先还是在线上使用<code>perf</code>工具生成了一下火焰图：<br><img src="/images/proxy_flame_before.png" alt="火焰图"></p>
 <p>第一次看到这个火焰图感觉很奇怪，主要的问题集中在为什么<code>__accept_nocancel</code>也就是<code>accept</code>的调用会如此频繁，首先想到的就是<code>惊群效应</code>了，但是应该在Linux内核2.6.18的时候，<code>accept</code>的惊群问题在内核中就已经解决了，我们线上用的CentOS 6.5内核版本已经到了2.6.32，理论上不应该会有类似的问题。<br>于是还是到线上尝试strace看一下程序的系统调用：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
@@ -392,29 +346,7 @@ accept<span class="token punctuation">(</span><span class="token number">6</span
 
 
 
-    <div class="comments gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      const commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
+    <div class="comments gitalk-container"></div><script src="/js/comments.js"></script>
 </div>
   </main>
 
@@ -431,7 +363,7 @@ accept<span class="token punctuation">(</span><span class="token number">6</span
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
 <div class="busuanzi-count">
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
       </span>
@@ -439,7 +371,7 @@ accept<span class="token punctuation">(</span><span class="token number">6</span
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
@@ -471,27 +403,10 @@ accept<span class="token punctuation">(</span><span class="token number">6</span
 
 
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
-
-<script>
-NexT.utils.loadComments('.gitalk-container', () => {
-  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
-    var gitalk = new Gitalk({
-      clientID    : '28277c1cf88cb302f885',
-      clientSecret: 'bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280',
-      repo        : 'c0refast.github.io',
-      owner       : 'C0reFast',
-      admin       : ['C0reFast'],
-      id          : 'd37fd42d8b3129f9dbfada733870500c',
-      proxy       : 'https://cors-anywhere.herokuapp.com/https://github.com/login/oauth/access_token',
-        language: 'zh-CN',
-      distractionFreeMode: true
-    });
-    gitalk.render(document.querySelector('.gitalk-container'));
-  }, window.Gitalk);
-});
-</script>
+<script class="next-config" data-name="gitalk" type="application/json">{&quot;enable&quot;:true,&quot;github_id&quot;:&quot;C0reFast&quot;,&quot;repo&quot;:&quot;c0refast.github.io&quot;,&quot;client_id&quot;:&quot;28277c1cf88cb302f885&quot;,&quot;client_secret&quot;:&quot;bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280&quot;,&quot;admin_user&quot;:&quot;C0reFast&quot;,&quot;distraction_free_mode&quot;:true,&quot;proxy&quot;:&quot;https:&#x2F;&#x2F;cors-anywhere.herokuapp.com&#x2F;https:&#x2F;&#x2F;github.com&#x2F;login&#x2F;oauth&#x2F;access_token&quot;,&quot;language&quot;:&quot;zh-CN&quot;,&quot;js&quot;:&quot;https:&#x2F;&#x2F;cdn.jsdelivr.net&#x2F;npm&#x2F;gitalk@1.7.2&#x2F;dist&#x2F;gitalk.min.js&quot;,&quot;path_md5&quot;:&quot;d37fd42d8b3129f9dbfada733870500c&quot;}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
 
 </body>
 </html>

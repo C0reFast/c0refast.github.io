@@ -16,12 +16,9 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/all.min.css">
 
-<script class="hexo-configurations">
-    var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
-  </script>
+<script class="next-config" data-name="main" type="application/json">{&quot;hostname&quot;:&quot;www.ichenfu.com&quot;,&quot;root&quot;:&quot;&#x2F;&quot;,&quot;images&quot;:&quot;&#x2F;images&quot;,&quot;scheme&quot;:&quot;Gemini&quot;,&quot;version&quot;:&quot;8.4.0&quot;,&quot;exturl&quot;:false,&quot;sidebar&quot;:{&quot;position&quot;:&quot;right&quot;,&quot;display&quot;:&quot;post&quot;,&quot;padding&quot;:18,&quot;offset&quot;:12,&quot;onmobile&quot;:false},&quot;copycode&quot;:false,&quot;bookmark&quot;:{&quot;enable&quot;:false,&quot;color&quot;:&quot;#222&quot;,&quot;save&quot;:&quot;auto&quot;},&quot;fancybox&quot;:false,&quot;mediumzoom&quot;:false,&quot;lazyload&quot;:false,&quot;pangu&quot;:false,&quot;comments&quot;:{&quot;style&quot;:&quot;tabs&quot;,&quot;active&quot;:null,&quot;storage&quot;:true,&quot;lazyload&quot;:false,&quot;nav&quot;:null},&quot;motion&quot;:{&quot;enable&quot;:false,&quot;async&quot;:false,&quot;transition&quot;:{&quot;post_block&quot;:&quot;fadeIn&quot;,&quot;post_header&quot;:&quot;slideDownIn&quot;,&quot;post_body&quot;:&quot;slideDownIn&quot;,&quot;coll_header&quot;:&quot;slideLeftIn&quot;,&quot;sidebar&quot;:&quot;slideUpIn&quot;}},&quot;prism&quot;:false,&quot;i18n&quot;:{&quot;placeholder&quot;:&quot;搜索...&quot;,&quot;empty&quot;:&quot;没有找到任何搜索结果：${query}&quot;,&quot;hits_time&quot;:&quot;找到 ${hits} 个搜索结果（用时 ${time} 毫秒）&quot;,&quot;hits&quot;:&quot;找到 ${hits} 个搜索结果&quot;}}</script>
 <meta name="description" content="之前一直听说Designing Data-Intensive Applications (DDIA) 这本书是神书，也决定读一下，顺便做些笔记，也算巩固一下学到的东西吧。 书的第一部分，主要关注于一些基础的知识，第一章的标题Reliable, Scalable, and Maintainable Applications就讲了三个当前应用的最主要特点：可靠性，可扩展性和可维护性。 可靠性首先是Re">
 <meta property="og:type" content="article">
 <meta property="og:title" content="《DDIA》读书笔记第一章">
@@ -38,65 +35,22 @@
 <link rel="canonical" href="https://www.ichenfu.com/2018/03/20/ddia-note-chapter-1/">
 
 
-<script class="page-configurations">
-  // https://hexo.io/docs/variables.html
-  CONFIG.page = {
-    sidebar: "",
-    isHome : false,
-    isPost : true,
-    lang   : 'zh-CN'
-  };
-</script>
-<title>《DDIA》读书笔记第一章 | C0reFast记事本</title>
+
+<script class="next-config" data-name="page" type="application/json">{&quot;sidebar&quot;:&quot;&quot;,&quot;isHome&quot;:false,&quot;isPost&quot;:true,&quot;lang&quot;:&quot;zh-CN&quot;,&quot;comments&quot;:true,&quot;permalink&quot;:&quot;https:&#x2F;&#x2F;www.ichenfu.com&#x2F;2018&#x2F;03&#x2F;20&#x2F;ddia-note-chapter-1&#x2F;&quot;,&quot;path&quot;:&quot;2018&#x2F;03&#x2F;20&#x2F;ddia-note-chapter-1&#x2F;&quot;,&quot;title&quot;:&quot;《DDIA》读书笔记第一章&quot;}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">&quot;&quot;</script>
+<title>《DDIA》读书笔记第一章 | C0reFast记事本</title><script src="/js/config.js"></script>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
-    <script>
-      if (CONFIG.hostname === location.hostname) {
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-47062085-1');
-      }
-    </script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{&quot;tracking_id&quot;:&quot;UA-47062085-1&quot;,&quot;only_pageview&quot;:false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
 
 
 
 
   <noscript>
-  <style>
-  body { margin-top: 2rem; }
-
-  .use-motion .menu-item,
-  .use-motion .sidebar,
-  .use-motion .post-block,
-  .use-motion .pagination,
-  .use-motion .comments,
-  .use-motion .post-header,
-  .use-motion .post-body,
-  .use-motion .collection-header {
-    visibility: visible;
-  }
-
-  .use-motion .header,
-  .use-motion .site-brand-container .toggle,
-  .use-motion .footer { opacity: initial; }
-
-  .use-motion .site-title,
-  .use-motion .site-subtitle,
-  .use-motion .custom-logo-image {
-    opacity: initial;
-    top: initial;
-  }
-
-  .use-motion .logo-line {
-    transform: scaleX(1);
-  }
-
-  .search-pop-overlay, .sidebar-nav { display: none; }
-  .sidebar-panel { display: block; }
-  </style>
-</noscript>
-
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
 <link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
 </head>
 
@@ -183,7 +137,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">83</span>
+          <span class="site-state-item-count">84</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -196,7 +150,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">182</span>
+        <span class="site-state-item-count">183</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -230,7 +184,7 @@
     </header>
 
     
-  <div class="back-to-top" role="button">
+  <div class="back-to-top" role="button" aria-label="返回顶部">
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
@@ -286,7 +240,7 @@
       </span>
 
   
-    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
@@ -312,7 +266,7 @@
 <li>能拒绝未授权或者滥用的情况</li>
 </ul>
 <p>如果能满足上面的需求，可以说一个软件是可靠的，但是并不是所有的东西都能满足预期，当一些意料之外的东西发生了，称之为<code>faults</code>，系统正确应对这些<code>faults</code>的能力则称作<code>fault-tolerant or resilient</code>（即容错能力或者弹性），虽然容错能力很重要，但也不是意味着可以实现一个能容忍任何错误的系统（比如地球爆炸了）。<br>需要注意的是，<code>fault</code>和<code>failure</code>是不一样的，前者一般指的是系统某个部分没有按照设计正常工作，而后者一般就意味着整个系统都无法正常提供服务了。当然，我们没有办法去降低<code>fault</code>发生的概率，特别是降低到0，能做的，就是当<code>fault</code>发生时，系统不会因为这些<code>faults</code>变成<code>failure</code>状态，这也是一个容错系统的设计目标。<br>针对一个系统，我们可以人为的提升<code>faults</code>的发生概率，来验证系统的可靠性，比如kill某个进程，或者断开网络等等。一般情况下，比较严重的bug都是因为对错误的处理不完善导致的。<br>当然尽管我们可以通过设计容忍很多错误，但是预防错误的发生，远远比发生后再去修复来的好，毕竟很多错误是没办法被修复的，比如数据库被黑客入侵，这个操作无法被修复到原始的样子（数据已经泄漏）。<br>常见的错误主要有三个：</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <h3 id="硬件故障"><a href="#硬件故障" class="headerlink" title="硬件故障"></a>硬件故障</h3><p>硬件故障是最容易想到的故障，比如硬盘损坏、机房掉电、网络问题、内存问题等等，对于一个大型的数据中心来说，这些故障几乎是每时每刻都在发生的。<br>对于磁盘，一般情况下，磁盘的平均无故障时间（MTTF）在10到50年这个级别，也就意味着，如果一个存储集群有超过10000个磁盘，那理论上每一天都会出现磁盘损坏的情况。<br>而针对一些硬件的冗余措施，可以减少故障发生的概率，比如引入RAID，实现CPU、内存的热切换，多路电源供应，UPS等等。<br>在一般情况下，一台机器在这些硬件冗余措施的帮助下发生失效的概率很低，即使发生失效，很多也都可以通过备份进行恢复，针对很多较小的应用，问题不是很大，只有在某些特别重要的应用上，多机部署实现高可用才显得必要一点。<br>并且，随着如<code>AWS</code>等云计算的发展，单个虚拟机的可用性已经到了一个很高的高度。但是设计使用可以容忍一台机器丢失的多机器系统还是有优势的，比如某些机器因为系统升级或者打补丁等需要重启的情况下，这样的系统也是可以保证系统可以一直正常运行。</p>
 <h3 id="软件错误"><a href="#软件错误" class="headerlink" title="软件错误"></a>软件错误</h3><p>对于硬件故障，一般来说，都是偶发的，比如一台机器的硬盘出现问题基本也不会预示着另外的机器也出问题，当然也有一些情况，比如整个机架的机器因为散热问题都出问题了，但是毕竟这是小概率，而且这种同一时间大量机器硬件出现问题的概率实在很小。<br>另外的错误集中在系统内部，往往这类错误是跨机器的，很难预测，这些问题一旦出现，一般会比硬件故障产生更严重的后果，包括一下的一些情况：</p>
@@ -336,7 +290,8 @@
 <h2 id="可扩展性"><a href="#可扩展性" class="headerlink" title="可扩展性"></a>可扩展性</h2><p>即使一个系统在目前工作的很好，不代表他在未来也能如此。一个最常见的导致降级的原因就是负载，比如系统并发用户从10000上涨到了100000，或者从100万到1000万，或者处理的数据量有了非常大的增长。<br>可扩展性就是用来描述系统应对负载增加能力的指标。但是他不是一个标签，比如X是可扩展的或者Y是不可扩展的，这类的描述是没有意义的。更多的，我们应该考虑以下的一些问题：如果系统以特定方式增长，我们应对增长的方式有哪些？或者说，我们应该如何增加计算资源来应对这些额外的负载？</p>
 <h3 id="描述负载"><a href="#描述负载" class="headerlink" title="描述负载"></a>描述负载</h3><p>首先需要描述一下什么是负载，这样才能讨论关于负载增长相关的话题，负载可以从几个参数上描述，根据系统的不同而不同，比如，对于web server来说是QPS，对于数据库来说是读写比，对于一个聊天室来说是同时在线的人数，或者其他比如缓存命中率等等。可能系统是受一些很常见的因素影响，也可能是一些很小的极端情况导致了系统的瓶颈。<br>以Twitter 2012年的数据为例：Twitter主要有两个操作：</p>
 <pre><code>发推：用户给关注者发推（平均4.6k请求/s，峰值12k请求/s）
-主信息流：用户刷新自己的时间线，查看别人发的推（300k请求/s）</code></pre>
+主信息流：用户刷新自己的时间线，查看别人发的推（300k请求/s）
+</code></pre>
 <p>如果仅仅是简单的处理12k/s的写请求（发推峰值），其实是比较简单的。但是Twitter面临的最大问题不是用户发推的容量，而是<code>fan-out</code>（电子行业的扇出问题），每个人都被很多人关注，每个人又关注很多人。所以大致有两种方式来处理上面说的两种基本操作：</p>
 <ol>
 <li>在发推时，直接发到一个公共的数据库里，然后用户在刷新自己的信息流时，查询一下自己关注了哪些人，然后去这些人的推文列表里查找最近发的推文，最后合并一下进行显示。最后的SQL语句与下面的类似： <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">SELECT</span> tweets<span class="token punctuation">.</span><span class="token operator">*</span><span class="token punctuation">,</span> users<span class="token punctuation">.</span><span class="token operator">*</span> <span class="token keyword">FROM</span> tweets
@@ -401,29 +356,7 @@
 
 
 
-    <div class="comments gitalk-container"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      const commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
+    <div class="comments gitalk-container"></div><script src="/js/comments.js"></script>
 </div>
   </main>
 
@@ -440,7 +373,7 @@
   <span class="author" itemprop="copyrightHolder">Chen Fu</span>
 </div>
 <div class="busuanzi-count">
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
       </span>
@@ -448,7 +381,7 @@
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
@@ -480,27 +413,10 @@
 
 
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.css">
-
-<script>
-NexT.utils.loadComments('.gitalk-container', () => {
-  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', () => {
-    var gitalk = new Gitalk({
-      clientID    : '28277c1cf88cb302f885',
-      clientSecret: 'bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280',
-      repo        : 'c0refast.github.io',
-      owner       : 'C0reFast',
-      admin       : ['C0reFast'],
-      id          : 'fc8030f62402bff98b80e79ea14f940b',
-      proxy       : 'https://cors-anywhere.herokuapp.com/https://github.com/login/oauth/access_token',
-        language: 'zh-CN',
-      distractionFreeMode: true
-    });
-    gitalk.render(document.querySelector('.gitalk-container'));
-  }, window.Gitalk);
-});
-</script>
+<script class="next-config" data-name="gitalk" type="application/json">{&quot;enable&quot;:true,&quot;github_id&quot;:&quot;C0reFast&quot;,&quot;repo&quot;:&quot;c0refast.github.io&quot;,&quot;client_id&quot;:&quot;28277c1cf88cb302f885&quot;,&quot;client_secret&quot;:&quot;bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280&quot;,&quot;admin_user&quot;:&quot;C0reFast&quot;,&quot;distraction_free_mode&quot;:true,&quot;proxy&quot;:&quot;https:&#x2F;&#x2F;cors-anywhere.herokuapp.com&#x2F;https:&#x2F;&#x2F;github.com&#x2F;login&#x2F;oauth&#x2F;access_token&quot;,&quot;language&quot;:&quot;zh-CN&quot;,&quot;js&quot;:&quot;https:&#x2F;&#x2F;cdn.jsdelivr.net&#x2F;npm&#x2F;gitalk@1.7.2&#x2F;dist&#x2F;gitalk.min.js&quot;,&quot;path_md5&quot;:&quot;fc8030f62402bff98b80e79ea14f940b&quot;}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
 
 </body>
 </html>
