@@ -1,0 +1,9 @@
+#RewriteEngine On
+#RewriteCond %{HTTP:X-FORWARDED-PROTO} !^https$
+#RewriteCond %{HTTP:X-CLIENT-SCHEME} !^https$
+#RewriteRule (.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+ExpiresActive On
+ExpiresDefault "access plus 12 hours"
+
+SetOutputFilter DEFLATE
