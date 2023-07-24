@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="在上一篇Blog里遗留一个问题：在打开了kube-proxy得tracing日志之后，除去定时同步iptables得日志之外，还出现了一些Calling handler.OnEndpointsUpdate相关得日志输出，这些输出其实是不太寻常的： 13:55:13 localhost kube-proxy[20761]: I0609 13:55:13.290051   20761 config.g">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kubernetes的Leader选举机制">
+<meta property="og:url" content="https://www.ichenfu.com/2021/06/16/k8s-leader-elect-resource-lock/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="在上一篇Blog里遗留一个问题：在打开了kube-proxy得tracing日志之后，除去定时同步iptables得日志之外，还出现了一些Calling handler.OnEndpointsUpdate相关得日志输出，这些输出其实是不太寻常的： 13:55:13 localhost kube-proxy[20761]: I0609 13:55:13.290051   20761 config.g">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-06-16T12:13:58.000Z">
+<meta property="article:modified_time" content="2021-06-18T08:52:10.570Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="leader-elect-resource-lock">
+<meta property="article:tag" content="endpoints">
+<meta property="article:tag" content="leases">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2021/06/16/k8s-leader-elect-resource-lock/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2021/06/16/k8s-leader-elect-resource-lock/","path":"2021/06/16/k8s-leader-elect-resource-lock/","title":"Kubernetes的Leader选举机制"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Kubernetes的Leader选举机制 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/06/16/k8s-leader-elect-resource-lock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Kubernetes的Leader选举机制 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kubernetes的Leader选举机制
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021年6月16日 20:13 20:13:58" itemprop="dateCreated datePublished" datetime="2021-06-16T20:13:58+08:00">2021年6月16日 20:13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年6月18日 16:52 16:52:10" itemprop="dateModified" datetime="2021-06-18T16:52:10+08:00">2021年6月18日 16:52</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>在<a href="/2021/06/14/systemd-privatenetwork-cause-annoying-logs/">上一篇Blog</a>里遗留一个问题：在打开了<code>kube-proxy</code>得tracing日志之后，除去定时同步iptables得日志之外，还出现了一些<code>Calling handler.OnEndpointsUpdate</code>相关得日志输出，这些输出其实是不太寻常的：</p>
+<pre class="line-numbers language-none"><code class="language-none">13:55:13 localhost kube-proxy[20761]: I0609 13:55:13.290051   20761 config.go:167] Calling handler.OnEndpointsUpdate
+13:55:14 localhost kube-proxy[20761]: I0609 13:55:14.502924   20761 config.go:167] Calling handler.OnEndpointsUpdate
+13:55:15 localhost kube-proxy[20761]: I0609 13:55:15.299633   20761 config.go:167] Calling handler.OnEndpointsUpdate
+13:55:16 localhost kube-proxy[20761]: I0609 13:55:16.515500   20761 config.go:167] Calling handler.OnEndpointsUpdate
+13:55:17 localhost kube-proxy[20761]: I0609 13:55:17.316952   20761 config.go:167] Calling handler.OnEndpointsUpdate
+13:55:18 localhost kube-proxy[20761]: I0609 13:55:18.525537   20761 config.go:167] Calling handler.OnEndpointsUpdate
+13:55:19 localhost kube-proxy[20761]: I0609 13:55:19.326566   20761 config.go:167] Calling handler.OnEndpointsUpdate
+13:55:20 localhost kube-proxy[20761]: I0609 13:55:20.541238   20761 config.go:167] Calling handler.OnEndpointsUpdate<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>频率大约是1s一条，如果熟悉K8S的Watch-List机制的一眼就应该可以看出来原因：因为<code>kube-proxy</code>会watch<code>Endpoints</code>的变化，并对这些变化做相应动作，然后某些<code>Endpoints</code>更新了之后，就触发了这条日志。其实这个机制是没有问题的，在正常的K8S集群里，这些输出也没有问题。但是在我们的集群里就有些不正常了，因为我们当前的应用场景，根本就不存在需要<code>Endpoints</code>的情况！那到底是什么地方触发了<code>Endpoints</code>的更新？</p>
+<span id="more"></span>
+
+<p>要找到原因，首先得知道是不是真的有对应的<code>Endpoints</code>，并且是不是真的再更新，比较简单，kubectl也支持针对资源的watch操作：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># kubectl get endpoints --all-namespaces --watch</span>
+NAMESPACE     NAME                      ENDPOINTS                              AGE
+default       kubernetes                <span class="token number">192.168</span>.0.1:6443                       71d
+kube-system   kube-controller-manager   <span class="token operator">&lt;</span>none<span class="token operator">></span>                                 71d
+kube-system   kube-scheduler            <span class="token operator">&lt;</span>none<span class="token operator">></span>                                 71d
+kube-system   kube-controller-manager   <span class="token operator">&lt;</span>none<span class="token operator">></span>                                 71d
+kube-system   kube-scheduler            <span class="token operator">&lt;</span>none<span class="token operator">></span>                                 71d
+kube-system   kube-controller-manager   <span class="token operator">&lt;</span>none<span class="token operator">></span>                                 71d
+kube-system   kube-scheduler            <span class="token operator">&lt;</span>none<span class="token operator">></span>                                 71d
+kube-system   kube-controller-manager   <span class="token operator">&lt;</span>none<span class="token operator">></span>                                 71d<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以发现确实在<code>kube-system</code>这个namespace下面有两个endpoint：<code>kube-scheduler</code>、<code>kube-controller-manager</code>，而且也都是不停的在被修改。只是比较奇怪的地方是谁在修改它？修改的目的是啥？于是就获取一下其中一个endpoint看下具体的信息：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># kubectl -n kube-system get endpoints kube-scheduler -oyaml</span>
+apiVersion: v1
+kind: Endpoints
+metadata:
+  annotations:
+    control-plane.alpha.kubernetes.io/leader: <span class="token string">'&#123;"holderIdentity":"192-168-0-1_e1e84d39-8c11-492b-8ee0-7d6eac6b3186","leaseDurationSeconds":15,"acquireTime":"2021-05-08T10:47:31Z","renewTime":"2021-06-16T10:41:23Z","leaderTransitions":9&#125;'</span>
+  creationTimestamp: <span class="token string">"2021-04-06T08:55:30Z"</span>
+  name: kube-scheduler
+  namespace: kube-system
+  resourceVersion: <span class="token string">"24773276"</span>
+  selfLink: /api/v1/namespaces/kube-system/endpoints/kube-scheduler
+  uid: ae3d725e-679d-4410-8655-7ddacb633d1f<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>可以看到annotations里有个key：<code>control-plane.alpha.kubernetes.io/leader</code>，好像和选举有关啊。之前知道K8S的scheduler和controller-manager以及一些自定义的controller有选举机制来保证同一时刻只有一个实例在工作，但是没仔细研究过到底是怎么实现的，难道是基于endpoints？</p>
+<p>先去看看<code>scheduler</code>的启动参数里，是不是有相关的选项，帮助我们理解一下当前的策略。果然执行<code>kube-scheduler --help</code>之后发现有一些相关的输出：</p>
+<blockquote><p>Leader election flags:</p>
+<pre><code>  --leader-elect
+            Start a leader election client and gain leadership before executing the main loop. Enable this when running replicated components for high availability. (default true)
+  --leader-elect-lease-duration duration
+            The duration that non-leader candidates will wait after observing a leadership renewal until attempting to acquire leadership of a led but unrenewed leader slot. This is effectively the
+            maximum duration that a leader can be stopped before it is replaced by another candidate. This is only applicable if leader election is enabled. (default 15s)
+  --leader-elect-renew-deadline duration
+            The interval between attempts by the acting master to renew a leadership slot before it stops leading. This must be less than or equal to the lease duration. This is only applicable if leader election is enabled. (default 10s)
+  --leader-elect-resource-lock endpoints
+            The type of resource object that is used for locking during leader election. Supported options are endpoints (default) and `configmaps`. (default &quot;endpoints&quot;)
+  --leader-elect-resource-name string
+            The name of resource object that is used for locking during leader election. (default &quot;kube-scheduler&quot;)
+  --leader-elect-resource-namespace string
+            The namespace of resource object that is used for locking during leader election. (default &quot;kube-system&quot;)
+  --leader-elect-retry-period duration
+            The duration the clients should wait between attempting acquisition and renewal of a leadership. This is only applicable if leader election is enabled. (default 2s)
+</code></pre>
+</blockquote>
+
+<p>发现确实有相关的选项，针对<code>scheduler</code>来说，默认选择是使用一个endpoints，叫<code>kube-scheduler</code>来作为加锁的key，也可以修改为<code>configmaps</code>，当然名字也可以修改。而且renew这个锁的时间间隔默认是2s，这就很符合之前的日志输出了，<code>kube-scheduler</code>和<code>kube-controller-manager</code>两个组件，每个都间隔2s更新对应的endpoints，刚好看起来像是每秒都会有更新，这个和日志里输出的情况是一致的。</p>
+<p>那具体K8S的这个选举机制是怎么工作的呢？继续分析一下代码，因为我们线上是运行的K8S的v1.16.15版本，所以下面的代码都是基于这个版本。</p>
+<p>整体上，逻辑大致分为两部分：</p>
+<ol>
+<li>控制部分，主要负责确认当前是否获取到锁，Renew锁，释放锁等等控制层面操作</li>
+<li>存储部分，主要负责存储这个锁，比如上文中的借助一个endpoint资源进行存储</li>
+</ol>
+<p>我们先看看<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/blob/v1.16.15/cmd/kube-scheduler/app/server.go#L274">控制部分的入口</a>：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">if</span> cc<span class="token punctuation">.</span>LeaderElection <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+  cc<span class="token punctuation">.</span>LeaderElection<span class="token punctuation">.</span>Callbacks <span class="token operator">=</span> leaderelection<span class="token punctuation">.</span>LeaderCallbacks<span class="token punctuation">&#123;</span>
+    OnStartedLeading<span class="token punctuation">:</span> run<span class="token punctuation">,</span>
+    OnStoppedLeading<span class="token punctuation">:</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      klog<span class="token punctuation">.</span><span class="token function">Fatalf</span><span class="token punctuation">(</span><span class="token string">"leaderelection lost"</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+  <span class="token punctuation">&#125;</span>
+  leaderElector<span class="token punctuation">,</span> err <span class="token operator">:=</span> leaderelection<span class="token punctuation">.</span><span class="token function">NewLeaderElector</span><span class="token punctuation">(</span><span class="token operator">*</span>cc<span class="token punctuation">.</span>LeaderElection<span class="token punctuation">)</span>
+  <span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"couldn't create leader elector: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+  <span class="token punctuation">&#125;</span>
+
+  leaderElector<span class="token punctuation">.</span><span class="token function">Run</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+
+  <span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"lost lease"</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>入口代码比较简单，创建<code>LeaderElector</code>并执行<code>Run()</code>，继续看看他的内部逻辑，这部分代码在<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/blob/v1.16.15/staging/src/k8s.io/client-go/tools/leaderelection/leaderelection.go#L195">client-go里</a>：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// Run starts the leader election loop</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>le <span class="token operator">*</span>LeaderElector<span class="token punctuation">)</span> <span class="token function">Run</span><span class="token punctuation">(</span>ctx context<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">defer</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		runtime<span class="token punctuation">.</span><span class="token function">HandleCrash</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		le<span class="token punctuation">.</span>config<span class="token punctuation">.</span>Callbacks<span class="token punctuation">.</span><span class="token function">OnStoppedLeading</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> <span class="token operator">!</span>le<span class="token punctuation">.</span><span class="token function">acquire</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token comment">// ctx signalled done</span>
+	<span class="token punctuation">&#125;</span>
+	ctx<span class="token punctuation">,</span> cancel <span class="token operator">:=</span> context<span class="token punctuation">.</span><span class="token function">WithCancel</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> <span class="token function">cancel</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">go</span> le<span class="token punctuation">.</span>config<span class="token punctuation">.</span>Callbacks<span class="token punctuation">.</span><span class="token function">OnStartedLeading</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+	le<span class="token punctuation">.</span><span class="token function">renew</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>主要的逻辑也比较清楚，先尝试<code>acquire</code>，如果成功，就调用回调函数并及时<code>renew</code>，而在<code>acquire</code>和<code>renew</code>这两个函数里主要的逻辑就是根据配置的时间间隔不停的尝试调用另一个<code>tryAcquireOrRenew</code>函数，我们主要看看这个函数：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// tryAcquireOrRenew tries to acquire a leader lease if it is not already acquired,</span>
+<span class="token comment">// else it tries to renew the lease if it has already been acquired. Returns true</span>
+<span class="token comment">// on success else returns false.</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>le <span class="token operator">*</span>LeaderElector<span class="token punctuation">)</span> <span class="token function">tryAcquireOrRenew</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">bool</span> <span class="token punctuation">&#123;</span>
+	now <span class="token operator">:=</span> metav1<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	leaderElectionRecord <span class="token operator">:=</span> rl<span class="token punctuation">.</span>LeaderElectionRecord<span class="token punctuation">&#123;</span>
+		HolderIdentity<span class="token punctuation">:</span>       le<span class="token punctuation">.</span>config<span class="token punctuation">.</span>Lock<span class="token punctuation">.</span><span class="token function">Identity</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		LeaseDurationSeconds<span class="token punctuation">:</span> <span class="token function">int</span><span class="token punctuation">(</span>le<span class="token punctuation">.</span>config<span class="token punctuation">.</span>LeaseDuration <span class="token operator">/</span> time<span class="token punctuation">.</span>Second<span class="token punctuation">)</span><span class="token punctuation">,</span>
+		RenewTime<span class="token punctuation">:</span>            now<span class="token punctuation">,</span>
+		AcquireTime<span class="token punctuation">:</span>          now<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token comment">// 1. obtain or create the ElectionRecord</span>
+	oldLeaderElectionRecord<span class="token punctuation">,</span> err <span class="token operator">:=</span> le<span class="token punctuation">.</span>config<span class="token punctuation">.</span>Lock<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> <span class="token operator">!</span>errors<span class="token punctuation">.</span><span class="token function">IsNotFound</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			klog<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"error retrieving resource lock %v: %v"</span><span class="token punctuation">,</span> le<span class="token punctuation">.</span>config<span class="token punctuation">.</span>Lock<span class="token punctuation">.</span><span class="token function">Describe</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+			<span class="token keyword">return</span> <span class="token boolean">false</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> err <span class="token operator">=</span> le<span class="token punctuation">.</span>config<span class="token punctuation">.</span>Lock<span class="token punctuation">.</span><span class="token function">Create</span><span class="token punctuation">(</span>leaderElectionRecord<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			klog<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"error initially creating leader election record: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+			<span class="token keyword">return</span> <span class="token boolean">false</span>
+		<span class="token punctuation">&#125;</span>
+		le<span class="token punctuation">.</span>observedRecord <span class="token operator">=</span> leaderElectionRecord
+		le<span class="token punctuation">.</span>observedTime <span class="token operator">=</span> le<span class="token punctuation">.</span>clock<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token boolean">true</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token comment">// 2. Record obtained, check the Identity &amp; Time</span>
+	<span class="token keyword">if</span> <span class="token operator">!</span>reflect<span class="token punctuation">.</span><span class="token function">DeepEqual</span><span class="token punctuation">(</span>le<span class="token punctuation">.</span>observedRecord<span class="token punctuation">,</span> <span class="token operator">*</span>oldLeaderElectionRecord<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		le<span class="token punctuation">.</span>observedRecord <span class="token operator">=</span> <span class="token operator">*</span>oldLeaderElectionRecord
+		le<span class="token punctuation">.</span>observedTime <span class="token operator">=</span> le<span class="token punctuation">.</span>clock<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>oldLeaderElectionRecord<span class="token punctuation">.</span>HolderIdentity<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span>
+		le<span class="token punctuation">.</span>observedTime<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>le<span class="token punctuation">.</span>config<span class="token punctuation">.</span>LeaseDuration<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">After</span><span class="token punctuation">(</span>now<span class="token punctuation">.</span>Time<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+		<span class="token operator">!</span>le<span class="token punctuation">.</span><span class="token function">IsLeader</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		klog<span class="token punctuation">.</span><span class="token function">V</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"lock is held by %v and has not yet expired"</span><span class="token punctuation">,</span> oldLeaderElectionRecord<span class="token punctuation">.</span>HolderIdentity<span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token boolean">false</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token comment">// 3. We're going to try to update. The leaderElectionRecord is set to it's default</span>
+	<span class="token comment">// here. Let's correct it before updating.</span>
+	<span class="token keyword">if</span> le<span class="token punctuation">.</span><span class="token function">IsLeader</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		leaderElectionRecord<span class="token punctuation">.</span>AcquireTime <span class="token operator">=</span> oldLeaderElectionRecord<span class="token punctuation">.</span>AcquireTime
+		leaderElectionRecord<span class="token punctuation">.</span>LeaderTransitions <span class="token operator">=</span> oldLeaderElectionRecord<span class="token punctuation">.</span>LeaderTransitions
+	<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		leaderElectionRecord<span class="token punctuation">.</span>LeaderTransitions <span class="token operator">=</span> oldLeaderElectionRecord<span class="token punctuation">.</span>LeaderTransitions <span class="token operator">+</span> <span class="token number">1</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token comment">// update the lock itself</span>
+	<span class="token keyword">if</span> err <span class="token operator">=</span> le<span class="token punctuation">.</span>config<span class="token punctuation">.</span>Lock<span class="token punctuation">.</span><span class="token function">Update</span><span class="token punctuation">(</span>leaderElectionRecord<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		klog<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"Failed to update lock: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token boolean">false</span>
+	<span class="token punctuation">&#125;</span>
+	le<span class="token punctuation">.</span>observedRecord <span class="token operator">=</span> leaderElectionRecord
+	le<span class="token punctuation">.</span>observedTime <span class="token operator">=</span> le<span class="token punctuation">.</span>clock<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">true</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>逻辑也不复杂，主要也就是调用Lock存储的<code>Get()</code>、<code>Create()</code>和<code>Update</code>函数。那关于控制部分的逻辑基本就差不多了。</p>
+<p>下面来看看存储相关的逻辑，入口代码在<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/blob/v1.16.15/cmd/kube-scheduler/app/options/options.go#L261">cmd&#x2F;kube-scheduler&#x2F;app&#x2F;options&#x2F;options.go</a></p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">makeLeaderElectionConfig</span><span class="token punctuation">(</span>config kubeschedulerconfig<span class="token punctuation">.</span>KubeSchedulerLeaderElectionConfiguration<span class="token punctuation">,</span> client clientset<span class="token punctuation">.</span>Interface<span class="token punctuation">,</span> recorder record<span class="token punctuation">.</span>EventRecorder<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>leaderelection<span class="token punctuation">.</span>LeaderElectionConfig<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	hostname<span class="token punctuation">,</span> err <span class="token operator">:=</span> os<span class="token punctuation">.</span><span class="token function">Hostname</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"unable to get hostname: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// add a uniquifier so that two processes on the same host don't accidentally both become active</span>
+	id <span class="token operator">:=</span> hostname <span class="token operator">+</span> <span class="token string">"_"</span> <span class="token operator">+</span> <span class="token function">string</span><span class="token punctuation">(</span>uuid<span class="token punctuation">.</span><span class="token function">NewUUID</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+	rl<span class="token punctuation">,</span> err <span class="token operator">:=</span> resourcelock<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span>config<span class="token punctuation">.</span>ResourceLock<span class="token punctuation">,</span>
+		config<span class="token punctuation">.</span>ResourceNamespace<span class="token punctuation">,</span>
+		config<span class="token punctuation">.</span>ResourceName<span class="token punctuation">,</span>
+		client<span class="token punctuation">.</span><span class="token function">CoreV1</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		client<span class="token punctuation">.</span><span class="token function">CoordinationV1</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		resourcelock<span class="token punctuation">.</span>ResourceLockConfig<span class="token punctuation">&#123;</span>
+			Identity<span class="token punctuation">:</span>      id<span class="token punctuation">,</span>
+			EventRecorder<span class="token punctuation">:</span> recorder<span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"couldn't create resource lock: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>leaderelection<span class="token punctuation">.</span>LeaderElectionConfig<span class="token punctuation">&#123;</span>
+		Lock<span class="token punctuation">:</span>          rl<span class="token punctuation">,</span>
+		LeaseDuration<span class="token punctuation">:</span> config<span class="token punctuation">.</span>LeaseDuration<span class="token punctuation">.</span>Duration<span class="token punctuation">,</span>
+		RenewDeadline<span class="token punctuation">:</span> config<span class="token punctuation">.</span>RenewDeadline<span class="token punctuation">.</span>Duration<span class="token punctuation">,</span>
+		RetryPeriod<span class="token punctuation">:</span>   config<span class="token punctuation">.</span>RetryPeriod<span class="token punctuation">.</span>Duration<span class="token punctuation">,</span>
+		WatchDog<span class="token punctuation">:</span>      leaderelection<span class="token punctuation">.</span><span class="token function">NewLeaderHealthzAdaptor</span><span class="token punctuation">(</span>time<span class="token punctuation">.</span>Second <span class="token operator">*</span> <span class="token number">20</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		Name<span class="token punctuation">:</span>          <span class="token string">"kube-scheduler"</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>其中最重要的调用是<code>resourcelock.New()</code>这里根据Lock的类型，创建了不同的实例，我们继续看看K8S提供了哪些类型的<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/blob/v1.16.15/staging/src/k8s.io/client-go/tools/leaderelection/resourcelock/interface.go#L93">实现</a>：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// Manufacture will create a lock of a given type according to the input parameters</span>
+<span class="token keyword">func</span> <span class="token function">New</span><span class="token punctuation">(</span>lockType <span class="token builtin">string</span><span class="token punctuation">,</span> ns <span class="token builtin">string</span><span class="token punctuation">,</span> name <span class="token builtin">string</span><span class="token punctuation">,</span> coreClient corev1<span class="token punctuation">.</span>CoreV1Interface<span class="token punctuation">,</span> coordinationClient coordinationv1<span class="token punctuation">.</span>CoordinationV1Interface<span class="token punctuation">,</span> rlc ResourceLockConfig<span class="token punctuation">)</span> <span class="token punctuation">(</span>Interface<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">switch</span> lockType <span class="token punctuation">&#123;</span>
+	<span class="token keyword">case</span> EndpointsResourceLock<span class="token punctuation">:</span>
+		<span class="token keyword">return</span> <span class="token operator">&amp;</span>EndpointsLock<span class="token punctuation">&#123;</span>
+			EndpointsMeta<span class="token punctuation">:</span> metav1<span class="token punctuation">.</span>ObjectMeta<span class="token punctuation">&#123;</span>
+				Namespace<span class="token punctuation">:</span> ns<span class="token punctuation">,</span>
+				Name<span class="token punctuation">:</span>      name<span class="token punctuation">,</span>
+			<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+			Client<span class="token punctuation">:</span>     coreClient<span class="token punctuation">,</span>
+			LockConfig<span class="token punctuation">:</span> rlc<span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+	<span class="token keyword">case</span> ConfigMapsResourceLock<span class="token punctuation">:</span>
+		<span class="token keyword">return</span> <span class="token operator">&amp;</span>ConfigMapLock<span class="token punctuation">&#123;</span>
+			ConfigMapMeta<span class="token punctuation">:</span> metav1<span class="token punctuation">.</span>ObjectMeta<span class="token punctuation">&#123;</span>
+				Namespace<span class="token punctuation">:</span> ns<span class="token punctuation">,</span>
+				Name<span class="token punctuation">:</span>      name<span class="token punctuation">,</span>
+			<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+			Client<span class="token punctuation">:</span>     coreClient<span class="token punctuation">,</span>
+			LockConfig<span class="token punctuation">:</span> rlc<span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+	<span class="token keyword">case</span> LeasesResourceLock<span class="token punctuation">:</span>
+		<span class="token keyword">return</span> <span class="token operator">&amp;</span>LeaseLock<span class="token punctuation">&#123;</span>
+			LeaseMeta<span class="token punctuation">:</span> metav1<span class="token punctuation">.</span>ObjectMeta<span class="token punctuation">&#123;</span>
+				Namespace<span class="token punctuation">:</span> ns<span class="token punctuation">,</span>
+				Name<span class="token punctuation">:</span>      name<span class="token punctuation">,</span>
+			<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+			Client<span class="token punctuation">:</span>     coordinationClient<span class="token punctuation">,</span>
+			LockConfig<span class="token punctuation">:</span> rlc<span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token boolean">nil</span>
+	<span class="token keyword">default</span><span class="token punctuation">:</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"Invalid lock-type %s"</span><span class="token punctuation">,</span> lockType<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>简单一看发现除了上面看到的<code>endpoints</code>、<code>configmaps</code>还多了个<code>leases</code>类型，具体的实现也比较简单，就用<code>endpoints</code>类型的<code>Create</code>举例吧：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// Create attempts to create a LeaderElectionRecord annotation</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>el <span class="token operator">*</span>EndpointsLock<span class="token punctuation">)</span> <span class="token function">Create</span><span class="token punctuation">(</span>ler LeaderElectionRecord<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	recordBytes<span class="token punctuation">,</span> err <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">Marshal</span><span class="token punctuation">(</span>ler<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+	el<span class="token punctuation">.</span>e<span class="token punctuation">,</span> err <span class="token operator">=</span> el<span class="token punctuation">.</span>Client<span class="token punctuation">.</span><span class="token function">Endpoints</span><span class="token punctuation">(</span>el<span class="token punctuation">.</span>EndpointsMeta<span class="token punctuation">.</span>Namespace<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Create</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>v1<span class="token punctuation">.</span>Endpoints<span class="token punctuation">&#123;</span>
+		ObjectMeta<span class="token punctuation">:</span> metav1<span class="token punctuation">.</span>ObjectMeta<span class="token punctuation">&#123;</span>
+			Name<span class="token punctuation">:</span>      el<span class="token punctuation">.</span>EndpointsMeta<span class="token punctuation">.</span>Name<span class="token punctuation">,</span>
+			Namespace<span class="token punctuation">:</span> el<span class="token punctuation">.</span>EndpointsMeta<span class="token punctuation">.</span>Namespace<span class="token punctuation">,</span>
+			Annotations<span class="token punctuation">:</span> <span class="token keyword">map</span><span class="token punctuation">[</span><span class="token builtin">string</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">&#123;</span>
+				LeaderElectionRecordAnnotationKey<span class="token punctuation">:</span> <span class="token function">string</span><span class="token punctuation">(</span>recordBytes<span class="token punctuation">)</span><span class="token punctuation">,</span>
+			<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> err
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>就非常的简单，就是调用kubeclient的Endpoints相关接口，创建一个<code>Endpoints</code>，同样的，其他动作也是类似。</p>
+<p>到这里其实大体上整个选主的逻辑也基本搞清楚了，似乎没什么大问题。但总觉得目前提供的这两个基于<code>endpoints</code>和<code>configmaps</code>的实现不怎么优雅。因为每个Node上，<code>kube-proxy</code>需要watch<code>endpoints</code>的变化、而<code>kubelet</code>又需要watch<code>configmaps</code>的变化。无论选择哪个，Lock的不停Renew都会Push到所有的节点，这在无形中也会对集群多造成一点点压力。</p>
+<p>其实从官方的实现也可以看的出来，<code>leases</code>类型是独立的一个资源，没用其他的组件会watch这个资源，从一定程度上能解决这个问题，可惜的是因为有平滑升级的需求，不能直接切换到<code>leases</code>类型的Lock了。所以官方也在后续1.17版本做出了一些改进，具体的可以参考：<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/pull/81030">migrate leader election to lease API #81030</a>，<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/pull/84084">Migrate components to EndpointsLeases leader election lock #84084</a>。</p>
+<p>说回我们自己的业务，暂时也没有升级K8S得欲望，好在当前我们机器上不需要InCluster类型访问<code>apiserver</code>，也没有ClusterIP的需求，所以其实不需要<code>kube-proxy</code>这个组件，一不做二不休，不如直接把<code>kube-proxy</code>给下线了，正好下线之后还能去掉对<code>ipvs</code>模块的依赖，刚好也能解决上篇疯狂输出日志的问题，一举两得。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/leader-elect-resource-lock/" rel="tag"># leader-elect-resource-lock</a>
+              <a href="/tags/endpoints/" rel="tag"># endpoints</a>
+              <a href="/tags/leases/" rel="tag"># leases</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/06/14/systemd-privatenetwork-cause-annoying-logs/" rel="prev" title="dmesg中持续打印的诡异日志追踪记">
+                  <i class="fa fa-chevron-left"></i> dmesg中持续打印的诡异日志追踪记
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/09/28/jdc-router-luban/" rel="next" title="京东云无线宝鲁班路由器试用记">
+                  京东云无线宝鲁班路由器试用记 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"20e28770b4d47fc769e33db18ca6faae"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

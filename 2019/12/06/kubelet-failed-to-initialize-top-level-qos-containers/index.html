@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="最近往K8s集群中添加节点的时候，发现部分节点的kubelet进程无法启动，导致节点处于NotReady状态。journalctl -u kubelet查看日志可以发现类似的日志： .... Nov 29 23:32:13 localhost kubelet[3830]: I1129 23:32:13.311881    3830 server.go:333] Adding debug handl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kubelet启动报错Failed to start ContainerManager failed to initialize top level QOS containers">
+<meta property="og:url" content="https://www.ichenfu.com/2019/12/06/kubelet-failed-to-initialize-top-level-qos-containers/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="最近往K8s集群中添加节点的时候，发现部分节点的kubelet进程无法启动，导致节点处于NotReady状态。journalctl -u kubelet查看日志可以发现类似的日志： .... Nov 29 23:32:13 localhost kubelet[3830]: I1129 23:32:13.311881    3830 server.go:333] Adding debug handl">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-12-06T04:31:54.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.290Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="cgroups">
+<meta property="article:tag" content="Kubernetes">
+<meta property="article:tag" content="Kubelet">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2019/12/06/kubelet-failed-to-initialize-top-level-qos-containers/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2019/12/06/kubelet-failed-to-initialize-top-level-qos-containers/","path":"2019/12/06/kubelet-failed-to-initialize-top-level-qos-containers/","title":"Kubelet启动报错Failed to start ContainerManager failed to initialize top level QOS containers"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Kubelet启动报错Failed to start ContainerManager failed to initialize top level QOS containers | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2019/12/06/kubelet-failed-to-initialize-top-level-qos-containers/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Kubelet启动报错Failed to start ContainerManager failed to initialize top level QOS containers | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kubelet启动报错Failed to start ContainerManager failed to initialize top level QOS containers
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019年12月6日 12:31 12:31:54" itemprop="dateCreated datePublished" datetime="2019-12-06T12:31:54+08:00">2019年12月6日 12:31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>最近往K8s集群中添加节点的时候，发现部分节点的kubelet进程无法启动，导致节点处于NotReady状态。<code>journalctl -u kubelet</code>查看日志可以发现类似的日志：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">..</span><span class="token punctuation">..</span>
+Nov <span class="token number">29</span> <span class="token number">23</span>:32:13 localhost kubelet<span class="token punctuation">[</span><span class="token number">3830</span><span class="token punctuation">]</span>: I1129 <span class="token number">23</span>:32:13.311881    <span class="token number">3830</span> server.go:333<span class="token punctuation">]</span> Adding debug handlers to kubelet server.
+Nov <span class="token number">29</span> <span class="token number">23</span>:32:13 localhost kubelet<span class="token punctuation">[</span><span class="token number">3830</span><span class="token punctuation">]</span>: W1129 <span class="token number">23</span>:32:13.311922    <span class="token number">3830</span> cni.go:203<span class="token punctuation">]</span> Unable to update cni config: No networks found <span class="token keyword">in</span> /etc/cni/net.d
+Nov <span class="token number">29</span> <span class="token number">23</span>:32:13 localhost kubelet<span class="token punctuation">[</span><span class="token number">3830</span><span class="token punctuation">]</span>: E1129 <span class="token number">23</span>:32:13.312092    <span class="token number">3830</span> kubelet.go:2192<span class="token punctuation">]</span> Container runtime network not ready: <span class="token assign-left variable">NetworkReady</span><span class="token operator">=</span>false reason:NetworkPluginNotReady message:docker: network plugin is not ready: cni config uninitialized
+Nov <span class="token number">29</span> <span class="token number">23</span>:32:13 localhost kubelet<span class="token punctuation">[</span><span class="token number">3830</span><span class="token punctuation">]</span>: I1129 <span class="token number">23</span>:32:13.382130    <span class="token number">3830</span> kubelet_node_status.go:278<span class="token punctuation">]</span> Setting <span class="token function">node</span> annotation to <span class="token builtin class-name">enable</span> volume controller attach/detach
+Nov <span class="token number">29</span> <span class="token number">23</span>:32:13 localhost kubelet<span class="token punctuation">[</span><span class="token number">3830</span><span class="token punctuation">]</span>: I1129 <span class="token number">23</span>:32:13.383695    <span class="token number">3830</span> cpu_manager.go:155<span class="token punctuation">]</span> <span class="token punctuation">[</span>cpumanager<span class="token punctuation">]</span> starting with none policy
+Nov <span class="token number">29</span> <span class="token number">23</span>:32:13 localhost kubelet<span class="token punctuation">[</span><span class="token number">3830</span><span class="token punctuation">]</span>: I1129 <span class="token number">23</span>:32:13.383705    <span class="token number">3830</span> cpu_manager.go:156<span class="token punctuation">]</span> <span class="token punctuation">[</span>cpumanager<span class="token punctuation">]</span> reconciling every 10s
+Nov <span class="token number">29</span> <span class="token number">23</span>:32:13 localhost kubelet<span class="token punctuation">[</span><span class="token number">3830</span><span class="token punctuation">]</span>: I1129 <span class="token number">23</span>:32:13.383713    <span class="token number">3830</span> policy_none.go:42<span class="token punctuation">]</span> <span class="token punctuation">[</span>cpumanager<span class="token punctuation">]</span> none policy: Start
+Nov <span class="token number">29</span> <span class="token number">23</span>:32:13 localhost kubelet<span class="token punctuation">[</span><span class="token number">3830</span><span class="token punctuation">]</span>: F1129 <span class="token number">23</span>:32:13.384272    <span class="token number">3830</span> kubelet.go:1384<span class="token punctuation">]</span> Failed to start ContainerManager failed to initialize <span class="token function">top</span> level QOS containers: failed to update <span class="token function">top</span> level BestEffort QOS cgroup <span class="token builtin class-name">:</span> failed to <span class="token builtin class-name">set</span> supported cgroup subsystems <span class="token keyword">for</span> cgroup <span class="token punctuation">[</span>kubepods besteffort<span class="token punctuation">]</span>: Failed to <span class="token builtin class-name">set</span> config <span class="token keyword">for</span> supported subsystems <span class="token builtin class-name">:</span> failed to <span class="token function">write</span> <span class="token number">4611686018427387904</span> to hugetlb.1GB.limit_in_bytes: <span class="token function">open</span> /sys/fs/cgroup/hugetlb/kubepods.slice/kubepods-besteffort.slice/hugetlb.1GB.limit_in_bytes: no such <span class="token function">file</span> or directory
+Nov <span class="token number">29</span> <span class="token number">23</span>:32:13 localhost systemd<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span>: kubelet.service: main process exited, <span class="token assign-left variable">code</span><span class="token operator">=</span>exited, <span class="token assign-left variable">status</span><span class="token operator">=</span><span class="token number">255</span>/n/a<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span id="more"></span>
+
+<p>日志里的<code>Failed to start ContainerManager failed to initialize top level QOS containers: failed to update top level BestEffort QOS cgroup : failed to set supported cgroup subsystems for cgroup [kubepods besteffort]: Failed to set config for supported subsystems : failed to write 4611686018427387904 to hugetlb.1GB.limit_in_bytes: open /sys/fs/cgroup/hugetlb/kubepods.slice/kubepods-besteffort.slice/hugetlb.1GB.limit_in_bytes: no such file or directory</code>就是问题所在，查了一下，确实这个目录不存在，很奇怪，这个subsystem明明就是<code>kubelet</code>所创建的啊。</p>
+<p>之前的做法就是重启一下这个节点，重启完成问题也解决了，不过显然重启不是最优解，于是还是动手查了一下，发现了这个issue： <a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/issues/43856">Failed to start ContainerManager failed to initialise top level QOS containers #43856</a>，虽然这个issue已经被修复关闭了，但实际我们还是遇到了类似的问题，好在评论里给出了一种解决办法，执行：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token keyword">for</span> <span class="token for-or-select variable">i</span> <span class="token keyword">in</span> <span class="token variable"><span class="token variable">$(</span>systemctl list-unit-files --no-legend --no-pager <span class="token parameter variable">-l</span> <span class="token operator">|</span> <span class="token function">grep</span> <span class="token parameter variable">--color</span><span class="token operator">=</span>never <span class="token parameter variable">-o</span> .*.slice <span class="token operator">|</span> <span class="token function">grep</span> kubepod<span class="token variable">)</span></span><span class="token punctuation">;</span>
+<span class="token keyword">do</span> systemctl stop <span class="token variable">$i</span><span class="token punctuation">;</span>
+<span class="token keyword">done</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>原理也很简单，就是停掉kubepod相关的systemd slice，经过测试，是可以解决问题的，简单点的方法，直接执行<code>systemctl stop kubepods.slice</code>后，再重启kubelet，问题也就解决了。</p>
+<p>具体的深层次原因没有深究，可能的情况是默认kubelet依赖<code>kubepods.slice</code>、<code>kubepods-besteffort.slice</code>、<code>kubepods-burstable.slice</code>这三个subsystem，但是因为某些原因这三个并没有完整启动，导致启动kubelet失败，停止<code>kubepods.slice</code>之后，kubelet尝试重启所有的subsytem，问题解决。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/cgroups/" rel="tag"># cgroups</a>
+              <a href="/tags/Kubernetes/" rel="tag"># Kubernetes</a>
+              <a href="/tags/Kubelet/" rel="tag"># Kubelet</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/11/03/interpreting-the-output-of-lspci/" rel="prev" title="lspci命令输出的一些解释">
+                  <i class="fa fa-chevron-left"></i> lspci命令输出的一些解释
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/12/19/mount-qcow2-with-libguestfs/" rel="next" title="使用libguestfs挂载qcow2文件">
+                  使用libguestfs挂载qcow2文件 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"a6246c0d99cf5084b51c387896dca65c"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

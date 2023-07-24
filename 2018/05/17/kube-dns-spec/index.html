@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="本文是Kubernetes DNS-Based Service Discovery的翻译，也就是Kubernetes DNS specification的翻译，目前最新版本号是1.0.1。 0 - 关于此文档本文档是Kubernetes基于DNS的服务发现的规范说明，尽管在Kubernetes中还有其他方式的服务发现协议和机制，但是DNS仍然是最常见而且是最推荐使用的扩展。实际的DNS服务并不一定">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kubernetes DNS-Based Service Discovery 翻译">
+<meta property="og:url" content="https://www.ichenfu.com/2018/05/17/kube-dns-spec/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="本文是Kubernetes DNS-Based Service Discovery的翻译，也就是Kubernetes DNS specification的翻译，目前最新版本号是1.0.1。 0 - 关于此文档本文档是Kubernetes基于DNS的服务发现的规范说明，尽管在Kubernetes中还有其他方式的服务发现协议和机制，但是DNS仍然是最常见而且是最推荐使用的扩展。实际的DNS服务并不一定">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-05-17T08:30:19.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.290Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="kube-dns">
+<meta property="article:tag" content="specification">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2018/05/17/kube-dns-spec/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2018/05/17/kube-dns-spec/","path":"2018/05/17/kube-dns-spec/","title":"Kubernetes DNS-Based Service Discovery 翻译"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Kubernetes DNS-Based Service Discovery 翻译 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0-%E5%85%B3%E4%BA%8E%E6%AD%A4%E6%96%87%E6%A1%A3"><span class="nav-number">1.</span> <span class="nav-text">0 - 关于此文档</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Schema-%E7%89%88%E6%9C%AC"><span class="nav-number">2.</span> <span class="nav-text">1 - Schema 版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%B5%84%E6%BA%90%E8%AE%B0%E5%BD%95"><span class="nav-number">3.</span> <span class="nav-text">2 - 资源记录</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E5%AE%9A%E4%B9%89"><span class="nav-number">3.1.</span> <span class="nav-text">2.1 - 定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-Schema-%E7%89%88%E6%9C%AC%E7%9A%84%E8%AE%B0%E5%BD%95"><span class="nav-number">3.2.</span> <span class="nav-text">2.2 - Schema 版本的记录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E9%92%88%E5%AF%B9%E5%B8%A6%E6%9C%89ClusterIP%E7%9A%84Service%E7%9A%84%E8%AE%B0%E5%BD%95"><span class="nav-number">3.3.</span> <span class="nav-text">2.3 - 针对带有ClusterIP的Service的记录</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-1-A-%E8%AE%B0%E5%BD%95"><span class="nav-number">3.3.1.</span> <span class="nav-text">2.3.1 - A 记录</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-2-SRV-%E8%AE%B0%E5%BD%95"><span class="nav-number">3.3.2.</span> <span class="nav-text">2.3.2 - SRV 记录</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-3-PTR-%E8%AE%B0%E5%BD%95"><span class="nav-number">3.3.3.</span> <span class="nav-text">2.3.3 - PTR 记录</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-%E9%92%88%E5%AF%B9Headless-Service%E7%9A%84%E8%AE%B0%E5%BD%95"><span class="nav-number">3.4.</span> <span class="nav-text">2.4 - 针对Headless Service的记录</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-4-1-A-%E8%AE%B0%E5%BD%95"><span class="nav-number">3.4.1.</span> <span class="nav-text">2.4.1 - A 记录</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-4-2-SRV-%E8%AE%B0%E5%BD%95"><span class="nav-number">3.4.2.</span> <span class="nav-text">2.4.2 - SRV 记录</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-4-3-PTR%E8%AE%B0%E5%BD%95"><span class="nav-number">3.4.3.</span> <span class="nav-text">2.4.3 - PTR记录</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-%E9%92%88%E5%AF%B9External-Name-Services%E7%9A%84%E8%AE%B0%E5%BD%95"><span class="nav-number">3.5.</span> <span class="nav-text">2.5 - 针对External Name Services的记录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-6-%E8%A2%AB%E5%BA%9F%E5%BC%83%E7%9A%84%E8%AE%B0%E5%BD%95"><span class="nav-number">3.6.</span> <span class="nav-text">2.6 - 被废弃的记录</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Schema%E6%89%A9%E5%B1%95"><span class="nav-number">4.</span> <span class="nav-text">3 - Schema扩展</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/05/17/kube-dns-spec/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Kubernetes DNS-Based Service Discovery 翻译 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kubernetes DNS-Based Service Discovery 翻译
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018年5月17日 16:30 16:30:19" itemprop="dateCreated datePublished" datetime="2018-05-17T16:30:19+08:00">2018年5月17日 16:30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>本文是<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dns/blob/707da5e449f6000e1ce0b92f1a13b966d262dbb2/docs/specification.md">Kubernetes DNS-Based Service Discovery</a>的翻译，也就是Kubernetes DNS specification的翻译，目前最新版本号是1.0.1。</p>
+<h2 id="0-关于此文档"><a href="#0-关于此文档" class="headerlink" title="0 - 关于此文档"></a>0 - 关于此文档</h2><p>本文档是Kubernetes基于DNS的服务发现的规范说明，尽管在Kubernetes中还有其他方式的服务发现协议和机制，但是DNS仍然是最常见而且是最推荐使用的扩展。实际的DNS服务并不一定由由默认的Kube-DNS提供。 本文档旨在为所有实现之间的通用性提供相应的基准。</p>
+<span id="more"></span>
+
+<h2 id="1-Schema-版本"><a href="#1-Schema-版本" class="headerlink" title="1 - Schema 版本"></a>1 - Schema 版本</h2><p>本文档描述了Schema版本1.0.1。</p>
+<h2 id="2-资源记录"><a href="#2-资源记录" class="headerlink" title="2 - 资源记录"></a>2 - 资源记录</h2><p>所有的基于DNS的Kubernetes服务发现方案必须兼容并提供以下所说明的所有的资源的对应记录（resource records or RRs）。</p>
+<h3 id="2-1-定义"><a href="#2-1-定义" class="headerlink" title="2.1 - 定义"></a>2.1 - 定义</h3><p>在以下的资源记录描述中，不在&lt;&gt;中的是普通文字，&lt;&gt;中的值的含义在下面或者特定记录的描述中说明：</p>
+<ul>
+<li><code>&lt;zone&gt;</code> &#x3D; 集群domain, 比如 cluster.local</li>
+<li><code>&lt;ns&gt;</code> &#x3D; 一个命名空间（namespace）</li>
+<li><code>&lt;ttl&gt;</code> &#x3D; DNS TTL （time-to-live）</li>
+</ul>
+<p>在下面的描述中，以下定义应用于_斜体_文字。</p>
+<p><em>hostname</em></p>
+<ul>
+<li>按照优先顺序, 一个<code>endpoint</code>的 <em>hostname</em> 是:<ul>
+<li><code>endpoint</code>的 <code>hostname</code>字段值.</li>
+<li>系统为<code>endpoint</code>分配的唯一标识符。本标准不规定该标识符的确切格式和来源，但是该标识符必须可以表示一个特定端点。</li>
+</ul>
+</li>
+</ul>
+<p><em>ready</em></p>
+<ul>
+<li>当一个<code>endpoint</code>的地址已经存在于EndpointSubset对象的<code>addresses</code>字段中，或者对应<code>service</code>的<code>service.alpha.kubernetes.io/tolerate-unready-endpoints</code>注释被标记为<code>true</code>，则认为该<code>endpoint</code> _ready_了，</li>
+</ul>
+<p>所有查询数据和Kubernetes数据都是<strong>不区分大小写</strong>的。</p>
+<h3 id="2-2-Schema-版本的记录"><a href="#2-2-Schema-版本的记录" class="headerlink" title="2.2 - Schema 版本的记录"></a>2.2 - Schema 版本的记录</h3><p>必须有一条<code>TXT</code>记录<code>dns-version.&lt;zone&gt;.</code>包含该集群DNS使用的Schema 版本。</p>
+<ul>
+<li>记录格式:<ul>
+<li><code>dns-version.&lt;zone&gt;. &lt;ttl&gt; IN TXT &lt;schema-version&gt;</code></li>
+</ul>
+</li>
+<li>查询示例:<ul>
+<li><code>dns-version.cluster.local. IN TXT</code></li>
+</ul>
+</li>
+<li>返回示例:<ul>
+<li><code>dns-version.cluster.local. 28800 IN TXT &quot;1.0.0&quot;</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="2-3-针对带有ClusterIP的Service的记录"><a href="#2-3-针对带有ClusterIP的Service的记录" class="headerlink" title="2.3 - 针对带有ClusterIP的Service的记录"></a>2.3 - 针对带有ClusterIP的Service的记录</h3><p>针对一个ClusterIP为<code>&lt;cluster-ip&gt;</code>、在<code>&lt;ns&gt;</code>命名空间下的<code>&lt;service&gt;</code>服务，下面的记录必须存在：</p>
+<h4 id="2-3-1-A-记录"><a href="#2-3-1-A-记录" class="headerlink" title="2.3.1 - A 记录"></a>2.3.1 - <code>A</code> 记录</h4><ul>
+<li>记录格式:<ul>
+<li><code>&lt;service&gt;.&lt;ns&gt;.svc.&lt;zone&gt;. &lt;ttl&gt; IN A &lt;cluster-ip&gt;</code></li>
+</ul>
+</li>
+<li>查询示例:<ul>
+<li><code>kubernetes.default.svc.cluster.local. IN A</code></li>
+</ul>
+</li>
+<li>返回示例:<ul>
+<li><code>kubernetes.default.svc.cluster.local. 4 IN A 10.3.0.1</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="2-3-2-SRV-记录"><a href="#2-3-2-SRV-记录" class="headerlink" title="2.3.2 - SRV 记录"></a>2.3.2 - <code>SRV</code> 记录</h4><p>针对每一个名字为<code>&lt;port&gt;</code>、端口为<code>&lt;port-number&gt;</code>、 协议为<code>&lt;proto&gt;</code>的Port对象, 下面的<code>SRV</code>记录必须存在：</p>
+<ul>
+<li>记录格式:<ul>
+<li><code>_&lt;port&gt;._&lt;proto&gt;.&lt;service&gt;.&lt;ns&gt;.svc.&lt;zone&gt;. &lt;ttl&gt; IN SRV &lt;weight&gt; &lt;priority&gt; &lt;port-number&gt; &lt;service&gt;.&lt;ns&gt;.svc.&lt;zone&gt;.</code></li>
+</ul>
+</li>
+</ul>
+<p>其中优先级<code>&lt;priority&gt;</code>和权重<code>&lt;weight&gt;</code>在<a target="_blank" rel="noopener" href="https://tools.ietf.org/html/rfc2782">RFC2782</a>定义。</p>
+<p>没有命名的port没有<code>SRV</code>记录。</p>
+<ul>
+<li>查询示例:<ul>
+<li><code>_https._tcp.kubernetes.default.svc.cluster.local. IN SRV</code></li>
+</ul>
+</li>
+<li>返回示例:<ul>
+<li><code>_https._tcp.kubernetes.default.svc.cluster.local. 30 IN SRV 10 100 443 kubernetes.default.svc.cluster.local.</code></li>
+</ul>
+</li>
+</ul>
+<p>服务的<code>A</code>记录有可能随着<code>SRV</code>记录的附加部分一同返回。</p>
+<h4 id="2-3-3-PTR-记录"><a href="#2-3-3-PTR-记录" class="headerlink" title="2.3.3 - PTR 记录"></a>2.3.3 - <code>PTR</code> 记录</h4><p>针对一个服务的ClusterIP <code>&lt;a&gt;.&lt;b&gt;.&lt;c&gt;.&lt;d&gt;</code>, 必须存在一个如下的<code>PTR</code>记录:</p>
+<ul>
+<li>记录格式:<ul>
+<li><code>&lt;d&gt;.&lt;c&gt;.&lt;b&gt;.&lt;a&gt;.in-addr.arpa. &lt;ttl&gt; IN PTR &lt;service&gt;.&lt;ns&gt;.svc.&lt;zone&gt;.</code></li>
+</ul>
+</li>
+<li>查询示例:<ul>
+<li><code>1.0.3.10.in-addr.arpa. IN PTR</code></li>
+</ul>
+</li>
+<li>返回示例:<ul>
+<li><code>1.0.3.10.in-addr.arpa. 14 IN PTR kubernetes.default.svc.cluster.local.</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="2-4-针对Headless-Service的记录"><a href="#2-4-针对Headless-Service的记录" class="headerlink" title="2.4 - 针对Headless Service的记录"></a>2.4 - 针对Headless Service的记录</h3><p>针对一个在<code>&lt;ns&gt;</code>命名空间中名为<code>&lt;service&gt;</code>的Headless Service（比如一个没有ClusterIP的Service），下面的记录必须存在：</p>
+<h4 id="2-4-1-A-记录"><a href="#2-4-1-A-记录" class="headerlink" title="2.4.1 - A 记录"></a>2.4.1 - <code>A</code> 记录</h4><p>针对每一个处于_ready_状态、IP地址为<code>&lt;endpoint-ip&gt;</code>的endpoint，必须有对应的一条A记录存在，<br>如果没有处于_ready_状态的endpoint，返回必须没有<code>A</code>记录，但是，如果服务存在，查询会得到一个空的返回并且<code>rcode</code>为0，而不是得到一个<code>NXDOMAIN</code>结果。</p>
+<ul>
+<li>记录格式:<ul>
+<li><code>&lt;service&gt;.&lt;ns&gt;.svc.&lt;zone&gt;. &lt;ttl&gt; IN A &lt;endpoint-ip&gt;</code></li>
+</ul>
+</li>
+<li>查询示例:<ul>
+<li><code>headless.default.svc.cluster.local. IN A</code></li>
+</ul>
+</li>
+<li>返回示例:<pre class="line-numbers language-none"><code class="language-none">headless.default.svc.cluster.local. 4 IN A 10.3.0.1
+headless.default.svc.cluster.local. 4 IN A 10.3.0.2
+headless.default.svc.cluster.local. 4 IN A 10.3.0.3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre></li>
+</ul>
+<p>针对每个拥有_hostname_为<code>&lt;hostname&gt;</code>、IP为<code>&lt;endpoint-ip&gt;</code>，状态为_ready_的endpoint，必须有一条<code>A</code>记录，如果名_hostname_的主机有多个IP，则每个IP也会有一个<code>A</code>记录。</p>
+<ul>
+<li>记录格式:<ul>
+<li><code>&lt;hostname&gt;.&lt;service&gt;.&lt;ns&gt;.svc.&lt;zone&gt;. &lt;ttl&gt; IN A &lt;endpoint-ip&gt;</code></li>
+</ul>
+</li>
+<li>查询示例:<ul>
+<li><code>my-pet.headless.default.svc.cluster.local. IN A</code></li>
+</ul>
+</li>
+<li>返回示例:<ul>
+<li><code>my-pet.headless.default.svc.cluster.local. 4 IN A 10.3.0.100</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="2-4-2-SRV-记录"><a href="#2-4-2-SRV-记录" class="headerlink" title="2.4.2 - SRV 记录"></a>2.4.2 - <code>SRV</code> 记录</h4><p>针对每个拥有_hostname_为<code>&lt;hostname&gt;</code>、IP为<code>&lt;endpoint-ip&gt;</code>，状态为_ready_的endpoint和一个名字为<code>&lt;port&gt;</code>、端口为<code>&lt;port-number&gt;</code>、 协议为<code>&lt;proto&gt;</code>的Service组合, 下面的<code>SRV</code>记录必须存在：</p>
+<ul>
+<li>记录格式:<ul>
+<li><code>_&lt;port&gt;._&lt;proto&gt;.&lt;service&gt;.&lt;ns&gt;.svc.&lt;zone&gt;. &lt;ttl&gt; IN SRV &lt;weight&gt; &lt;priority&gt; &lt;port-number&gt; &lt;hostname&gt;.&lt;service&gt;.&lt;ns&gt;.svc.&lt;zone&gt;.</code></li>
+</ul>
+</li>
+</ul>
+<p>这意味着如果有<strong>N</strong>个_ready_的endpoints，并且Service定义了<strong>M</strong>个有名字的端口，那么就会有<strong>N</strong> :heavy_multiplication_x: <strong>M</strong>个<code>SRV</code>记录。</p>
+<p>其中优先级<code>&lt;priority&gt;</code>和权重<code>&lt;weight&gt;</code>在<a target="_blank" rel="noopener" href="https://tools.ietf.org/html/rfc2782">RFC2782</a>定义。</p>
+<p>没有命名的port没有<code>SRV</code>记录。</p>
+<ul>
+<li>查询示例:<ul>
+<li><code>_https._tcp.headless.default.svc.cluster.local. IN SRV</code></li>
+</ul>
+</li>
+<li>返回示例:<pre class="line-numbers language-none"><code class="language-none">_https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 my-pet.headless.default.svc.cluster.local.
+_https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 my-pet-2.headless.default.svc.cluster.local.
+_https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 438934893.headless.default.svc.cluster.local.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre></li>
+</ul>
+<p>服务的<code>A</code>记录有可能随着<code>SRV</code>记录的附加部分一同返回。</p>
+<h4 id="2-4-3-PTR记录"><a href="#2-4-3-PTR记录" class="headerlink" title="2.4.3 - PTR记录"></a>2.4.3 - <code>PTR</code>记录</h4><p>针对一个_hostname_为<code>&lt;hostname&gt;</code>、IP地址为<code>&lt;a&gt;.&lt;b&gt;.&lt;c&gt;.&lt;d&gt;</code>状态为_ready_的endpoint，必须存在下面的<code>PTR</code>记录：</p>
+<ul>
+<li>记录格式:<ul>
+<li><code>&lt;d&gt;.&lt;c&gt;.&lt;b&gt;.&lt;a&gt;.in-addr.arpa. &lt;ttl&gt; IN PTR &lt;hostname&gt;.&lt;service&gt;.&lt;ns&gt;.svc.&lt;zone&gt;.</code></li>
+</ul>
+</li>
+<li>查询示例:<ul>
+<li><code>100.0.3.10.in-addr.arpa. IN PTR</code></li>
+</ul>
+</li>
+<li>返回示例:<ul>
+<li><code>100.0.3.10.in-addr.arpa. 14 IN PTR my-pet.headless.default.svc.cluster.local.</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="2-5-针对External-Name-Services的记录"><a href="#2-5-针对External-Name-Services的记录" class="headerlink" title="2.5 - 针对External Name Services的记录"></a>2.5 - 针对External Name Services的记录</h3><p>针对一个在<code>&lt;ns&gt;</code>命名空间中名字为<code>&lt;service&gt;</code>、ExternalName名字为<code>&lt;extname&gt;</code>的Service，必须存在一条<code>CNAME</code>记录<code>&lt;service&gt;.&lt;ns&gt;.svc.&lt;zone&gt;</code>指向<code>&lt;extname&gt;</code>：</p>
+<ul>
+<li>记录格式:<ul>
+<li><code>&lt;service&gt;.&lt;ns&gt;.svc.&lt;zone&gt;. &lt;ttl&gt; IN CNAME &lt;extname&gt;.</code></li>
+</ul>
+</li>
+<li>查询示例:<ul>
+<li><code>foo.default.svc.cluster.local. IN A</code></li>
+</ul>
+</li>
+<li>返回示例:<ul>
+<li><code>foo.default.svc.cluster.local. 10 IN CNAME www.example.com.</code></li>
+<li><code>www.example.com. 28715 IN A 192.0.2.53</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="2-6-被废弃的记录"><a href="#2-6-被废弃的记录" class="headerlink" title="2.6 - 被废弃的记录"></a>2.6 - 被废弃的记录</h3><p>在本规范之前的Kube-DNS实现也会对对在0-255之间的<code>&lt;a&gt;</code>, <code>&lt;b&gt;</code>, <code>&lt;c&gt;</code>, and <code>&lt;d&gt;</code>作出如下的<code>A</code>记录回复：</p>
+<ul>
+<li>记录格式:<ul>
+<li><code>&lt;a&gt;-&lt;b&gt;-&lt;c&gt;-&lt;d&gt;.&lt;ns&gt;.pod.&lt;zone&gt;. &lt;ttl&gt; IN A &lt;a&gt;.&lt;b&gt;.&lt;c&gt;.&lt;d&gt;</code></li>
+</ul>
+</li>
+</ul>
+<p>针对本规范这个行为被废弃了，但是仍然需要实现，该特性会在未来的版本中被移除。</p>
+<h2 id="3-Schema扩展"><a href="#3-Schema扩展" class="headerlink" title="3 - Schema扩展"></a>3 - Schema扩展</h2><p>具体的实现可以针对本Schema进行扩展，但是本文档中所述的所有记录必须是所实现记录的子集。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/kube-dns/" rel="tag"># kube-dns</a>
+              <a href="/tags/specification/" rel="tag"># specification</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/05/15/linux-timezone/" rel="prev" title="Linux时间和timezone概念解释">
+                  <i class="fa fa-chevron-left"></i> Linux时间和timezone概念解释
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/07/06/ceph-pg-states-concepts/" rel="next" title="Ceph中一些PG相关的状态说明和基本概念说明">
+                  Ceph中一些PG相关的状态说明和基本概念说明 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"69c6859ad646f8ea80dd08ae27e1f117"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

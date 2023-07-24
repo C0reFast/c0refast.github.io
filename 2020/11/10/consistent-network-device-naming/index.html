@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="针对网卡名字这个问题，其实之前也讨论过一次，主要是如何利用udev去重命名网卡，里面提到了新的一致性命名规则，但是没有细说。 当然肯定是遇到问题了，所以针对网卡命名的细节，需要再探讨一下。 其实目前大家还是更熟悉老的那种eth0,eth1…那种命名，目前我们大部分生产环境里也是这么用的。但是随着网卡数量越来越多（在我们使用的SR-IOV场景，加上VF虚拟网卡，机器上已经有超过16个网卡）这种命名规">
+<meta property="og:type" content="article">
+<meta property="og:title" content="再谈网卡的一致性命名">
+<meta property="og:url" content="https://www.ichenfu.com/2020/11/10/consistent-network-device-naming/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="针对网卡名字这个问题，其实之前也讨论过一次，主要是如何利用udev去重命名网卡，里面提到了新的一致性命名规则，但是没有细说。 当然肯定是遇到问题了，所以针对网卡命名的细节，需要再探讨一下。 其实目前大家还是更熟悉老的那种eth0,eth1…那种命名，目前我们大部分生产环境里也是这么用的。但是随着网卡数量越来越多（在我们使用的SR-IOV场景，加上VF虚拟网卡，机器上已经有超过16个网卡）这种命名规">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-11-10T12:11:41.000Z">
+<meta property="article:modified_time" content="2020-11-18T02:21:13.050Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="udev">
+<meta property="article:tag" content="一致网络设备命名">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2020/11/10/consistent-network-device-naming/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2020/11/10/consistent-network-device-naming/","path":"2020/11/10/consistent-network-device-naming/","title":"再谈网卡的一致性命名"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>再谈网卡的一致性命名 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/11/10/consistent-network-device-naming/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="再谈网卡的一致性命名 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          再谈网卡的一致性命名
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020年11月10日 20:11 20:11:41" itemprop="dateCreated datePublished" datetime="2020-11-10T20:11:41+08:00">2020年11月10日 20:11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年11月18日 10:21 10:21:13" itemprop="dateModified" datetime="2020-11-18T10:21:13+08:00">2020年11月18日 10:21</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%95%88%E7%8E%87%E9%85%8D%E7%BD%AE/" itemprop="url" rel="index"><span itemprop="name">效率配置</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>针对网卡名字这个问题，其实之前也讨论过一次，主要是如何利用udev去重命名网卡，里面提到了新的一致性命名规则，但是没有细说。</p>
+<p>当然肯定是遇到问题了，所以针对网卡命名的细节，需要再探讨一下。</p>
+<p>其实目前大家还是更熟悉老的那种eth0,eth1…那种命名，目前我们大部分生产环境里也是这么用的。但是随着网卡数量越来越多（在我们使用的SR-IOV场景，加上VF虚拟网卡，机器上已经有超过16个网卡）这种命名规则已经不适应现代的硬件和操作系统了，所以最近我们也从老的命名方式，切换到操作系统默认的<a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/7/html/networking_guide/ch-consistent_network_device_naming">一致网络设备命名</a>。</p>
+<p>不过因此也带来了一些问题，发现不同厂商，或者不同机器会有命名不一致的情况，举个例子：</p>
+<p>这是某台机器的网卡名字：</p>
+<span id="more"></span>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># ip addr</span>
+<span class="token number">1</span>: lo: <span class="token operator">&lt;</span>LOOPBACK,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">65536</span> qdisc noqueue state UNKNOWN group default qlen <span class="token number">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet <span class="token number">127.0</span>.0.1/8 scope <span class="token function">host</span> lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope <span class="token function">host</span>
+       valid_lft forever preferred_lft forever
+<span class="token number">2</span>: enp59s0f0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq master bond0 state UP group default qlen <span class="token number">1000</span>
+    link/ether 0c:42:a1:b3:12:b8 brd ff:ff:ff:ff:ff:ff
+<span class="token number">3</span>: enp59s0f1: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq master bond0 state UP group default qlen <span class="token number">1000</span>
+    link/ether 0c:42:a1:b3:12:b8 brd ff:ff:ff:ff:ff:ff<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>一块网卡的两个网口，被分别命名为<code>enp59s0f0</code>和<code>enp59s0f1</code>，这个还是挺容易理解的，通过网卡的PCIE地址进行命名，我们看下这块网卡的PCIE信息：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># lspci |grep Mellanox</span>
+3b:00.0 Ethernet controller: Mellanox Technologies MT27800 Family <span class="token punctuation">[</span>ConnectX-5<span class="token punctuation">]</span>
+3b:00.1 Ethernet controller: Mellanox Technologies MT27800 Family <span class="token punctuation">[</span>ConnectX-5<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>针对<code>lspci</code>的输出，之前的文章<a href="https://www.ichenfu.com/2019/11/03/interpreting-the-output-of-lspci/">lspci命令输出的一些解释</a>也讨论过了：PCIE地址中总线编号<code>3b</code>对应到十进制就是59，后面的00.0和00.1分别对应设备编号0的第0和第1个Function，对应到网卡的名字，就是插在59总线的第0个插槽的第0个网口和第1个网口，因为网卡的插槽是不会变的，而且是个物理状态，自然网卡的名字就稳定了。</p>
+<p>那么，按正常的理解，不同厂商之间，应该只是插槽不一样吧？然而却被事实打脸，换了一台机器，又是另外一个样子了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@bx-10-13-207-38.chinaunicom-north-1.node.kubernetes ~<span class="token punctuation">]</span><span class="token comment"># ip addr</span>
+<span class="token number">1</span>: lo: <span class="token operator">&lt;</span>LOOPBACK,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">65536</span> qdisc noqueue state UNKNOWN group default qlen <span class="token number">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet <span class="token number">127.0</span>.0.1/8 scope <span class="token function">host</span> lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope <span class="token function">host</span>
+       valid_lft forever preferred_lft forever
+<span class="token number">2</span>: ens2f0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq master bond0 state UP group default qlen <span class="token number">1000</span>
+    link/ether 04:3f:72:ac:f6:0e brd ff:ff:ff:ff:ff:ff
+<span class="token number">3</span>: ens2f1: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq master bond0 state UP group default qlen <span class="token number">1000</span>
+    link/ether 04:3f:72:ac:f6:0e brd ff:ff:ff:ff:ff:ff<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>如果还像上面那样理解这个名称的话，那应该网卡插在00总线的第2个插槽？因为总线是0所以省略了？然而继续被打脸：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># lspci |grep Mellanox</span>
+<span class="token number">86</span>:00.0 Ethernet controller: Mellanox Technologies MT27800 Family <span class="token punctuation">[</span>ConnectX-5<span class="token punctuation">]</span>
+<span class="token number">86</span>:00.1 Ethernet controller: Mellanox Technologies MT27800 Family <span class="token punctuation">[</span>ConnectX-5<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>发现网卡插在<code>0x86</code>这个总线上，那换算成十进制应该是134啊？网卡名字不应该是<code>enp134s0f0</code>和<code>enp134s0f1</code>么，为啥变成<code>ens2f0</code>和<code>ens2f1</code>了？</p>
+<p>于是乎，又翻开红帽的<a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/7/html/networking_guide/sec-understanding_the_device_renaming_procedure">文档</a>，再仔细阅读一下:</p>
+<blockquote><p>设备命名过程如下：<br>    1. &#x2F;usr&#x2F;lib&#x2F;udev&#x2F;rules.d&#x2F;60-net.rules文件中的规则会让 udev 帮助工具&#x2F;lib&#x2F;udev&#x2F;rename_device查看所有&#x2F;etc&#x2F;sysconfig&#x2F;network-scripts&#x2F;ifcfg-suffix文件。如果发现包含HWADDR条目的ifcfg文件与某个接口的MAC地址匹配，它会将该接口重命名为ifcfg文件中由DEVICE指令给出的名称。<br>    2. &#x2F;usr&#x2F;lib&#x2F;udev&#x2F;rules.d&#x2F;71-biosdevname.rules中的规则让biosdevname根据其命名策略重命名该接口，即在上一步中没有重命名该接口、已安装biosdevname、且未在boot命令行中将biosdevname&#x3D;0作为内核命令给出。<br>    3. &#x2F;lib&#x2F;udev&#x2F;rules.d&#x2F;75-net-description.rules中的规则让udev通过检查网络接口设备，填写内部udev设备属性值ID_NET_NAME_ONBOARD、ID_NET_NAME_SLOT、ID_NET_NAME_PATH。注：有些设备属性可能处于未定义状态。<br>    4. &#x2F;usr&#x2F;lib&#x2F;udev&#x2F;rules.d&#x2F;80-net-name-slot.rules中的规则让udev重命名该接口，优先顺序如下：ID_NET_NAME_ONBOARD、ID_NET_NAME_SLOT、ID_NET_NAME_PATH。并提供如下信息：没有在步骤 1 或 2 中重命名该接口，同时未给出内核参数net.ifnames&#x3D;0。如果一个参数未设定，则会按列表的顺序设定下一个。如果没有设定任何参数，则不会重命名该接口。</p>
+</blockquote>
+
+<p>再理理这个命名过程：</p>
+<p>第1步先看看<code>/etc/sysconfig/network-scripts/</code>文件夹下有没有MAC地址匹配的配置文件，如果有，就按配置文件里的命名来。这里我们的系统不会命中。<br>第2步看是否使用<code>biosdevname</code>进行命名，这个是Dell的机器专属，不过我们统一给内核加上了<code>biosdevname=0</code>参数来统一Dell和其他厂商，所以这条应该也不会命中。<br>第3步是通过udev规则填一些env，暂时不涉及命名过程。<br>第4步是根据env进行重命名，并且有个优先顺序：ID_NET_NAME_ONBOARD、ID_NET_NAME_SLOT、ID_NET_NAME_PATH。</p>
+<p>所以仔细点会发现，<code>enp59s0f0</code>这种命名规则是命中了<code>ID_NET_NAME_PATH</code>，是以PCI物理位置为规则命名；而<code>ens2f0</code>这种则是命中了<code>ID_NET_NAME_SLOT</code>，是以热插拔插槽索引号命名。</p>
+<p>但是为什么会有这样的差异，依然不明朗，继续追踪，使用<code>udevadm info</code>命令看看能不能找到两者不同：</p>
+<p>以<code>ID_NET_NAME_PATH</code>命名的机器：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># udevadm info /sys/class/net/enp59s0f0</span>
+P: /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/net/enp59s0f0
+E: <span class="token assign-left variable">DEVPATH</span><span class="token operator">=</span>/devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/net/enp59s0f0
+E: <span class="token assign-left variable">ID_BUS</span><span class="token operator">=</span>pci
+E: <span class="token assign-left variable">ID_MODEL_FROM_DATABASE</span><span class="token operator">=</span>MT27800 Family <span class="token punctuation">[</span>ConnectX-5<span class="token punctuation">]</span> <span class="token punctuation">(</span>ConnectX®-5 EN network interface card, <span class="token number">10</span>/25GbE dual-port SFP28, PCIe3.0 x8, tall bracket <span class="token punctuation">;</span> MCX512A-ACAT<span class="token punctuation">)</span>
+E: <span class="token assign-left variable">ID_MODEL_ID</span><span class="token operator">=</span>0x1017
+E: <span class="token assign-left variable">ID_NET_DRIVER</span><span class="token operator">=</span>mlx5_core
+E: <span class="token assign-left variable">ID_NET_NAME_MAC</span><span class="token operator">=</span>enxb8599fbaa608
+E: <span class="token assign-left variable">ID_NET_NAME_PATH</span><span class="token operator">=</span>enp59s0f0
+E: <span class="token assign-left variable">ID_OUI_FROM_DATABASE</span><span class="token operator">=</span>Mellanox Technologies, Inc.
+E: <span class="token assign-left variable">ID_PATH</span><span class="token operator">=</span>pci-0000:3b:00.0
+E: <span class="token assign-left variable">ID_PATH_TAG</span><span class="token operator">=</span>pci-0000_3b_00_0
+E: <span class="token assign-left variable">ID_PCI_CLASS_FROM_DATABASE</span><span class="token operator">=</span>Network controller
+E: <span class="token assign-left variable">ID_PCI_SUBCLASS_FROM_DATABASE</span><span class="token operator">=</span>Ethernet controller
+E: <span class="token assign-left variable">ID_VENDOR_FROM_DATABASE</span><span class="token operator">=</span>Mellanox Technologies
+E: <span class="token assign-left variable">ID_VENDOR_ID</span><span class="token operator">=</span>0x15b3
+E: <span class="token assign-left variable">IFINDEX</span><span class="token operator">=</span><span class="token number">6</span>
+E: <span class="token assign-left variable">INTERFACE</span><span class="token operator">=</span>enp59s0f0
+E: <span class="token assign-left variable">MAJOR</span><span class="token operator">=</span><span class="token number">0</span>
+E: <span class="token assign-left variable">MINOR</span><span class="token operator">=</span><span class="token number">0</span>
+E: <span class="token assign-left variable">SUBSYSTEM</span><span class="token operator">=</span>net
+E: <span class="token assign-left variable">SYSTEMD_ALIAS</span><span class="token operator">=</span>/sys/subsystem/net/devices/enp59s0f0 /sys/subsystem/net/devices/enp59s0f0
+E: <span class="token assign-left variable">TAGS</span><span class="token operator">=</span>:systemd:
+E: <span class="token assign-left variable">UDEV_BIOSDEVNAME</span><span class="token operator">=</span><span class="token number">1</span>
+E: <span class="token assign-left variable">USEC_INITIALIZED</span><span class="token operator">=</span><span class="token number">54242</span>
+E: <span class="token assign-left variable">biosdevname</span><span class="token operator">=</span><span class="token number">0</span>
+E: <span class="token assign-left variable">net.ifnames</span><span class="token operator">=</span><span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>以<code>ID_NET_NAME_SLOT</code>命名的机器：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># udevadm info /sys/class/net/ens2f0</span>
+P: /devices/pci0000:85/0000:85:00.0/0000:86:00.0/net/ens2f0
+E: <span class="token assign-left variable">DEVPATH</span><span class="token operator">=</span>/devices/pci0000:85/0000:85:00.0/0000:86:00.0/net/ens2f0
+E: <span class="token assign-left variable">ID_BUS</span><span class="token operator">=</span>pci
+E: <span class="token assign-left variable">ID_MODEL_FROM_DATABASE</span><span class="token operator">=</span>MT27800 Family <span class="token punctuation">[</span>ConnectX-5<span class="token punctuation">]</span> <span class="token punctuation">(</span>ConnectX®-5 EN network interface card, <span class="token number">10</span>/25GbE dual-port SFP28, PCIe3.0 x8, tall bracket <span class="token punctuation">;</span> MCX512A-ACAT<span class="token punctuation">)</span>
+E: <span class="token assign-left variable">ID_MODEL_ID</span><span class="token operator">=</span>0x1017
+E: <span class="token assign-left variable">ID_NET_DRIVER</span><span class="token operator">=</span>mlx5_core
+E: <span class="token assign-left variable">ID_NET_NAME_MAC</span><span class="token operator">=</span>enx043f72acf60e
+E: <span class="token assign-left variable">ID_NET_NAME_PATH</span><span class="token operator">=</span>enp134s0f0
+E: <span class="token assign-left variable">ID_NET_NAME_SLOT</span><span class="token operator">=</span>ens2f0
+E: <span class="token assign-left variable">ID_PATH</span><span class="token operator">=</span>pci-0000:86:00.0
+E: <span class="token assign-left variable">ID_PATH_TAG</span><span class="token operator">=</span>pci-0000_86_00_0
+E: <span class="token assign-left variable">ID_PCI_CLASS_FROM_DATABASE</span><span class="token operator">=</span>Network controller
+E: <span class="token assign-left variable">ID_PCI_SUBCLASS_FROM_DATABASE</span><span class="token operator">=</span>Ethernet controller
+E: <span class="token assign-left variable">ID_VENDOR_FROM_DATABASE</span><span class="token operator">=</span>Mellanox Technologies
+E: <span class="token assign-left variable">ID_VENDOR_ID</span><span class="token operator">=</span>0x15b3
+E: <span class="token assign-left variable">IFINDEX</span><span class="token operator">=</span><span class="token number">2</span>
+E: <span class="token assign-left variable">INTERFACE</span><span class="token operator">=</span>ens2f0
+E: <span class="token assign-left variable">SUBSYSTEM</span><span class="token operator">=</span>net
+E: <span class="token assign-left variable">SYSTEMD_ALIAS</span><span class="token operator">=</span>/sys/subsystem/net/devices/ens2f0
+E: <span class="token assign-left variable">TAGS</span><span class="token operator">=</span>:systemd:
+E: <span class="token assign-left variable">UDEV_BIOSDEVNAME</span><span class="token operator">=</span><span class="token number">0</span>
+E: <span class="token assign-left variable">USEC_INITIALIZED</span><span class="token operator">=</span><span class="token number">34864</span>
+E: <span class="token assign-left variable">biosdevname</span><span class="token operator">=</span><span class="token number">0</span>
+E: <span class="token assign-left variable">net.ifnames</span><span class="token operator">=</span><span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>大部分都是一样的，但是以<code>ID_NET_NAME_SLOT</code>命名的机器，ID_NET_NAME_SLOT这个ENV不为空，而以<code>ID_NET_NAME_PATH</code>命名的机器直接就没有<code>ID_NET_NAME_SLOT</code>这个ENV。那么按照<code>/usr/lib/udev/rules.d/80-net-name-slot.rules</code>里的udev规则：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># cat /usr/lib/udev/rules.d/80-net-name-slot.rules</span>
+<span class="token comment"># do not edit this file, it will be overwritten on update</span>
+
+ACTION<span class="token operator">!=</span><span class="token string">"add"</span>, <span class="token assign-left variable">GOTO</span><span class="token operator">=</span><span class="token string">"net_name_slot_end"</span>         <span class="token comment"># 如果不是设备添加操作，直接跳过</span>
+SUBSYSTEM<span class="token operator">!=</span><span class="token string">"net"</span>, <span class="token assign-left variable">GOTO</span><span class="token operator">=</span><span class="token string">"net_name_slot_end"</span>      <span class="token comment"># 如果不是一个网络设备，直接跳过</span>
+NAME<span class="token operator">!=</span><span class="token string">""</span>, <span class="token assign-left variable">GOTO</span><span class="token operator">=</span><span class="token string">"net_name_slot_end"</span>              <span class="token comment"># 如果已经有名字了，直接跳过</span>
+
+IMPORT<span class="token punctuation">&#123;</span>cmdline<span class="token punctuation">&#125;</span><span class="token operator">=</span><span class="token string">"net.ifnames"</span>
+ENV<span class="token punctuation">&#123;</span>net.ifnames<span class="token punctuation">&#125;</span><span class="token operator">==</span><span class="token string">"0"</span>, <span class="token assign-left variable">GOTO</span><span class="token operator">=</span><span class="token string">"net_name_slot_end"</span> <span class="token comment"># 如果内核参数里有net.ifnames=0，直接跳过</span>
+
+<span class="token assign-left variable">NAME</span><span class="token operator">==</span><span class="token string">""</span>, ENV<span class="token punctuation">&#123;</span>ID_NET_NAME_ONBOARD<span class="token punctuation">&#125;</span><span class="token operator">!=</span><span class="token string">""</span>, <span class="token assign-left variable">NAME</span><span class="token operator">=</span><span class="token string">"<span class="token variable">$env</span>&#123;ID_NET_NAME_ONBOARD&#125;"</span> <span class="token comment"># 没有名字，ID_NET_NAME_ONBOARD这个ENV存在，用ID_NET_NAME_ONBOARD作为名字</span>
+<span class="token assign-left variable">NAME</span><span class="token operator">==</span><span class="token string">""</span>, ENV<span class="token punctuation">&#123;</span>ID_NET_NAME_SLOT<span class="token punctuation">&#125;</span><span class="token operator">!=</span><span class="token string">""</span>, <span class="token assign-left variable">NAME</span><span class="token operator">=</span><span class="token string">"<span class="token variable">$env</span>&#123;ID_NET_NAME_SLOT&#125;"</span>       <span class="token comment"># 没有名字，ID_NET_NAME_SLOT这个ENV存在，用ID_NET_NAME_SLOT作为名字</span>
+<span class="token assign-left variable">NAME</span><span class="token operator">==</span><span class="token string">""</span>, ENV<span class="token punctuation">&#123;</span>ID_NET_NAME_PATH<span class="token punctuation">&#125;</span><span class="token operator">!=</span><span class="token string">""</span>, <span class="token assign-left variable">NAME</span><span class="token operator">=</span><span class="token string">"<span class="token variable">$env</span>&#123;ID_NET_NAME_PATH&#125;"</span>       <span class="token comment"># 没有名字，ID_NET_NAME_PATH这个ENV存在，用ID_NET_NAME_PATH作为名字</span>
+
+<span class="token assign-left variable">LABEL</span><span class="token operator">=</span><span class="token string">"net_name_slot_end"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>和文档说的一样，如果<code>ENV&#123;ID_NET_NAME_SLOT&#125;</code>有值的话，那就直接用它了，就不会再用<code>ENV&#123;ID_NET_NAME_PATH&#125;</code>了。</p>
+<p>那么问题来了，这些ENV又是咋来的？文档里说是在<code>/lib/udev/rules.d/75-net-description.rules</code>中设置的。那就看看这个文件：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># cat /usr/lib/udev/rules.d/75-net-description.rules</span>
+<span class="token comment"># do not edit this file, it will be overwritten on update</span>
+
+<span class="token assign-left variable">ACTION</span><span class="token operator">==</span><span class="token string">"remove"</span>, <span class="token assign-left variable">GOTO</span><span class="token operator">=</span><span class="token string">"net_end"</span>
+SUBSYSTEM<span class="token operator">!=</span><span class="token string">"net"</span>, <span class="token assign-left variable">GOTO</span><span class="token operator">=</span><span class="token string">"net_end"</span>
+
+IMPORT<span class="token punctuation">&#123;</span>builtin<span class="token punctuation">&#125;</span><span class="token operator">=</span><span class="token string">"net_id"</span>            <span class="token comment"># 这些ENV应该是在这里设置的，因为没有其他显式赋值的地方了。</span>
+
+<span class="token assign-left variable">SUBSYSTEMS</span><span class="token operator">==</span><span class="token string">"usb"</span>, IMPORT<span class="token punctuation">&#123;</span>builtin<span class="token punctuation">&#125;</span><span class="token operator">=</span><span class="token string">"usb_id"</span>, IMPORT<span class="token punctuation">&#123;</span>builtin<span class="token punctuation">&#125;</span><span class="token operator">=</span><span class="token string">"hwdb --subsystem=usb"</span>
+<span class="token assign-left variable">SUBSYSTEMS</span><span class="token operator">==</span><span class="token string">"usb"</span>, <span class="token assign-left variable">GOTO</span><span class="token operator">=</span><span class="token string">"net_end"</span>
+
+<span class="token assign-left variable">SUBSYSTEMS</span><span class="token operator">==</span><span class="token string">"pci"</span>, ENV<span class="token punctuation">&#123;</span>ID_BUS<span class="token punctuation">&#125;</span><span class="token operator">=</span><span class="token string">"pci"</span>, ENV<span class="token punctuation">&#123;</span>ID_VENDOR_ID<span class="token punctuation">&#125;</span><span class="token operator">=</span><span class="token string">"<span class="token variable">$attr</span>&#123;vendor&#125;"</span>, ENV<span class="token punctuation">&#123;</span>ID_MODEL_ID<span class="token punctuation">&#125;</span><span class="token operator">=</span><span class="token string">"<span class="token variable">$attr</span>&#123;device&#125;"</span>
+<span class="token assign-left variable">SUBSYSTEMS</span><span class="token operator">==</span><span class="token string">"pci"</span>, IMPORT<span class="token punctuation">&#123;</span>builtin<span class="token punctuation">&#125;</span><span class="token operator">=</span><span class="token string">"hwdb --subsystem=pci"</span>
+
+<span class="token assign-left variable">LABEL</span><span class="token operator">=</span><span class="token string">"net_end"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里的<code>IMPORT&#123;builtin&#125;=&quot;net_id&quot;</code>是udev内部的实现。我们需要找到实现对应的代码了。</p>
+<p>找了一下，代码在<a target="_blank" rel="noopener" href="https://github.com/systemd/systemd/blob/v246/src/udev/udev-builtin.c">udev-builtin.c</a></p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">const</span> UdevBuiltin <span class="token operator">*</span><span class="token keyword">const</span> builtins<span class="token punctuation">[</span>_UDEV_BUILTIN_MAX<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression">HAVE_BLKID</span></span>
+        <span class="token punctuation">[</span>UDEV_BUILTIN_BLKID<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">&amp;</span>udev_builtin_blkid<span class="token punctuation">,</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+        <span class="token punctuation">[</span>UDEV_BUILTIN_BTRFS<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">&amp;</span>udev_builtin_btrfs<span class="token punctuation">,</span>
+        <span class="token punctuation">[</span>UDEV_BUILTIN_HWDB<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">&amp;</span>udev_builtin_hwdb<span class="token punctuation">,</span>
+        <span class="token punctuation">[</span>UDEV_BUILTIN_INPUT_ID<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">&amp;</span>udev_builtin_input_id<span class="token punctuation">,</span>
+        <span class="token punctuation">[</span>UDEV_BUILTIN_KEYBOARD<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">&amp;</span>udev_builtin_keyboard<span class="token punctuation">,</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression">HAVE_KMOD</span></span>
+        <span class="token punctuation">[</span>UDEV_BUILTIN_KMOD<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">&amp;</span>udev_builtin_kmod<span class="token punctuation">,</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+        <span class="token punctuation">[</span>UDEV_BUILTIN_NET_ID<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">&amp;</span>udev_builtin_net_id<span class="token punctuation">,</span>       <span class="token comment">// 就是这里</span>
+        <span class="token punctuation">[</span>UDEV_BUILTIN_NET_LINK<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">&amp;</span>udev_builtin_net_setup_link<span class="token punctuation">,</span>
+        <span class="token punctuation">[</span>UDEV_BUILTIN_PATH_ID<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">&amp;</span>udev_builtin_path_id<span class="token punctuation">,</span>
+        <span class="token punctuation">[</span>UDEV_BUILTIN_USB_ID<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">&amp;</span>udev_builtin_usb_id<span class="token punctuation">,</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression">HAVE_ACL</span></span>
+        <span class="token punctuation">[</span>UDEV_BUILTIN_UACCESS<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">&amp;</span>udev_builtin_uaccess<span class="token punctuation">,</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>而<code>udev_builtin_net_id</code>的实现在<a target="_blank" rel="noopener" href="https://github.com/systemd/systemd/blob/v246/src/udev/udev-builtin-net_id.c">udev-builtin-net_id.c</a>，这里不仔细分析了，就看看<code>ID_NET_NAME_SLOT</code>这个ENV：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">dev_pci_slot</span><span class="token punctuation">(</span>sd_device <span class="token operator">*</span>dev<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">netnames</span> <span class="token operator">*</span>names<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+<span class="token comment">// ...</span>
+        r <span class="token operator">=</span> <span class="token function">sd_device_get_sysname</span><span class="token punctuation">(</span>names<span class="token operator">-></span>pcidev<span class="token punctuation">,</span> <span class="token operator">&amp;</span>sysname<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>r <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+                <span class="token keyword">return</span> r<span class="token punctuation">;</span>
+
+
+        r <span class="token operator">=</span> <span class="token function">sd_device_get_syspath</span><span class="token punctuation">(</span>pci<span class="token punctuation">,</span> <span class="token operator">&amp;</span>syspath<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>r <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+                <span class="token keyword">return</span> r<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">snprintf_ok</span><span class="token punctuation">(</span>slots<span class="token punctuation">,</span> <span class="token keyword">sizeof</span> slots<span class="token punctuation">,</span> <span class="token string">"%s/slots"</span><span class="token punctuation">,</span> syspath<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token keyword">return</span> <span class="token operator">-</span>ENAMETOOLONG<span class="token punctuation">;</span>
+
+        <span class="token comment">// 这里的slots对应'/sys/bus/pci/slots/'这个目录</span>
+        dir <span class="token operator">=</span> <span class="token function">opendir</span><span class="token punctuation">(</span>slots<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>dir<span class="token punctuation">)</span>
+                <span class="token keyword">return</span> <span class="token operator">-</span>errno<span class="token punctuation">;</span>
+
+        hotplug_slot_dev <span class="token operator">=</span> names<span class="token operator">-></span>pcidev<span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>hotplug_slot_dev<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">sd_device_get_sysname</span><span class="token punctuation">(</span>hotplug_slot_dev<span class="token punctuation">,</span> <span class="token operator">&amp;</span>sysname<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+                        <span class="token keyword">continue</span><span class="token punctuation">;</span>
+                <span class="token comment">// 遍历'/sys/bus/pci/slots/'目录</span>
+                <span class="token function">FOREACH_DIRENT_ALL</span><span class="token punctuation">(</span>dent<span class="token punctuation">,</span> dir<span class="token punctuation">,</span> <span class="token keyword">break</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                        <span class="token keyword">unsigned</span> i<span class="token punctuation">;</span>
+                        <span class="token keyword">char</span> str<span class="token punctuation">[</span>PATH_MAX<span class="token punctuation">]</span><span class="token punctuation">;</span>
+                        _cleanup_free_ <span class="token keyword">char</span> <span class="token operator">*</span>address <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+
+                        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">dot_or_dot_dot</span><span class="token punctuation">(</span>dent<span class="token operator">-></span>d_name<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                                <span class="token keyword">continue</span><span class="token punctuation">;</span>
+
+                        r <span class="token operator">=</span> <span class="token function">safe_atou_full</span><span class="token punctuation">(</span>dent<span class="token operator">-></span>d_name<span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>i<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token keyword">if</span> <span class="token punctuation">(</span>r <span class="token operator">&lt;</span> <span class="token number">0</span> <span class="token operator">||</span> i <span class="token operator">&lt;=</span> <span class="token number">0</span><span class="token punctuation">)</span>
+                                <span class="token keyword">continue</span><span class="token punctuation">;</span>
+
+                        <span class="token comment">/* match slot address with device by stripping the function */</span>
+                        <span class="token comment">// 如果有任何目录中'/sys/bus/pci/slots/&#123;xx&#125;/address'文件里的值和网卡的设备号对应的话，</span>
+                        <span class="token comment">// 说明这块网卡是插在可热拔插插槽的，插槽号是&#123;xx&#125;</span>
+                        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">snprintf_ok</span><span class="token punctuation">(</span>str<span class="token punctuation">,</span> <span class="token keyword">sizeof</span> str<span class="token punctuation">,</span> <span class="token string">"%s/%s/address"</span><span class="token punctuation">,</span> slots<span class="token punctuation">,</span> dent<span class="token operator">-></span>d_name<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+                            <span class="token function">read_one_line_file</span><span class="token punctuation">(</span>str<span class="token punctuation">,</span> <span class="token operator">&amp;</span>address<span class="token punctuation">)</span> <span class="token operator">>=</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span>
+                            <span class="token function">startswith</span><span class="token punctuation">(</span>sysname<span class="token punctuation">,</span> address<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                                hotplug_slot <span class="token operator">=</span> i<span class="token punctuation">;</span>
+                                <span class="token keyword">break</span><span class="token punctuation">;</span>
+                        <span class="token punctuation">&#125;</span>
+                <span class="token punctuation">&#125;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>hotplug_slot <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span>
+                        <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token comment">// 如果没有，则继续查询网卡的父设备</span>
+                <span class="token comment">// 需要注意的是，新老版本的udev在这里的行为有些区别，高版本里会继续看网卡的父设备，</span>
+                <span class="token comment">// 但是在CentOS 7使用的v219版本里，并不会去查找网卡的父设备，</span>
+                <span class="token comment">// 所以会发现网卡名称在CentOS 8和CentOS 7之间也有可能会有一定的区别。</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">sd_device_get_parent_with_subsystem_devtype</span><span class="token punctuation">(</span>hotplug_slot_dev<span class="token punctuation">,</span> <span class="token string">"pci"</span><span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>hotplug_slot_dev<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+                        <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token function">rewinddir</span><span class="token punctuation">(</span>dir<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>hotplug_slot <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                s <span class="token operator">=</span> names<span class="token operator">-></span>pci_slot<span class="token punctuation">;</span>
+                l <span class="token operator">=</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>names<span class="token operator">-></span>pci_slot<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>domain <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span>
+                        l <span class="token operator">=</span> <span class="token function">strpcpyf</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token punctuation">,</span> l<span class="token punctuation">,</span> <span class="token string">"P%d"</span><span class="token punctuation">,</span> domain<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                l <span class="token operator">=</span> <span class="token function">strpcpyf</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token punctuation">,</span> l<span class="token punctuation">,</span> <span class="token string">"s%d"</span><span class="token punctuation">,</span> hotplug_slot<span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// 如果是热拔插网卡，那名字就是s+插槽号</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>func <span class="token operator">></span> <span class="token number">0</span> <span class="token operator">||</span> <span class="token function">is_pci_multifunction</span><span class="token punctuation">(</span>names<span class="token operator">-></span>pcidev<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                        l <span class="token operator">=</span> <span class="token function">strpcpyf</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token punctuation">,</span> l<span class="token punctuation">,</span> <span class="token string">"f%d"</span><span class="token punctuation">,</span> func<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>port_name<span class="token punctuation">)</span>
+                        l <span class="token operator">=</span> <span class="token function">strpcpyf</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token punctuation">,</span> l<span class="token punctuation">,</span> <span class="token string">"n%s"</span><span class="token punctuation">,</span> port_name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>dev_port <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span>
+                        l <span class="token operator">=</span> <span class="token function">strpcpyf</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token punctuation">,</span> l<span class="token punctuation">,</span> <span class="token string">"d%lu"</span><span class="token punctuation">,</span> dev_port<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>l <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
+                        names<span class="token operator">-></span>pci_slot<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token char">'\0'</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>噢，发现区别了，<code>ens2f0</code>的网卡是插在热拔插2插槽的。再确认一下，看看机器上是不是有对应文件：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># cat /sys/bus/pci/slots/2/address</span>
+0000:86:00<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>发现地址确实是吻合的，而且名字和插槽号确实能对应上。</p>
+<p>好吧，到这里问题算是解决了一半。至少知道了为啥网卡名字会不同了，但是也没办法去控制不同厂商去规定网卡地址必须一样了。所以呢，业务层还是需要针对这种场景去做些适配。或者，我们再自定义一个udev文件，另起门户，单独做一个我们自己的命名规则，将所有厂商给统一起来了。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/udev/" rel="tag"># udev</a>
+              <a href="/tags/%E4%B8%80%E8%87%B4%E7%BD%91%E7%BB%9C%E8%AE%BE%E5%A4%87%E5%91%BD%E5%90%8D/" rel="tag"># 一致网络设备命名</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/10/11/measuring-avaliable-memory/" rel="prev" title="当我们在讨论可用内存，我们在讨论什么？">
+                  <i class="fa fa-chevron-left"></i> 当我们在讨论可用内存，我们在讨论什么？
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/11/24/multi-nics-policy-routing/" rel="next" title="多网卡环境下利用策略路由实现网络流量同进同出">
+                  多网卡环境下利用策略路由实现网络流量同进同出 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"9bbb9fd05924021ef23995411f53a1d5"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

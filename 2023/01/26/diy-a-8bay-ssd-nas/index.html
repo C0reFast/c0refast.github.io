@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="接上篇LSI RAID卡芯片和各个OEM对应卡型号列表里说的后续DIY NAS的想法，经过快3个月的时间，终于来更新整个DIY过程了，总结起来在整个过程中，收获的主要还是折腾的乐趣，要说折腾的尽头是白群晖，随着时间的推移，个人还是比较认同的，不过不得不说白群晖确实太贵了，都说群晖是买软件送硬件，但是这软件也太贵了点。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DIY一个8盘位全闪NAS">
+<meta property="og:url" content="https://www.ichenfu.com/2023/01/26/diy-a-8bay-ssd-nas/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="接上篇LSI RAID卡芯片和各个OEM对应卡型号列表里说的后续DIY NAS的想法，经过快3个月的时间，终于来更新整个DIY过程了，总结起来在整个过程中，收获的主要还是折腾的乐趣，要说折腾的尽头是白群晖，随着时间的推移，个人还是比较认同的，不过不得不说白群晖确实太贵了，都说群晖是买软件送硬件，但是这软件也太贵了点。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.ichenfu.com/images/inspur-12bay-front.jpg">
+<meta property="og:image" content="https://www.ichenfu.com/images/inspur-12bay-back.jpg">
+<meta property="og:image" content="https://www.ichenfu.com/images/intel-8-anybay-front.jpg">
+<meta property="og:image" content="https://www.ichenfu.com/images/intel-8-anybay-back.jpg">
+<meta property="og:image" content="https://www.ichenfu.com/images/intel-8-sas.jpg">
+<meta property="og:image" content="https://www.ichenfu.com/images/hp-8-sas.jpg">
+<meta property="article:published_time" content="2023-01-26T07:43:28.000Z">
+<meta property="article:modified_time" content="2023-02-10T02:45:27.842Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="NAS">
+<meta property="article:tag" content="黑群晖">
+<meta property="article:tag" content="SSD">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.ichenfu.com/images/inspur-12bay-front.jpg">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2023/01/26/diy-a-8bay-ssd-nas/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2023/01/26/diy-a-8bay-ssd-nas/","path":"2023/01/26/diy-a-8bay-ssd-nas/","title":"DIY一个8盘位全闪NAS"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>DIY一个8盘位全闪NAS | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%9C%80%E6%B1%82%E6%8F%8F%E8%BF%B0%E5%92%8C%E5%88%86%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">需求描述和分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A1%AC%E7%9B%98%E7%AC%BC%E9%80%89%E6%8B%A9"><span class="nav-number">2.</span> <span class="nav-text">硬盘笼选择</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%AA%E6%BD%AE12%E7%9B%98%E4%BD%8D3-5%E5%AF%B8%E7%A1%AC%E7%9B%98%E7%AC%BC"><span class="nav-number">2.1.</span> <span class="nav-text">浪潮12盘位3.5寸硬盘笼</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intel-8%E7%9B%98%E4%BD%8D%E7%83%AD%E6%8F%92%E6%8B%94%E7%AC%BC%E5%AD%90-8-AnyBay"><span class="nav-number">2.2.</span> <span class="nav-text">Intel 8盘位热插拔笼子(8 AnyBay)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intel-8%E7%9B%98%E4%BD%8D%E7%83%AD%E6%8F%92%E6%8B%94%E7%AC%BC%E5%AD%90-4-AnyBay-4-SATA-SAS"><span class="nav-number">2.3.</span> <span class="nav-text">Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intel-8%E7%9B%98%E4%BD%8D%E7%83%AD%E6%8F%92%E6%8B%94%E7%AC%BC%E5%AD%90-8-SATA-SAS"><span class="nav-number">2.4.</span> <span class="nav-text">Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HP%E7%83%AD%E6%8F%92%E6%8B%94380-G6-G7%E7%A1%AC%E7%9B%98%E7%AC%BC"><span class="nav-number">2.5.</span> <span class="nav-text">HP热插拔380 G6&#x2F;G7硬盘笼</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RAID-HBA%E5%8D%A1%E9%80%89%E6%8B%A9"><span class="nav-number">3.</span> <span class="nav-text">RAID&#x2F;HBA卡选择</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A1%AC%E7%9B%98%E9%80%89%E6%8B%A9"><span class="nav-number">4.</span> <span class="nav-text">硬盘选择</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#NAS%E7%B3%BB%E7%BB%9F%E9%80%89%E6%8B%A9"><span class="nav-number">5.</span> <span class="nav-text">NAS系统选择</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E5%92%8C%E5%90%8E%E7%BB%AD"><span class="nav-number">6.</span> <span class="nav-text">总结和后续</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2023/01/26/diy-a-8bay-ssd-nas/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="DIY一个8盘位全闪NAS | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          DIY一个8盘位全闪NAS
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023年1月26日 15:43 15:43:28" itemprop="dateCreated datePublished" datetime="2023-01-26T15:43:28+08:00">2023年1月26日 15:43</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023年2月10日 10:45 10:45:27" itemprop="dateModified" datetime="2023-02-10T10:45:27+08:00">2023年2月10日 10:45</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>接上篇<a href="/2022/11/05/lsi-raid-controller-and-hba-complete-listing-plus-oem-models/">LSI RAID卡芯片和各个OEM对应卡型号列表</a>里说的后续DIY NAS的想法，经过快3个月的时间，终于来更新整个DIY过程了，总结起来在整个过程中，收获的主要还是折腾的乐趣，要说折腾的尽头是白群晖，随着时间的推移，个人还是比较认同的，不过不得不说白群晖确实太贵了，都说群晖是买软件送硬件，但是这软件也太贵了点。</p>
+<span id="more"></span>
+
+<h1 id="需求描述和分析"><a href="#需求描述和分析" class="headerlink" title="需求描述和分析"></a>需求描述和分析</h1><p>说起来，为啥会有个DIY NAS的需求呢？一个重要的原因是家里的小宝贝出生了，不知不觉也拍了好多的照片和视频，还是希望能更长久的把这些记忆保留下来。另外呢，之前更新自己的电脑，淘汰下来一套i5 6500 CPU加16G内存以及主板的准系统，买个机箱还有电源就直接可以用了，本着废物利用的原则，做个NAS也不亏，而且还多了很多可玩性。</p>
+<p>其实单纯从保存数据来说，将数据存放到任何一个公有云的对象存储上，是个最终极的方案，因为目前各个厂商提供的对象存储数据持久性SLA都达到了11或者12个9（99.999999999%-99.9999999999%），这基本意味着几乎不存在数据丢失的可能性了。但是确实这个方案也是最贵的，毕竟每TB存储每月都需要消耗对应的存储费用，随着时间增长，即使是最便宜的冷归档类型，也依然是个不小的消耗。</p>
+<p>那到底需要多少的存储容量呢？针对我个人而言，目前可预见的容量，应该不会超过10T，当前1-2年内所需求的容量更小，大概只需要1到2T的样子。</p>
+<p>针对这个容量，其实已经可以考虑全SSD的存储方案了，其实相比于使用HDD的方案，纯SSD的NAS有以下几个好处：首先是噪音角度，相比HDD运行时的“炒豆子”声来说，SSD 0噪音，这可以直接解决夜间安静环境下HDD低频噪音对睡眠质量的影响；其次是稳定性和数据安全角度，根据我们公司数据中心有比较大规模的SSD和HDD的使用经验，同时参考<a target="_blank" rel="noopener" href="https://www.backblaze.com/blog/ssd-drive-stats-mid-2022-review/">backblaze提供的统计数据</a>，可以看出SSD的稳定性远超过HDD，这带来了两个优势，一个是相比HDD，SSD损坏的概率低，这可以减少存储池修复的可能性，另外因为读写速度上SSD快很多，在坏盘的情况下，SSD也可以做到更坏的修复速度，从而可以提供更好的数据持久性。</p>
+<p>当然SSD依然还是有缺点的，很明显当前SSD比HDD依然贵很多，以当前的价格来说，SSD成本大约0.4元&#x2F;GB（大多数1T SATA SSD），HDD大概只有0.12元&#x2F;GB（西数HC550 16T）。但是对于我目前的容量需求来说，使用SSD的成本相比HDD没有差距太大，多花的那部分成本，对于0噪音来说是相当值得的。</p>
+<p>除了磁盘的选型，还有一些其他的需求，诸如盘位数量大于等于4，硬盘需要支持热拔插，存储池可以动态扩容，移动端、桌面端数据自动同步等等，不过这些也都算是比较基础的需求了。</p>
+<h1 id="硬盘笼选择"><a href="#硬盘笼选择" class="headerlink" title="硬盘笼选择"></a>硬盘笼选择</h1><p>针对硬盘热拔插的需求，肯定还是要搞个硬盘笼的，不管怎么说，相比于直接把硬盘塞机箱里，有个热拔插硬盘笼一下子逼格就上来了。</p>
+<p>所以一直花了不少精力去找合适的硬盘笼，主要还是集中于服务器的拆机件，这里给几个当时考虑的一些方案。</p>
+<h2 id="浪潮12盘位3-5寸硬盘笼"><a href="#浪潮12盘位3-5寸硬盘笼" class="headerlink" title="浪潮12盘位3.5寸硬盘笼"></a>浪潮12盘位3.5寸硬盘笼</h2><div class="group-picture"><div class="group-picture-row"><div class="group-picture-column"><img src="/images/inspur-12bay-front.jpg"></div><div class="group-picture-column"><img src="/images/inspur-12bay-back.jpg"></div></div></div>
+
+<p>首先第一个选择是买浪潮的12盘位3.5寸硬盘笼，目前的价格大概150块钱的样子，还挺便宜，感觉应该都是当初Chia矿老板淘汰下来的，这些硬盘笼基本都有大4P的电源接口以及MiniSAS（SFF8087）接口，使用起来还是比较方便的，当然缺点是确实占地比较大，毕竟是适配的2U机箱，因为本来也一直坚持全闪的方案，所以3.5寸的硬盘位就没有必要了，即使很便宜，依然放弃了这个方案。</p>
+<h2 id="Intel-8盘位热插拔笼子-8-AnyBay"><a href="#Intel-8盘位热插拔笼子-8-AnyBay" class="headerlink" title="Intel 8盘位热插拔笼子(8 AnyBay)"></a>Intel 8盘位热插拔笼子(8 AnyBay)</h2><div class="group-picture"><div class="group-picture-row"><div class="group-picture-column"><img src="/images/intel-8-anybay-front.jpg"></div><div class="group-picture-column"><img src="/images/intel-8-anybay-back.jpg"></div></div></div>
+
+
+<p>这是Intel一个颜值和功能都超级能打的硬盘笼，具体的参数可以参考<a target="_blank" rel="noopener" href="https://www.intel.com/content/www/us/en/products/sku/99083/2u-hotswap-8x2-5inch-sasnvme-combo-drive-bay-kit-a2u8x25s3phs/specifications.html">Intel的Spec文档</a>（不得不说Intel的文档写的是真的好），甚至当前这个时间点，依然在量产状态，这个笼子一般来说都是在2U机箱上做竖插24盘位的组件的，这几乎是我心目中最理想的硬盘笼选择，8盘位AnyBay，支持SATA、SAS、U.2 NVMe接口的硬盘，特别是在现在咸鱼有大量的U.2接口的大容量企业级SSD，价格十分友好。最关键的是这个硬盘笼的尺寸非常完美，可以无缝的塞进两个5.25英寸光驱位中，网上也有这个硬盘笼搭配银欣（SilverStone）SG02-F机箱组NAS的方案：<a target="_blank" rel="noopener" href="https://www.bilibili.com/read/cv16906380">全网首发【8盘位热插拔NVMe SSD NAS】DIY指南简章</a>，不得不说这个方案真的让人流口水，但确实不得不说成本太高了。</p>
+<p>这个硬盘笼呢，什么都好，就是成本太高，不仅仅笼子本身（大约1100+）更重要的是其配套的组件，首先这个硬盘笼是MiniSAS HD（SFF‑8643）接口的，支持这个接口的HBA或者RAID卡也比较贵，其次如果说要支持8个NVMe硬盘的话，需要准备8个OcuLink接口，那PCIe转OcuLink接口的转接卡又是不小的支出。更重要的是，8个NVMe需要32个PCIe lane，这直接超出了当前大部分平台的能力，基本只有服务器平台的CPU+主板才能支持这么多的PCIe lane，成本很可观。最后还有一个不得不考虑的问题，U.2 NVMe硬盘一般来说功耗都比较高，很多盘能到10几20W往上，如果是8块硬盘，那整体功耗可能会超过100W，所以散热的问题就不得不考虑了，这个笼子如果插NVMe硬盘的话，需要额外的散热。</p>
+<p>所以呢，东西虽好，但确实不符合我当前的需求和预算（流下贫穷的泪水）。据说H3C也有类似的笼子，价格要便宜1半，如果大家有类似的需求可以考虑。好像类似的8盘位AnyBay硬盘笼，各家OEM都有，但是好像好买且价格合适的不多。</p>
+<h2 id="Intel-8盘位热插拔笼子-4-AnyBay-4-SATA-SAS"><a href="#Intel-8盘位热插拔笼子-4-AnyBay-4-SATA-SAS" class="headerlink" title="Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)"></a>Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)</h2><p>这是另外一个Intel的硬盘笼子，大概可以算是上面笼子的低配版，<a target="_blank" rel="noopener" href="https://www.intel.com/content/www/us/en/products/sku/82790/hotswap-backplane-pcie-combination-drive-cage-kit-for-p4000-server-chassis-fup8x25s3nvdk-2-5in-nvme-ssd/specifications.html">文档看这里</a>，这个笼子支持4个NVMe + 4个SATA&#x2F;SAS硬盘，价格在淘宝也相对便宜，看到加上PCIe转接卡大概1000不到可以拿下，其实是个不错的选择，但是依然超出我的预算不少（继续流下贫穷的泪水）。</p>
+<h2 id="Intel-8盘位热插拔笼子-8-SATA-SAS"><a href="#Intel-8盘位热插拔笼子-8-SATA-SAS" class="headerlink" title="Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)"></a>Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)</h2><p><img src="/images/intel-8-sas.jpg"></p>
+<p>Intel还有一种硬盘笼（Intel出的好东西真不少啊），<a target="_blank" rel="noopener" href="https://www.intel.com/content/www/us/en/products/sku/60221/spare-8x2-5-hotswap-drive-cage-kit-fup8x25hsdks/specifications.html">文档看这里</a>，这个笼子支持8个SATA&#x2F;SAS硬盘，使用两个MiniSAS（SFF8087）接口，是一开始我选中的方案，整体还是很平衡的，淘宝大概400不到，在我找到下面的硬盘笼之前，一度准备剁手入了。</p>
+<h2 id="HP热插拔380-G6-G7硬盘笼"><a href="#HP热插拔380-G6-G7硬盘笼" class="headerlink" title="HP热插拔380 G6&#x2F;G7硬盘笼"></a>HP热插拔380 G6&#x2F;G7硬盘笼</h2><p><img src="/images/hp-8-sas.jpg"></p>
+<p>这个是我最后选择的笼子，这个硬盘笼原本是给HP DL380G6&#x2F;G7升级16盘位的套件，在HP那边的编号是：<code>507690-001</code>和<code>516914-B21</code>（这俩编号是一个东西），这个套件包含的几个组件和对应的物料编号如下：</p>
+<blockquote><p>硬盘笼子：463173-001 496074-001<br>硬盘背板：507690-001 451283-002<br>硬盘供电线：514217-001<br>硬盘SAS数据线：498425-001 493228-005</p>
+</blockquote>
+
+<p>为什么我选择这个硬盘笼子呢，因为它真的便宜，笼子加上背板、送供电线和两根SAS线，只需要50块钱，当然是不带硬盘托架的，不过算上硬盘托架的价钱也只需要80。80块钱真买不了上当和吃亏。说实话它也有一些小问题，比如坑爹的HP不知道为啥要设计成横向的两个4盘位，尺寸比竖向8盘位相比宽了一点点，直接导致没办法塞进2个5.25英寸光驱位。另外电源接口的设计也比较恶心，是向外的，如果想塞进机箱，那突出来的电源线会成为一个大问题，另外HP的电源接口定义也是每代一改，虽然复用了10pin的接口，但是定义并不标准，导致我花了非常长的时间去寻找各个pin的定义，生怕弄错接口定义把背板烧了，最终还是在一个德语的论坛找到<a target="_blank" rel="noopener" href="https://www.hardwareluxx.de/community/threads/adapter-auf-hp-10-pin-stromanschlu%C3%9F-gesucht-f%C3%BCr-hp-sas-backplane.865625/page-2#post-19825023">一个评论</a>说了这个硬盘笼子的定义，需要说明的是这个背板不接3.3V的供电也没有影响，所以也是淘宝了两根大4P的电源线和10pin线，自己DIY了一个电源线，最终把这个硬盘盒的供电问题解决。总的来说，主要这个笼子实在是太便宜了，便宜到它的这几个缺点都可以忍受（还是流下贫穷的泪水）。</p>
+<h1 id="RAID-HBA卡选择"><a href="#RAID-HBA卡选择" class="headerlink" title="RAID&#x2F;HBA卡选择"></a>RAID&#x2F;HBA卡选择</h1><p>针对上面几个硬盘笼，特别是最终我选的硬盘笼，都使用了MiniSAS（SFF8087）接口，所以要想使用硬盘笼的话，需要有支持MiniSAS接口的SATA控制器或者RAID&#x2F;HBA卡，根据之前的调查，大致有几种方案：</p>
+<pre><code>1. 可以使用MiniSAS转4SATA线实现，不过需要注意的是，这种线是区分正反的，正向线是MiniSAS口转4SATA，需要买反接线，将4SATA转换成MiniSAS口，从而实现将主板上的4个SATA口转成一个MiniSAS口。
+2. 市面上还有一些基于类似ASM1166（或者类似芯片）的PCI-E转SFF-8087转接卡，但ASM1166原生只支持6SATA Port，是否两个SFF-8087端口的8个端口都能使用，这个存疑。
+   另外还有也有一些M.2转8口SATA扩展卡也是用的两个SFF-8087转接卡，理论上也可以使用。
+3. 使用拆机的服务器HBA卡，比如基于LSI SAS 2008/2308的一众原厂或者OEM HBA卡。
+</code></pre>
+<p>最终我还是选择了相对成熟的HBA卡方案，一顿精挑细选，最终选了SuperMicro家的<code>AOC-S2308L-L8I 9217-8i</code>，基于SAS 2308芯片，PCIe 3.0 x8的接口，支持两个SFF-8087接口，这是一张OEM卡，对应的原厂卡型号是<code>LSI SAS9217-8i</code>，市面上除了SuperMicro之外，还有很多OEM也会出相同芯片的卡，比如浪潮、IBM等等，选择还是比较多的。我选的是2308的方案，这个芯片算是2008芯片的升级，其实区别不大，最主要的升级就是从PCIe 2.0 x8变成了PCIe 3.0 x8，整体带宽会高点。另外需要注意的一点是，这两个芯片有两种固件：IT（Initiator Target）模式和IR（Integrated RAID）模式，IT模式是类似HBA卡的直通模式，没办法组建RAID；IR模式是类似RAID卡的模式，可以组建简单的RAID0和RAID1。另外这两种固件是可以互刷的，区别只是在产品名字上是9207还是9217（9217是IR模式，9207是IT模式，所以我买的卡也是原厂IR模式刷的IT固件）。最后其实这个卡有个比较大的散热方面的问题，根据原厂的<a target="_blank" rel="noopener" href="https://docs.broadcom.com/doc/12353331">User Guide文档</a>。这张卡默认情况下有接近10W（默认9.8W，最大16W）的功耗，且最低要求<code>200 linear feet per minute</code>的风量，在服务器环境下散热都不是问题，但是放到家用的机箱里，如果没有主动散热的情况下，这张卡会非常的烫手！所以最终我又找了一个12cm的风扇专门对着卡的散热片吹，从而解决散热问题。</p>
+<h1 id="硬盘选择"><a href="#硬盘选择" class="headerlink" title="硬盘选择"></a>硬盘选择</h1><p>上面的这些组件搞定，最终就是买硬盘了，之前提到现在全新的SATA SSD大概0.4元&#x2F;GB，一块1TB的SSD大概400左右，说实话还是不便宜的，所以我又勇敢的选择了大船货！其实现在二手拆机SSD，量最大，最划算的还是U.2的硬盘，不到1000块钱可以买到4T左右的企业级SSD，而且这些企业级SSD寿命极高，稳定性也相当好，而且相比于SATA接口，U.2因为是PCIe链路，可以做到传输层的数据保护，可惜的是咱们的硬盘笼不支持。于是就只能选择SATA接口的SSD，一下子可选范围就少了不少，最终还是选了当前比较火的Sandisk&#x2F;闪迪云盘ECO，但是相比于更火的1.92T容量的版本，我最终买了960G容量的版本，相比于1.92T这个容量点，我猜960G容量用来做系统盘的概率更大点，说不准能抽奖抽到写入量超低的盘😁。相比于全新盘，这个拆机盘的价格就很实惠了。目前的价格是960G容量版本230块，不到0.24元&#x2F;GB，属实是相当划算了。</p>
+<h1 id="NAS系统选择"><a href="#NAS系统选择" class="headerlink" title="NAS系统选择"></a>NAS系统选择</h1><p>所有硬件的问题搞定，最后就只剩下软件层面的选择了，到底该用什么系统呢？一开始想使用TrueNAS，主要是看中ZFS的能力，但是试用了一小段时间TrueNAS之后，感觉这系统是真的很难用，门槛太高了，虽然运维这玩意对我来说并不是太大的瓶颈，但是确实各个方面都不太好用，特别是相关的软件生态上差很多。<br>于是乎就又试了试黑群晖，一开始我其实是抵制黑群晖的，因为有点担心数据安全问题，不确定会不会哪天就崩了，但是试用了一下之后，觉得确实群晖的生态做的太好了，体验拉满。于是就去简单研究了一下黑群晖的实现原理，发现其实黑群晖的相关项目都是开源的，都放在了<a target="_blank" rel="noopener" href="https://github.com/RedPill-TTG">RedPill-TTG</a>这个组织下，其中最关键的对群晖内核的hack都在<a target="_blank" rel="noopener" href="https://github.com/RedPill-TTG/redpill-lkm">RedPill-TTG&#x2F;redpill-lkm</a>这个项目里，大致翻了翻代码，基本上就是通过加载模块的方式，欺骗群晖的内核，让其认为自己是跑在群晖专有的硬件上。了解了之后，黑群晖在我心目中好感倍增，话说感觉群晖这绝对是套路满满，都说黑群晖的尽头是白群。估计群晖官方默许黑群晖行为的原因大概和Windows一样，反正最终都会买我。</p>
+<p>不过相比于直接把群晖跑在裸机上，我采取了一个另外的方法，把群晖跑在了虚拟机里，这样做的目的主要也是为了方便以后迁移，对我来说当前的硬件平台只是个相对临时的解决方案，为了后续能更好的跨平台迁移，所以我选择将黑群晖跑在虚拟机里，而对于HBA卡来说，采取的是硬件直通的方式直通给虚拟机，从而确保SMART等功能的正常使用。这里分享一下我现在用的虚拟机的XML，有需要的可以参考一下：</p>
+<pre class="line-numbers language-markup" data-language="markup"><code class="language-markup"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>domain</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>kvm<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>Synology<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>uuid</span><span class="token punctuation">></span></span>5ce24e3b-627b-468a-bcd5-53ff58d9731d<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>uuid</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>memory</span><span class="token punctuation">></span></span>8388608<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>memory</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>currentMemory</span><span class="token punctuation">></span></span>8388608<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>currentMemory</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>memoryBacking</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>hugepages</span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>memoryBacking</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>vcpu</span><span class="token punctuation">></span></span>4<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>vcpu</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>os</span> <span class="token attr-name">firmware</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>efi<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>firmware</span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>feature</span> <span class="token attr-name">enabled</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>no<span class="token punctuation">'</span></span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>secure-boot<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>firmware</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>type</span> <span class="token attr-name">arch</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>x86_64<span class="token punctuation">"</span></span> <span class="token attr-name">machine</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>q35<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>hvm<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>type</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>boot</span> <span class="token attr-name">dev</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>hd<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>os</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>features</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>acpi</span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>apic</span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>features</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>cpu</span> <span class="token attr-name">mode</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>host-passthrough<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>clock</span> <span class="token attr-name">offset</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>utc<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timer</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>rtc<span class="token punctuation">"</span></span> <span class="token attr-name">tickpolicy</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>catchup<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timer</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>pit<span class="token punctuation">"</span></span> <span class="token attr-name">tickpolicy</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>delay<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timer</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>hpet<span class="token punctuation">"</span></span> <span class="token attr-name">present</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>no<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>clock</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>pm</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>suspend-to-mem</span> <span class="token attr-name">enabled</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>no<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>suspend-to-disk</span> <span class="token attr-name">enabled</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>no<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>pm</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>devices</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>emulator</span><span class="token punctuation">></span></span>/usr/libexec/qemu-kvm<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>emulator</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>disk</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>file<span class="token punctuation">"</span></span> <span class="token attr-name">device</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>disk<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>driver</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>qemu<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>raw<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>source</span> <span class="token attr-name">file</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>/data0/Synology/boot.img<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>target</span> <span class="token attr-name">dev</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>sda<span class="token punctuation">"</span></span> <span class="token attr-name">bus</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>usb<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>disk</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>interface</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>bridge<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>source</span> <span class="token attr-name">bridge</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>br0<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>mac</span> <span class="token attr-name">address</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>11:22:33:44:55:66<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>model</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>virtio<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>interface</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>console</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>pty<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>hostdev</span> <span class="token attr-name">mode</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>subsystem<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>pci<span class="token punctuation">"</span></span> <span class="token attr-name">managed</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>yes<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>source</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>address</span> <span class="token attr-name">domain</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>0<span class="token punctuation">"</span></span> <span class="token attr-name">bus</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>1<span class="token punctuation">"</span></span> <span class="token attr-name">slot</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>0<span class="token punctuation">"</span></span> <span class="token attr-name">function</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>0<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>source</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>hostdev</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>memballoon</span> <span class="token attr-name">model</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>none<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>graphics</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>vnc<span class="token punctuation">'</span></span> <span class="token attr-name">port</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>-1<span class="token punctuation">'</span></span> <span class="token attr-name">autoport</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>yes<span class="token punctuation">'</span></span> <span class="token attr-name">listen</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>0.0.0.0<span class="token punctuation">'</span></span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>listen</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>address<span class="token punctuation">'</span></span> <span class="token attr-name">address</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>0.0.0.0<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>graphics</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>video</span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>model</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>vga<span class="token punctuation">'</span></span> <span class="token attr-name">vram</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>16384<span class="token punctuation">'</span></span> <span class="token attr-name">heads</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>1<span class="token punctuation">'</span></span> <span class="token attr-name">primary</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>yes<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>video</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>devices</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>domain</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+<h1 id="总结和后续"><a href="#总结和后续" class="headerlink" title="总结和后续"></a>总结和后续</h1><p>目前的这套NAS方案已经运行了2个多月，看起来还算稳定，这段时间内没出现过大的问题。如果折腾半天就只为了存点照片也有点浪费，所以除了存储功能之外，我又跑了个PCDN业务，目前收益也还不错，我是100M的上传带宽，目前每天大概能有个5块钱的收益，至少电费能覆盖了，跑着玩玩吧~</p>
+<p>想想当前这套还有什么不足，个人觉得一个比较大的缺点是占地，目前我是用了乔斯伯的V4做的机箱，但是硬盘笼是不太好直接放进机箱了，所以只是简单的放在了外壳上，整体相比于家用的NAS产品还是大了一圈，另外确实硬盘笼比双5.25寸光驱位大了点，即使后续换了机箱，可能也不太好直接放进去。</p>
+<p>另外就是CPU这些硬件配置了，一方面当前这颗CPU TDP还是比较大的，65W，必须有主动散热，另外HBA卡也需要主动散热，所以离真正的0噪音还有点距离，理论上换用嵌入式的低功耗CPU+SATA转MiniSAS的方案，可以做到整机完全没有任何机械活动的部件，做到真正意义上的0噪音。</p>
+<p>最后就是另一个方向，换到稍微低端点的数据中心CPU+主板，功耗会高一些，但是可扩展性会极大的增强，包括ECC内存以及U.2硬盘、IPMI这些都可以支持。具体往后该如何演进，还是等待当前套系统继续运行一段时间吧。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/NAS/" rel="tag"># NAS</a>
+              <a href="/tags/%E9%BB%91%E7%BE%A4%E6%99%96/" rel="tag"># 黑群晖</a>
+              <a href="/tags/SSD/" rel="tag"># SSD</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/11/05/lsi-raid-controller-and-hba-complete-listing-plus-oem-models/" rel="prev" title="分享一个记录LSI RAID卡芯片和各个OEM对应卡型号列表的神贴">
+                  <i class="fa fa-chevron-left"></i> 分享一个记录LSI RAID卡芯片和各个OEM对应卡型号列表的神贴
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2023/07/13/parse-aws-aliyun-like-api-request/" rel="next" title="反序列化AWS/阿里云样式的基于Query的API请求">
+                  反序列化AWS/阿里云样式的基于Query的API请求 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"d2a4ec3c03978d93a38b52f44633b0eb"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

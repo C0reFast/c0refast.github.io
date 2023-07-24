@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="本篇是Building a Consistent Hashing Ring的翻译，原文一步步描述了一个一致性哈希环的构建过程，对于OpenStack Swift存储，对应的Ring文件，其实就是一个一致性哈希环。这篇文章讲述了OpenStack Swift Ring文件的构建原理。目前翻译了第一部分和第二部分，包含了最原始的算法，并最终引入虚拟节点，减少扩容时的数据移动">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2)">
+<meta property="og:url" content="https://www.ichenfu.com/2017/04/17/building-a-consistent-hashing-ring-1-2/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="本篇是Building a Consistent Hashing Ring的翻译，原文一步步描述了一个一致性哈希环的构建过程，对于OpenStack Swift存储，对应的Ring文件，其实就是一个一致性哈希环。这篇文章讲述了OpenStack Swift Ring文件的构建原理。目前翻译了第一部分和第二部分，包含了最原始的算法，并最终引入虚拟节点，减少扩容时的数据移动">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-04-17T05:53:01.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.280Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="Consistent Hashing">
+<meta property="article:tag" content="Swift Ring">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2017/04/17/building-a-consistent-hashing-ring-1-2/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2017/04/17/building-a-consistent-hashing-ring-1-2/","path":"2017/04/17/building-a-consistent-hashing-ring-1-2/","title":"Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2)"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2) | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Part-1"><span class="nav-number">1.</span> <span class="nav-text">Part 1</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Part-2"><span class="nav-number">2.</span> <span class="nav-text">Part 2</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/04/17/building-a-consistent-hashing-ring-1-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2) | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2)
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017年4月17日 13:53 13:53:01" itemprop="dateCreated datePublished" datetime="2017-04-17T13:53:01+08:00">2017年4月17日 13:53</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/OpenStack-Swift/" itemprop="url" rel="index"><span itemprop="name">OpenStack Swift</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>本篇是<a target="_blank" rel="noopener" href="https://docs.openstack.org/swift/latest/ring_background.html">Building a Consistent Hashing Ring</a>的翻译，原文一步步描述了一个一致性哈希环的构建过程，对于OpenStack Swift存储，对应的Ring文件，其实就是一个一致性哈希环。<br>这篇文章讲述了OpenStack Swift Ring文件的构建原理。目前翻译了第一部分和第二部分，包含了最原始的算法，并最终引入虚拟节点，减少扩容时的数据移动<span id="more"></span></p>
+<h2 id="Part-1"><a href="#Part-1" class="headerlink" title="Part 1"></a>Part 1</h2><p>“一致性哈希”是用于描述使用散列算法分布数据以确定其位置的过程的术语。只需要知道数据id的哈系值，就可以确切地确定数据应该在哪里。哈希与位置的映射关系通常被称为“环”。</p>
+<p>也许最简单的哈希只是id的模数。例如，如果所有数据的id都是数字，希望分散数据到两台机器上，可以将所有id为奇数的数据放在一台机器上，id为偶数的数据放在另一台。假设奇数id和偶数id的数据数量大致平衡，并且每个数据的大小也大致平衡，那么数据在两台计算机之间也是大致平衡的。</p>
+<p>由于数据通常具有文本名称而不是数字，例如文件或URL的路径，因此实际使用中会先通过散列算法将名称转换成一个数字。例如，使用MD5，名称“mom.png”的散列是’4559a12e3e8da7c2186250c2f292e3af’，’dad.png’的散列是’096edcc4107e9e18d6a03a43b3853bea’。然后，使用模数，我们可以将“mom.jpg”放在奇数机器上，把“dad.png”放在偶数机器上。使用像MD5这样的哈希算法的另一个好处就是生成的哈希值是可以保证均匀分布的，这意味着任意名称最终将均匀分布，不用担心数据id分布的均匀性。</p>
+<p>例子：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> hashlib <span class="token keyword">import</span> md5
+<span class="token keyword">from</span> struct <span class="token keyword">import</span> unpack_from
+
+<span class="token comment"># 100个节点，10000000个文件</span>
+NODE_COUNT <span class="token operator">=</span> <span class="token number">100</span>
+DATA_ID_COUNT <span class="token operator">=</span> <span class="token number">10000000</span>
+
+node_counts <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">*</span> NODE_COUNT
+<span class="token keyword">for</span> data_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>DATA_ID_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    data_id <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span>
+    <span class="token comment"># 根据数据id计算md5，并将md5的前4个字节作为一个int</span>
+    hsh <span class="token operator">=</span> unpack_from<span class="token punctuation">(</span><span class="token string">'>I'</span><span class="token punctuation">,</span> md5<span class="token punctuation">(</span>data_id<span class="token punctuation">)</span><span class="token punctuation">.</span>digest<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+    <span class="token comment"># 取模，计算node_id</span>
+    node_id <span class="token operator">=</span> hsh <span class="token operator">%</span> NODE_COUNT
+    <span class="token comment"># 统计节点的数据个数</span>
+    node_counts<span class="token punctuation">[</span>node_id<span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+<span class="token comment"># 每个节点数据个数的期望值</span>
+desired_count <span class="token operator">=</span> DATA_ID_COUNT <span class="token operator">/</span> NODE_COUNT
+<span class="token keyword">print</span> <span class="token string">'%d: Desired data ids per node'</span> <span class="token operator">%</span> desired_count
+<span class="token comment"># 数据最多的节点的数据个数</span>
+max_count <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span>node_counts<span class="token punctuation">)</span>
+over <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>max_count <span class="token operator">-</span> desired_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Most data ids on one node, %.02f%% over'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>max_count<span class="token punctuation">,</span> over<span class="token punctuation">)</span>
+<span class="token comment"># 数据最少的节点的数据个数</span>
+min_count <span class="token operator">=</span> <span class="token builtin">min</span><span class="token punctuation">(</span>node_counts<span class="token punctuation">)</span>
+under <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>desired_count <span class="token operator">-</span> min_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Least data ids on one node, %.02f%% under'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>min_count<span class="token punctuation">,</span> under<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>执行结果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">100000</span>: Desired data ids per <span class="token function">node</span>
+<span class="token number">100695</span>: Most data ids on one node, <span class="token number">0.69</span>% over
+<span class="token number">99073</span>: Least data ids on one node, <span class="token number">0.93</span>% under<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>结果很不错，对于单个节点，分配的数据差距小于1%。</p>
+<h2 id="Part-2"><a href="#Part-2" class="headerlink" title="Part 2"></a>Part 2</h2><p>在本系列的第1部分中，我们使用哈希的模数来定位数据进行了简单地测试。可以看到数据分布地很好，但这只是故事的一部分。分布式系统不仅需要分配负载，而且随着数据量的增长，它们也经常需要扩容。</p>
+<p>所以让我们想象一下，我们使用我们以前的算法来运行一个100节点的系统，但是它的资源逐渐被耗尽，所以我们要添加另一个节点。当我们将第101个节点添加到我们的系统中时，会注意到许多id将映射到与之前不同的节点。我们将不得不在我们的系统上清理一大堆数据，以便将其全部重新安置到位。</p>
+<p>我们在一个最小规模的系统中举个简单的例子：开始只有2个节点，节点0存储偶数id的数据，节点1存储奇数id的数据。因此，数据id为100的将映射到节点0，数据id为101的将映射到节点1，数据id为102的将映射到节点0，依次类推，很简单的，node &#x3D; id ％ 2。现在我们添加第三个节点（节点2）以获得更多的空间，所以我们想要node &#x3D; id ％ 3。所以现在数据id为100的将映射到节点1，数据id为101的将映射到节点2，数据id为102的将映射到节点0。所以我们必须移动3个数据中的其中2个，使他们都存在正确的位置。</p>
+<p>举个更大规模的例子：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">from hashlib <span class="token function">import</span> md5
+from struct <span class="token function">import</span> unpack_from
+
+NODE_COUNT <span class="token operator">=</span> <span class="token number">100</span>
+NEW_NODE_COUNT <span class="token operator">=</span> <span class="token number">101</span>
+DATA_ID_COUNT <span class="token operator">=</span> <span class="token number">10000000</span>
+
+<span class="token comment"># 用于统计移动的数据个数</span>
+moved_ids <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token keyword">for</span> <span class="token for-or-select variable">data_id</span> <span class="token keyword">in</span> xrange<span class="token punctuation">(</span>DATA_ID_COUNT<span class="token punctuation">)</span>:
+    data_id <span class="token operator">=</span> str<span class="token punctuation">(</span>data_id<span class="token punctuation">)</span>
+    hsh <span class="token operator">=</span> unpack_from<span class="token punctuation">(</span><span class="token string">'>I'</span>, md5<span class="token punctuation">(</span>str<span class="token punctuation">(</span>data_id<span class="token punctuation">))</span>.digest<span class="token punctuation">(</span><span class="token punctuation">))</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+    node_id <span class="token operator">=</span> hsh % NODE_COUNT
+    new_node_id <span class="token operator">=</span> hsh % NEW_NODE_COUNT
+    <span class="token comment"># 很显然，当新旧节点id不同时，需要移动该数据</span>
+    <span class="token keyword">if</span> node_id <span class="token operator">!=</span> new_node_id:
+        moved_ids <span class="token operator">+=</span> <span class="token number">1</span>
+percent_moved <span class="token operator">=</span> <span class="token number">100.0</span> * moved_ids / DATA_ID_COUNT
+print <span class="token string">'%d ids moved, %.02f%%'</span> % <span class="token punctuation">(</span>moved_ids, percent_moved<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>执行结果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">9900989</span> ids moved, <span class="token number">99.01</span>%<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>结果很严峻，为了提升1%的容量，我们需要移动差不多99%的数据！因此，必须使用一个新的算法，来避免这种情况。</p>
+<p>所以在这里我们需要引入“环”的概念，我们可以将一定哈希值范围的数据直接分配给每个节点，然后通过一定的算法减少这些范围的变化。<br>还是看一个小规模例子，数据id从0到999，两个节点，将0到499的数据分配给节点0，500到999的数据分配给节点1，当新加了节点2时，节点2的数据各有一半来自于节点0和1，这样最小化需要移动的数据量。</p>
+<p>大规模的例子：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> bisect <span class="token keyword">import</span> bisect_left
+<span class="token keyword">from</span> hashlib <span class="token keyword">import</span> md5
+<span class="token keyword">from</span> struct <span class="token keyword">import</span> unpack_from
+
+NODE_COUNT <span class="token operator">=</span> <span class="token number">100</span>
+NEW_NODE_COUNT <span class="token operator">=</span> <span class="token number">101</span>
+DATA_ID_COUNT <span class="token operator">=</span> <span class="token number">10000000</span>
+
+<span class="token comment"># 原来每个节点的哈希值区间</span>
+node_range_starts <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token keyword">for</span> node_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>NODE_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    node_range_starts<span class="token punctuation">.</span>append<span class="token punctuation">(</span>DATA_ID_COUNT <span class="token operator">/</span>
+                             NODE_COUNT <span class="token operator">*</span> node_id<span class="token punctuation">)</span>
+
+<span class="token comment"># 新加节点后每个节点的哈希值区间</span>
+new_node_range_starts <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token keyword">for</span> new_node_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>NEW_NODE_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    new_node_range_starts<span class="token punctuation">.</span>append<span class="token punctuation">(</span>DATA_ID_COUNT <span class="token operator">/</span>
+                              NEW_NODE_COUNT <span class="token operator">*</span> new_node_id<span class="token punctuation">)</span>
+moved_ids <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token keyword">for</span> data_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>DATA_ID_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    data_id <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span>
+    hsh <span class="token operator">=</span> unpack_from<span class="token punctuation">(</span><span class="token string">'>I'</span><span class="token punctuation">,</span> md5<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span>digest<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+    <span class="token comment"># 获取原来的节点id</span>
+    node_id <span class="token operator">=</span> bisect_left<span class="token punctuation">(</span>node_range_starts<span class="token punctuation">,</span>
+                          hsh <span class="token operator">%</span> DATA_ID_COUNT<span class="token punctuation">)</span> <span class="token operator">%</span> NODE_COUNT
+    <span class="token comment"># 获取新的节点id</span>
+    new_node_id <span class="token operator">=</span> bisect_left<span class="token punctuation">(</span>new_node_range_starts<span class="token punctuation">,</span>
+                          hsh <span class="token operator">%</span> DATA_ID_COUNT<span class="token punctuation">)</span> <span class="token operator">%</span> NEW_NODE_COUNT
+    <span class="token keyword">if</span> node_id <span class="token operator">!=</span> new_node_id<span class="token punctuation">:</span>
+        moved_ids <span class="token operator">+=</span> <span class="token number">1</span>
+percent_moved <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> moved_ids <span class="token operator">/</span> DATA_ID_COUNT
+<span class="token keyword">print</span> <span class="token string">'%d ids moved, %.02f%%'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>moved_ids<span class="token punctuation">,</span> percent_moved<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>执行结果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">4901707</span> ids moved, <span class="token number">49.02</span>%<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>结果好了不少，但是在总容量增加1%的情况下，移动50%的数据仍然不容乐观。如果我们仔细研究一下发生了什么，就会明白其实这就是“手风琴效应”，当我们将节点0的范围缩小一点，以赋予新节点，但是将所有其他节点的范围也跟着移位了相同的量。<br>为了最小化对节点分配范围的更改，可以给节点分配几个较小的区间而不是单个很大的区间。 这可以通过为每个节点创建“虚拟节点”来实现。 所以100个节点可能有1000个虚拟节点。 来看看是如何实现的：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> bisect <span class="token keyword">import</span> bisect_left
+<span class="token keyword">from</span> hashlib <span class="token keyword">import</span> md5
+<span class="token keyword">from</span> struct <span class="token keyword">import</span> unpack_from
+
+NODE_COUNT <span class="token operator">=</span> <span class="token number">100</span>
+DATA_ID_COUNT <span class="token operator">=</span> <span class="token number">10000000</span>
+VNODE_COUNT <span class="token operator">=</span> <span class="token number">1000</span>
+
+vnode_range_starts <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+vnode2node <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token comment"># 初始化两个表，vnode_range_starts是每个vnode对应的哈希区间，</span>
+<span class="token comment"># vnode2node是每个vnode实际对应的node_id，</span>
+<span class="token comment"># 这里vnode和node之间对应关系是取vnode_id % NODE_COUNT</span>
+<span class="token keyword">for</span> vnode_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>VNODE_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    vnode_range_starts<span class="token punctuation">.</span>append<span class="token punctuation">(</span>DATA_ID_COUNT <span class="token operator">/</span>
+                              VNODE_COUNT <span class="token operator">*</span> vnode_id<span class="token punctuation">)</span>
+    vnode2node<span class="token punctuation">.</span>append<span class="token punctuation">(</span>vnode_id <span class="token operator">%</span> NODE_COUNT<span class="token punctuation">)</span>
+new_vnode2node <span class="token operator">=</span> <span class="token builtin">list</span><span class="token punctuation">(</span>vnode2node<span class="token punctuation">)</span>
+new_node_id <span class="token operator">=</span> NODE_COUNT
+NEW_NODE_COUNT <span class="token operator">=</span> NODE_COUNT <span class="token operator">+</span> <span class="token number">1</span>
+<span class="token comment"># 计算需要修改指向的vnode数量</span>
+vnodes_to_reassign <span class="token operator">=</span> VNODE_COUNT <span class="token operator">/</span> NEW_NODE_COUNT
+<span class="token keyword">while</span> vnodes_to_reassign <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">:</span>
+    <span class="token keyword">for</span> node_to_take_from <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>NODE_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">for</span> vnode_id<span class="token punctuation">,</span> node_id <span class="token keyword">in</span> <span class="token builtin">enumerate</span><span class="token punctuation">(</span>new_vnode2node<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token keyword">if</span> node_id <span class="token operator">==</span> node_to_take_from<span class="token punctuation">:</span>
+                new_vnode2node<span class="token punctuation">[</span>vnode_id<span class="token punctuation">]</span> <span class="token operator">=</span> new_node_id
+                vnodes_to_reassign <span class="token operator">-=</span> <span class="token number">1</span>
+                <span class="token keyword">break</span>
+        <span class="token keyword">if</span> vnodes_to_reassign <span class="token operator">&lt;=</span> <span class="token number">0</span><span class="token punctuation">:</span>
+            <span class="token keyword">break</span>
+moved_ids <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token keyword">for</span> data_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>DATA_ID_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    data_id <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span>
+    hsh <span class="token operator">=</span> unpack_from<span class="token punctuation">(</span><span class="token string">'>I'</span><span class="token punctuation">,</span> md5<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span>digest<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+    vnode_id <span class="token operator">=</span> bisect_left<span class="token punctuation">(</span>vnode_range_starts<span class="token punctuation">,</span>
+                         hsh <span class="token operator">%</span> DATA_ID_COUNT<span class="token punctuation">)</span> <span class="token operator">%</span> VNODE_COUNT
+    node_id <span class="token operator">=</span> vnode2node<span class="token punctuation">[</span>vnode_id<span class="token punctuation">]</span>
+    new_node_id <span class="token operator">=</span> new_vnode2node<span class="token punctuation">[</span>vnode_id<span class="token punctuation">]</span>
+    <span class="token keyword">if</span> node_id <span class="token operator">!=</span> new_node_id<span class="token punctuation">:</span>
+        moved_ids <span class="token operator">+=</span> <span class="token number">1</span>
+percent_moved <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> moved_ids <span class="token operator">/</span> DATA_ID_COUNT
+<span class="token keyword">print</span> <span class="token string">'%d ids moved, %.02f%%'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>moved_ids<span class="token punctuation">,</span> percent_moved<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>执行结果:</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">90423</span> ids moved, <span class="token number">0.90</span>%<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>这就对了，在添加1%容量的情况下，只需要移动0.9%的数据。上面的代码，看起来vnode_range_starts有点多余了，因为在整个生命周期中只被计算了一次，而且从来没变过，所以可以优化一下：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> bisect <span class="token keyword">import</span> bisect_left
+<span class="token keyword">from</span> hashlib <span class="token keyword">import</span> md5
+<span class="token keyword">from</span> struct <span class="token keyword">import</span> unpack_from
+
+NODE_COUNT <span class="token operator">=</span> <span class="token number">100</span>
+DATA_ID_COUNT <span class="token operator">=</span> <span class="token number">10000000</span>
+VNODE_COUNT <span class="token operator">=</span> <span class="token number">1000</span>
+
+vnode2node <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token keyword">for</span> vnode_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>VNODE_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    vnode2node<span class="token punctuation">.</span>append<span class="token punctuation">(</span>vnode_id <span class="token operator">%</span> NODE_COUNT<span class="token punctuation">)</span>
+new_vnode2node <span class="token operator">=</span> <span class="token builtin">list</span><span class="token punctuation">(</span>vnode2node<span class="token punctuation">)</span>
+new_node_id <span class="token operator">=</span> NODE_COUNT
+vnodes_to_reassign <span class="token operator">=</span> VNODE_COUNT <span class="token operator">/</span> <span class="token punctuation">(</span>NODE_COUNT <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token keyword">while</span> vnodes_to_reassign <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">:</span>
+    <span class="token keyword">for</span> node_to_take_from <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>NODE_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">for</span> vnode_id<span class="token punctuation">,</span> node_id <span class="token keyword">in</span> <span class="token builtin">enumerate</span><span class="token punctuation">(</span>vnode2node<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token keyword">if</span> node_id <span class="token operator">==</span> node_to_take_from<span class="token punctuation">:</span>
+                vnode2node<span class="token punctuation">[</span>vnode_id<span class="token punctuation">]</span> <span class="token operator">=</span> new_node_id
+                vnodes_to_reassign <span class="token operator">-=</span> <span class="token number">1</span>
+                <span class="token keyword">break</span>
+        <span class="token keyword">if</span> vnodes_to_reassign <span class="token operator">&lt;=</span> <span class="token number">0</span><span class="token punctuation">:</span>
+            <span class="token keyword">break</span>
+moved_ids <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token keyword">for</span> data_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>DATA_ID_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    data_id <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span>
+    hsh <span class="token operator">=</span> unpack_from<span class="token punctuation">(</span><span class="token string">'>I'</span><span class="token punctuation">,</span> md5<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span>digest<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+    vnode_id <span class="token operator">=</span> hsh <span class="token operator">%</span> VNODE_COUNT
+    node_id <span class="token operator">=</span> vnode2node<span class="token punctuation">[</span>vnode_id<span class="token punctuation">]</span>
+    new_node_id <span class="token operator">=</span> new_vnode2node<span class="token punctuation">[</span>vnode_id<span class="token punctuation">]</span>
+    <span class="token keyword">if</span> node_id <span class="token operator">!=</span> new_node_id<span class="token punctuation">:</span>
+        moved_ids <span class="token operator">+=</span> <span class="token number">1</span>
+percent_moved <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> moved_ids <span class="token operator">/</span> DATA_ID_COUNT
+<span class="token keyword">print</span> <span class="token string">'%d ids moved, %.02f%%'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>moved_ids<span class="token punctuation">,</span> percent_moved<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>结果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">89841</span> ids moved, <span class="token number">0.90</span>%<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>很好，在下面的系列中，会继续说明算法的局限性，并相应的进行优化。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Consistent-Hashing/" rel="tag"># Consistent Hashing</a>
+              <a href="/tags/Swift-Ring/" rel="tag"># Swift Ring</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/04/17/netease-cloud-music-archlinux-whitescreen/" rel="prev" title="ArchLinux下网易云音乐白屏问题">
+                  <i class="fa fa-chevron-left"></i> ArchLinux下网易云音乐白屏问题
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/04/23/building-a-consistent-hashing-ring-3-5/" rel="next" title="Building a Consistent Hashing Ring Part3-Part5(构建一个一致性哈希环 Part3-Part5)">
+                  Building a Consistent Hashing Ring Part3-Part5(构建一个一致性哈希环 Part3-Part5) <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"6f11c46d56621d78d7abdda2e35576cb"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

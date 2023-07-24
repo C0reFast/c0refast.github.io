@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="心跳机制在Ceph中承担非常重要的角色，所有OSD之间都需要通过心跳来确认各个OSD的状态，并且在OSD出现失联，Crash等情况下能及时的被发现，从而进行故障OSD摘除，触发数据重平衡等，保证数据的安全性。 所以弄明白当前Ceph的心跳机制，理顺OSD从故障到被集群踢出的流程是十分必要的。 心跳初始化 &amp; 心跳发送首先我们从Ceph OSD进程的启动main函数开始，代码在src&#x2F;cep">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ceph OSD的心跳机制分析">
+<meta property="og:url" content="https://www.ichenfu.com/2021/03/16/ceph-osd-heartbeat/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="心跳机制在Ceph中承担非常重要的角色，所有OSD之间都需要通过心跳来确认各个OSD的状态，并且在OSD出现失联，Crash等情况下能及时的被发现，从而进行故障OSD摘除，触发数据重平衡等，保证数据的安全性。 所以弄明白当前Ceph的心跳机制，理顺OSD从故障到被集群踢出的流程是十分必要的。 心跳初始化 &amp; 心跳发送首先我们从Ceph OSD进程的启动main函数开始，代码在src&#x2F;cep">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-03-16T11:44:31.000Z">
+<meta property="article:modified_time" content="2021-03-16T10:03:12.020Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="Ceph">
+<meta property="article:tag" content="OSD心跳">
+<meta property="article:tag" content="源码分析">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2021/03/16/ceph-osd-heartbeat/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2021/03/16/ceph-osd-heartbeat/","path":"2021/03/16/ceph-osd-heartbeat/","title":"Ceph OSD的心跳机制分析"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Ceph OSD的心跳机制分析 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BF%83%E8%B7%B3%E5%88%9D%E5%A7%8B%E5%8C%96-%E5%BF%83%E8%B7%B3%E5%8F%91%E9%80%81"><span class="nav-number">1.</span> <span class="nav-text">心跳初始化 &amp; 心跳发送</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BF%83%E8%B7%B3%E5%AF%B9%E8%B1%A1%E7%A1%AE%E5%AE%9A"><span class="nav-number">2.</span> <span class="nav-text">心跳对象确定</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BF%83%E8%B7%B3%E6%8E%A5%E6%94%B6"><span class="nav-number">3.</span> <span class="nav-text">心跳接收</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B6%85%E6%97%B6%E6%A3%80%E6%B5%8B%E5%92%8C%E4%B8%8A%E6%8A%A5"><span class="nav-number">4.</span> <span class="nav-text">超时检测和上报</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/03/16/ceph-osd-heartbeat/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Ceph OSD的心跳机制分析 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Ceph OSD的心跳机制分析
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021年3月16日 19:44 19:44:31" itemprop="dateCreated datePublished" datetime="2021-03-16T19:44:31+08:00">2021年3月16日 19:44</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年3月16日 18:03 18:03:12" itemprop="dateModified" datetime="2021-03-16T18:03:12+08:00">2021年3月16日 18:03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>心跳机制在Ceph中承担非常重要的角色，所有OSD之间都需要通过心跳来确认各个OSD的状态，并且在OSD出现失联，Crash等情况下能及时的被发现，从而进行故障OSD摘除，触发数据重平衡等，保证数据的安全性。</p>
+<p>所以弄明白当前Ceph的心跳机制，理顺OSD从故障到被集群踢出的流程是十分必要的。</p>
+<h3 id="心跳初始化-心跳发送"><a href="#心跳初始化-心跳发送" class="headerlink" title="心跳初始化 &amp; 心跳发送"></a>心跳初始化 &amp; 心跳发送</h3><p>首先我们从Ceph OSD进程的启动main函数开始，代码在<code>src/ceph_osd.cc</code>：</p>
+<span id="more"></span>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span><span class="token operator">*</span>argv<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+<span class="token comment">// ...</span>
+
+<span class="token comment">//首先创建前端、后端的发送、接收总共四个Messenger</span>
+  Messenger <span class="token operator">*</span>ms_hb_back_client <span class="token operator">=</span> <span class="token class-name">Messenger</span><span class="token double-colon punctuation">::</span><span class="token function">create</span><span class="token punctuation">(</span>g_ceph_context<span class="token punctuation">,</span> cluster_msg_type<span class="token punctuation">,</span>
+				entity_name_t<span class="token double-colon punctuation">::</span><span class="token function">OSD</span><span class="token punctuation">(</span>whoami<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"hb_back_client"</span><span class="token punctuation">,</span>
+				nonce<span class="token punctuation">,</span> Messenger<span class="token double-colon punctuation">::</span>HEARTBEAT<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Messenger <span class="token operator">*</span>ms_hb_front_client <span class="token operator">=</span> <span class="token class-name">Messenger</span><span class="token double-colon punctuation">::</span><span class="token function">create</span><span class="token punctuation">(</span>g_ceph_context<span class="token punctuation">,</span> public_msg_type<span class="token punctuation">,</span>
+				entity_name_t<span class="token double-colon punctuation">::</span><span class="token function">OSD</span><span class="token punctuation">(</span>whoami<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"hb_front_client"</span><span class="token punctuation">,</span>
+				nonce<span class="token punctuation">,</span> Messenger<span class="token double-colon punctuation">::</span>HEARTBEAT<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Messenger <span class="token operator">*</span>ms_hb_back_server <span class="token operator">=</span> <span class="token class-name">Messenger</span><span class="token double-colon punctuation">::</span><span class="token function">create</span><span class="token punctuation">(</span>g_ceph_context<span class="token punctuation">,</span> cluster_msg_type<span class="token punctuation">,</span>
+				entity_name_t<span class="token double-colon punctuation">::</span><span class="token function">OSD</span><span class="token punctuation">(</span>whoami<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"hb_back_server"</span><span class="token punctuation">,</span>
+				nonce<span class="token punctuation">,</span> Messenger<span class="token double-colon punctuation">::</span>HEARTBEAT<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Messenger <span class="token operator">*</span>ms_hb_front_server <span class="token operator">=</span> <span class="token class-name">Messenger</span><span class="token double-colon punctuation">::</span><span class="token function">create</span><span class="token punctuation">(</span>g_ceph_context<span class="token punctuation">,</span> public_msg_type<span class="token punctuation">,</span>
+				entity_name_t<span class="token double-colon punctuation">::</span><span class="token function">OSD</span><span class="token punctuation">(</span>whoami<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"hb_front_server"</span><span class="token punctuation">,</span>
+				nonce<span class="token punctuation">,</span> Messenger<span class="token double-colon punctuation">::</span>HEARTBEAT<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// ...</span>
+
+<span class="token comment">// 接下来进行绑定，将前后端对应的IP地址绑定到对应的Messenger上</span>
+  entity_addrvec_t hb_front_addrs <span class="token operator">=</span> public_addrs<span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">auto</span><span class="token operator">&amp;</span> a <span class="token operator">:</span> hb_front_addrs<span class="token punctuation">.</span>v<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    a<span class="token punctuation">.</span><span class="token function">set_port</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>ms_hb_front_server<span class="token operator">-></span><span class="token function">bindv</span><span class="token punctuation">(</span>hb_front_addrs<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    forker<span class="token punctuation">.</span><span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>ms_hb_front_client<span class="token operator">-></span><span class="token function">client_bind</span><span class="token punctuation">(</span>hb_front_addrs<span class="token punctuation">.</span><span class="token function">front</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    forker<span class="token punctuation">.</span><span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  entity_addrvec_t hb_back_addrs <span class="token operator">=</span> cluster_addrs<span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">auto</span><span class="token operator">&amp;</span> a <span class="token operator">:</span> hb_back_addrs<span class="token punctuation">.</span>v<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    a<span class="token punctuation">.</span><span class="token function">set_port</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>ms_hb_back_server<span class="token operator">-></span><span class="token function">bindv</span><span class="token punctuation">(</span>hb_back_addrs<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    forker<span class="token punctuation">.</span><span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>ms_hb_back_client<span class="token operator">-></span><span class="token function">client_bind</span><span class="token punctuation">(</span>hb_back_addrs<span class="token punctuation">.</span><span class="token function">front</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    forker<span class="token punctuation">.</span><span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// ...</span>
+
+<span class="token comment">// 创建OSD实例</span>
+  osdptr <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">OSD</span><span class="token punctuation">(</span>g_ceph_context<span class="token punctuation">,</span>
+		   store<span class="token punctuation">,</span>
+		   whoami<span class="token punctuation">,</span>
+		   ms_cluster<span class="token punctuation">,</span>
+		   ms_public<span class="token punctuation">,</span>
+		   ms_hb_front_client<span class="token punctuation">,</span>
+		   ms_hb_back_client<span class="token punctuation">,</span>
+		   ms_hb_front_server<span class="token punctuation">,</span>
+		   ms_hb_back_server<span class="token punctuation">,</span>
+		   ms_objecter<span class="token punctuation">,</span>
+		   <span class="token operator">&amp;</span>mc<span class="token punctuation">,</span>
+		   data_path<span class="token punctuation">,</span>
+		   journal_path<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// ...</span>
+
+<span class="token comment">// 此时心跳等还没启动，真正初始化心跳是在OSD::init()里</span>
+  err <span class="token operator">=</span> osdptr<span class="token operator">-></span><span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>初始化心跳相关逻辑在OSD::init()方法里，我们转到<code>src/osd/OSD.cc</code>：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token class-name">OSD</span><span class="token double-colon punctuation">::</span><span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+<span class="token comment">// ...</span>
+
+<span class="token comment">// 给各个心跳相关的Messenger加上回调，用于处理心跳返回，以及其他OSD发送到自己的心跳，具体流程后面分析</span>
+  hb_front_client_messenger<span class="token operator">-></span><span class="token function">add_dispatcher_head</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>heartbeat_dispatcher<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  hb_back_client_messenger<span class="token operator">-></span><span class="token function">add_dispatcher_head</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>heartbeat_dispatcher<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  hb_front_server_messenger<span class="token operator">-></span><span class="token function">add_dispatcher_head</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>heartbeat_dispatcher<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  hb_back_server_messenger<span class="token operator">-></span><span class="token function">add_dispatcher_head</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>heartbeat_dispatcher<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// ...</span>
+
+<span class="token comment">// 正式启动心跳</span>
+<span class="token comment">// start the heartbeat</span>
+  heartbeat_thread<span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token string">"osd_srv_heartbt"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>继续，看看<code>heartbeat_thread</code>的定义是什么样的，代码在<code>src/osd/OSD.h</code>:</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">T_Heartbeat</span> <span class="token operator">:</span> <span class="token base-clause"><span class="token keyword">public</span> <span class="token class-name">Thread</span></span> <span class="token punctuation">&#123;</span>
+  OSD <span class="token operator">*</span>osd<span class="token punctuation">;</span>
+  <span class="token keyword">explicit</span> <span class="token function">T_Heartbeat</span><span class="token punctuation">(</span>OSD <span class="token operator">*</span>o<span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">osd</span><span class="token punctuation">(</span>o<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+  <span class="token keyword">void</span> <span class="token operator">*</span><span class="token function">entry</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">override</span> <span class="token punctuation">&#123;</span>
+    osd<span class="token operator">-></span><span class="token function">heartbeat_entry</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span> heartbeat_thread<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>很简单，就是调用<code>osd-&gt;heartbeat_entry()</code>，那就继续看<code>OSD::heartbeat_entry()</code>做了哪些事，同样实现在<code>src/osd/OSD.cc</code>：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">OSD</span><span class="token double-colon punctuation">::</span><span class="token function">heartbeat_entry</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  std<span class="token double-colon punctuation">::</span>unique_lock <span class="token function">l</span><span class="token punctuation">(</span>heartbeat_lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">is_stopping</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span><span class="token punctuation">;</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>heartbeat_stop<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// 调用OSD::heartbeat()</span>
+    <span class="token function">heartbeat</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// 根据配置，等待一段时间，继续心跳</span>
+    <span class="token keyword">double</span> wait<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>cct<span class="token operator">-></span>_conf<span class="token punctuation">.</span><span class="token generic-function"><span class="token function">get_val</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">bool</span><span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token string">"debug_disable_randomized_ping"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      wait <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">float</span><span class="token punctuation">)</span>cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_heartbeat_interval<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+      wait <span class="token operator">=</span> <span class="token number">.5</span> <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">float</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token function">rand</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token operator">/</span><span class="token number">10.0</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token punctuation">(</span><span class="token keyword">float</span><span class="token punctuation">)</span>cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_heartbeat_interval<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">auto</span> w <span class="token operator">=</span> ceph<span class="token double-colon punctuation">::</span><span class="token function">make_timespan</span><span class="token punctuation">(</span>wait<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"heartbeat_entry sleeping for "</span> <span class="token operator">&lt;&lt;</span> wait <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+    heartbeat_cond<span class="token punctuation">.</span><span class="token function">wait_for</span><span class="token punctuation">(</span>l<span class="token punctuation">,</span> w<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">is_stopping</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"heartbeat_entry woke up"</span> <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">void</span> <span class="token class-name">OSD</span><span class="token double-colon punctuation">::</span><span class="token function">heartbeat</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+<span class="token comment">// ...</span>
+
+  <span class="token comment">// 获取当前的系统负载，在心跳包中，会带上当前OSD所在机器的负载信息</span>
+  <span class="token comment">// 这里用了个公式，计算的是一天的累计的负载</span>
+  <span class="token comment">// get CPU load avg</span>
+  <span class="token keyword">double</span> loadavgs<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+  <span class="token keyword">int</span> hb_interval <span class="token operator">=</span> cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_heartbeat_interval<span class="token punctuation">;</span>
+  <span class="token keyword">int</span> n_samples <span class="token operator">=</span> <span class="token number">86400</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>hb_interval <span class="token operator">></span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    n_samples <span class="token operator">/=</span> hb_interval<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>n_samples <span class="token operator">&lt;</span> <span class="token number">1</span><span class="token punctuation">)</span>
+      n_samples <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">getloadavg</span><span class="token punctuation">(</span>loadavgs<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    logger<span class="token operator">-></span><span class="token function">set</span><span class="token punctuation">(</span>l_osd_loadavg<span class="token punctuation">,</span> <span class="token number">100</span> <span class="token operator">*</span> loadavgs<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    daily_loadavg <span class="token operator">=</span> <span class="token punctuation">(</span>daily_loadavg <span class="token operator">*</span> <span class="token punctuation">(</span>n_samples <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">+</span> loadavgs<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">/</span> n_samples<span class="token punctuation">;</span>
+    <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"heartbeat: daily_loadavg "</span> <span class="token operator">&lt;&lt;</span> daily_loadavg <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+<span class="token comment">// ...</span>
+
+  utime_t now <span class="token operator">=</span> <span class="token function">ceph_clock_now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">auto</span> mnow <span class="token operator">=</span> service<span class="token punctuation">.</span><span class="token function">get_mnow</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  utime_t deadline <span class="token operator">=</span> now<span class="token punctuation">;</span>
+  deadline <span class="token operator">+=</span> cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_heartbeat_grace<span class="token punctuation">;</span>
+
+  <span class="token comment">// 遍历所有需要心跳检测的Peer</span>
+  <span class="token comment">// send heartbeats</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span>map<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span>HeartbeatInfo<span class="token operator">></span><span class="token double-colon punctuation">::</span>iterator i <span class="token operator">=</span> heartbeat_peers<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+       i <span class="token operator">!=</span> heartbeat_peers<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+       <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  
+  <span class="token comment">// ...</span>
+
+    <span class="token comment">// 通过集群内网络发送MOSDPing消息</span>
+    i<span class="token operator">-></span>second<span class="token punctuation">.</span>con_back<span class="token operator">-></span><span class="token function">send_message</span><span class="token punctuation">(</span>
+      <span class="token keyword">new</span> <span class="token function">MOSDPing</span><span class="token punctuation">(</span>monc<span class="token operator">-></span><span class="token function">get_fsid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		   service<span class="token punctuation">.</span><span class="token function">get_osdmap_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		   MOSDPing<span class="token double-colon punctuation">::</span>PING<span class="token punctuation">,</span>
+		   now<span class="token punctuation">,</span>
+		   mnow<span class="token punctuation">,</span>
+		   mnow<span class="token punctuation">,</span>
+		   service<span class="token punctuation">.</span><span class="token function">get_up_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		   cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_heartbeat_min_size<span class="token punctuation">,</span>
+		   delta_ub<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 如果前端网络是分离的，那从前端网络也发送MOSDPing消息</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>i<span class="token operator">-></span>second<span class="token punctuation">.</span>con_front<span class="token punctuation">)</span>
+      i<span class="token operator">-></span>second<span class="token punctuation">.</span>con_front<span class="token operator">-></span><span class="token function">send_message</span><span class="token punctuation">(</span>
+	<span class="token keyword">new</span> <span class="token function">MOSDPing</span><span class="token punctuation">(</span>monc<span class="token operator">-></span><span class="token function">get_fsid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		     service<span class="token punctuation">.</span><span class="token function">get_osdmap_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		     MOSDPing<span class="token double-colon punctuation">::</span>PING<span class="token punctuation">,</span>
+		     now<span class="token punctuation">,</span>
+		     mnow<span class="token punctuation">,</span>
+		     mnow<span class="token punctuation">,</span>
+		     service<span class="token punctuation">.</span><span class="token function">get_up_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		     cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_heartbeat_min_size<span class="token punctuation">,</span>
+		     delta_ub<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  logger<span class="token operator">-></span><span class="token function">set</span><span class="token punctuation">(</span>l_osd_hb_to<span class="token punctuation">,</span> heartbeat_peers<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// 有个情况是就一个OSD，那就等着OSDMap更新吧。</span>
+  <span class="token comment">// hmm.. am i all alone?</span>
+  <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"heartbeat lonely?"</span> <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>heartbeat_peers<span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>now <span class="token operator">-</span> last_mon_heartbeat <span class="token operator">></span> cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_mon_heartbeat_interval <span class="token operator">&amp;&amp;</span> <span class="token function">is_active</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      last_mon_heartbeat <span class="token operator">=</span> now<span class="token punctuation">;</span>
+      <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"i have no heartbeat peers; checking mon for new map"</span> <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+      <span class="token function">osdmap_subscribe</span><span class="token punctuation">(</span><span class="token function">get_osdmap_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"heartbeat done"</span> <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="心跳对象确定"><a href="#心跳对象确定" class="headerlink" title="心跳对象确定"></a>心跳对象确定</h3><p>心跳逻辑还是比较好理解的，基本就是个for循环，但是有个小细节，就是<code>heartbeat_peers</code>哪来的？哪些OSD会被放入到这个心跳列表？是所有的OSD么？这个列表的初始化在<code>OSD::maybe_update_heartbeat_peers()</code>:</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">
+<span class="token keyword">void</span> <span class="token class-name">OSD</span><span class="token double-colon punctuation">::</span><span class="token function">maybe_update_heartbeat_peers</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+<span class="token comment">// ...</span>
+
+  <span class="token comment">// 首先，把所有OSD负责的PG的副本OSD，加到列表里</span>
+  <span class="token comment">// build heartbeat from set</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">is_active</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    vector<span class="token operator">&lt;</span>PGRef<span class="token operator">></span> pgs<span class="token punctuation">;</span>
+    <span class="token function">_get_pgs</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>pgs<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">auto</span><span class="token operator">&amp;</span> pg <span class="token operator">:</span> pgs<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      pg<span class="token operator">-></span><span class="token function">with_heartbeat_peers</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token operator">&amp;</span><span class="token punctuation">]</span><span class="token punctuation">(</span><span class="token keyword">int</span> peer<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">get_osdmap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">is_up</span><span class="token punctuation">(</span>peer<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	    <span class="token function">_add_heartbeat_peer</span><span class="token punctuation">(</span>peer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	  <span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token comment">// 然后再看看OSDMap，把前后相邻的OSD先算出来</span>
+  <span class="token comment">// include next and previous up osds to ensure we have a fully-connected set</span>
+  set<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> want<span class="token punctuation">,</span> extras<span class="token punctuation">;</span>
+  <span class="token keyword">const</span> <span class="token keyword">int</span> next <span class="token operator">=</span> <span class="token function">get_osdmap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">get_next_up_osd_after</span><span class="token punctuation">(</span>whoami<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>next <span class="token operator">>=</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    want<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>next<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">int</span> prev <span class="token operator">=</span> <span class="token function">get_osdmap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">get_previous_up_osd_before</span><span class="token punctuation">(</span>whoami<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>prev <span class="token operator">>=</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> prev <span class="token operator">!=</span> next<span class="token punctuation">)</span>
+    want<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>prev<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// 根据配置，从OSDMap里随机找一些OSD</span>
+  <span class="token comment">// make sure we have at least **min_down** osds coming from different</span>
+  <span class="token comment">// subtree level (e.g., hosts) for fast failure detection.</span>
+  <span class="token keyword">auto</span> min_down <span class="token operator">=</span> cct<span class="token operator">-></span>_conf<span class="token punctuation">.</span><span class="token generic-function"><span class="token function">get_val</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">uint64_t</span><span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token string">"mon_osd_min_down_reporters"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">auto</span> subtree <span class="token operator">=</span> cct<span class="token operator">-></span>_conf<span class="token punctuation">.</span><span class="token generic-function"><span class="token function">get_val</span><span class="token generic class-name"><span class="token operator">&lt;</span>string<span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token string">"mon_osd_reporter_subtree_level"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">auto</span> limit <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token function">max</span><span class="token punctuation">(</span>min_down<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">uint64_t</span><span class="token punctuation">)</span>cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_heartbeat_min_peers<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">get_osdmap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">get_random_up_osds_by_subtree</span><span class="token punctuation">(</span>
+    whoami<span class="token punctuation">,</span> subtree<span class="token punctuation">,</span> limit<span class="token punctuation">,</span> want<span class="token punctuation">,</span> <span class="token operator">&amp;</span>want<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// 把这些OSD全加到extras列表里</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span>set<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token double-colon punctuation">::</span>iterator p <span class="token operator">=</span> want<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> p <span class="token operator">!=</span> want<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token operator">++</span>p<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">" adding neighbor peer osd."</span> <span class="token operator">&lt;&lt;</span> <span class="token operator">*</span>p <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+    extras<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span><span class="token operator">*</span>p<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">_add_heartbeat_peer</span><span class="token punctuation">(</span><span class="token operator">*</span>p<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token comment">// 二次确认一下，如果有非UP的OSD，就从列表里去掉</span>
+  <span class="token comment">// remove down peers; enumerate extras</span>
+  map<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span>HeartbeatInfo<span class="token operator">></span><span class="token double-colon punctuation">::</span>iterator p <span class="token operator">=</span> heartbeat_peers<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span>p <span class="token operator">!=</span> heartbeat_peers<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">get_osdmap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">is_up</span><span class="token punctuation">(</span>p<span class="token operator">-></span>first<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">int</span> o <span class="token operator">=</span> p<span class="token operator">-></span>first<span class="token punctuation">;</span>
+      <span class="token operator">++</span>p<span class="token punctuation">;</span>
+      <span class="token function">_remove_heartbeat_peer</span><span class="token punctuation">(</span>o<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">continue</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>p<span class="token operator">-></span>second<span class="token punctuation">.</span>epoch <span class="token operator">&lt;</span> <span class="token function">get_osdmap_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      extras<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>p<span class="token operator">-></span>first<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token operator">++</span>p<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token comment">// 下面就是根据配置调整心跳列表OSD的数量，让数量保持在一个合理的值</span>
+  <span class="token comment">// too few?</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> n <span class="token operator">=</span> next<span class="token punctuation">;</span> n <span class="token operator">>=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span>heartbeat_peers<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">>=</span> cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_heartbeat_min_peers<span class="token punctuation">)</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>extras<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>want<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> n <span class="token operator">!=</span> whoami<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">" adding random peer osd."</span> <span class="token operator">&lt;&lt;</span> n <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+      extras<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token function">_add_heartbeat_peer</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    n <span class="token operator">=</span> <span class="token function">get_osdmap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">get_next_up_osd_after</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>n <span class="token operator">==</span> next<span class="token punctuation">)</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>  <span class="token comment">// came full circle; stop</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token comment">// too many?</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span>set<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token double-colon punctuation">::</span>iterator p <span class="token operator">=</span> extras<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+       <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span>heartbeat_peers<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_heartbeat_min_peers <span class="token operator">&amp;&amp;</span> p <span class="token operator">!=</span> extras<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+       <span class="token operator">++</span>p<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>want<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token operator">*</span>p<span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token keyword">continue</span><span class="token punctuation">;</span>
+    <span class="token function">_remove_heartbeat_peer</span><span class="token punctuation">(</span><span class="token operator">*</span>p<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"maybe_update_heartbeat_peers "</span> <span class="token operator">&lt;&lt;</span> heartbeat_peers<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">" peers, extras "</span> <span class="token operator">&lt;&lt;</span> extras <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+
+  <span class="token comment">// clean up stale failure pending</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">auto</span> it <span class="token operator">=</span> failure_pending<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> it <span class="token operator">!=</span> failure_pending<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>heartbeat_peers<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>it<span class="token operator">-></span>first<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token function">send_still_alive</span><span class="token punctuation">(</span><span class="token function">get_osdmap_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> it<span class="token operator">-></span>first<span class="token punctuation">,</span> it<span class="token operator">-></span>second<span class="token punctuation">.</span>second<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      failure_pending<span class="token punctuation">.</span><span class="token function">erase</span><span class="token punctuation">(</span>it<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+      it<span class="token operator">++</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="心跳接收"><a href="#心跳接收" class="headerlink" title="心跳接收"></a>心跳接收</h3><p>在OSD初始化的一开始，我们已经知道4个心跳相关Messenger注册了一个回调<code>heartbeat_dispatcher</code>用于处理收到的请求。这是封装后的dispatcher，最终会执行<code>osd-&gt;heartbeat_dispatch(m)</code>，这个<code>heartbeat_dispatch</code>也定义在<code>src/osd/OSD.cc</code>:</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token class-name">OSD</span><span class="token double-colon punctuation">::</span><span class="token function">heartbeat_dispatch</span><span class="token punctuation">(</span>Message <span class="token operator">*</span>m<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"heartbeat_dispatch "</span> <span class="token operator">&lt;&lt;</span> m <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+  <span class="token keyword">switch</span> <span class="token punctuation">(</span>m<span class="token operator">-></span><span class="token function">get_type</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+<span class="token comment">// ...</span>
+
+<span class="token comment">// 如果是MSG_OSD_PING类型MSG继续调用handle_osd_ping</span>
+  <span class="token keyword">case</span> MSG_OSD_PING<span class="token operator">:</span>
+    <span class="token function">handle_osd_ping</span><span class="token punctuation">(</span><span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>MOSDPing<span class="token operator">*</span><span class="token operator">></span></span></span><span class="token punctuation">(</span>m<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">break</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">void</span> <span class="token class-name">OSD</span><span class="token double-colon punctuation">::</span><span class="token function">handle_osd_ping</span><span class="token punctuation">(</span>MOSDPing <span class="token operator">*</span>m<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">// ...</span>
+
+    <span class="token keyword">switch</span> <span class="token punctuation">(</span>m<span class="token operator">-></span>op<span class="token punctuation">)</span>
+    <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 收到PING包</span>
+    <span class="token keyword">case</span> MOSDPing<span class="token double-colon punctuation">::</span>PING<span class="token operator">:</span>
+    <span class="token punctuation">&#123;</span>
+
+        <span class="token comment">// 发送回包</span>
+        Message <span class="token operator">*</span>r <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">MOSDPing</span><span class="token punctuation">(</span>monc<span class="token operator">-></span><span class="token function">get_fsid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                  curmap<span class="token operator">-></span><span class="token function">get_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                  MOSDPing<span class="token double-colon punctuation">::</span>PING_REPLY<span class="token punctuation">,</span>
+                                  m<span class="token operator">-></span>ping_stamp<span class="token punctuation">,</span>
+                                  m<span class="token operator">-></span>mono_ping_stamp<span class="token punctuation">,</span>
+                                  mnow<span class="token punctuation">,</span>
+                                  service<span class="token punctuation">.</span><span class="token function">get_up_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                  cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_heartbeat_min_size<span class="token punctuation">,</span>
+                                  sender_delta_ub<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        con<span class="token operator">-></span><span class="token function">send_message</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token comment">// ...</span>
+        <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>curmap<span class="token operator">-></span><span class="token function">exists</span><span class="token punctuation">(</span>from<span class="token punctuation">)</span> <span class="token operator">||</span>
+                 curmap<span class="token operator">-></span><span class="token function">get_down_at</span><span class="token punctuation">(</span>from<span class="token punctuation">)</span> <span class="token operator">></span> m<span class="token operator">-></span>map_epoch<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token comment">/*
+			 * 如果对端异常，发送个MOSDPing::YOU_DIED包
+			 * tell them they have died
+			 */</span>
+            Message <span class="token operator">*</span>r <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">MOSDPing</span><span class="token punctuation">(</span>monc<span class="token operator">-></span><span class="token function">get_fsid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                      curmap<span class="token operator">-></span><span class="token function">get_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                      MOSDPing<span class="token double-colon punctuation">::</span>YOU_DIED<span class="token punctuation">,</span>
+                                      m<span class="token operator">-></span>ping_stamp<span class="token punctuation">,</span>
+                                      m<span class="token operator">-></span>mono_ping_stamp<span class="token punctuation">,</span>
+                                      mnow<span class="token punctuation">,</span>
+                                      service<span class="token punctuation">.</span><span class="token function">get_up_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                      cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_heartbeat_min_size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            con<span class="token operator">-></span><span class="token function">send_message</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">break</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* 收到PING回包 */</span>
+    <span class="token keyword">case</span> MOSDPing<span class="token double-colon punctuation">::</span>PING_REPLY<span class="token operator">:</span>
+    <span class="token punctuation">&#123;</span>
+        map<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span> HeartbeatInfo<span class="token operator">></span><span class="token double-colon punctuation">::</span>iterator i <span class="token operator">=</span> heartbeat_peers<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span>from<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+		  <span class="token comment">// 如果在心跳列表里</span>
+      <span class="token comment">// 根据连接更新前后端的上次心跳时间</span>
+      <span class="token comment">// 如果只有后端网络，则前后端一起更新，如果前后端网络都有，则各自更新各自的</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>i <span class="token operator">!=</span> heartbeat_peers<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token keyword">auto</span> acked <span class="token operator">=</span> i<span class="token operator">-></span>second<span class="token punctuation">.</span>ping_history<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span>m<span class="token operator">-></span>ping_stamp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>acked <span class="token operator">!=</span> i<span class="token operator">-></span>second<span class="token punctuation">.</span>ping_history<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token keyword">int</span> <span class="token operator">&amp;</span>unacknowledged <span class="token operator">=</span> acked<span class="token operator">-></span>second<span class="token punctuation">.</span>second<span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>con <span class="token operator">==</span> i<span class="token operator">-></span>second<span class="token punctuation">.</span>con_back<span class="token punctuation">)</span>
+                <span class="token punctuation">&#123;</span>
+ 
+                    i<span class="token operator">-></span>second<span class="token punctuation">.</span>last_rx_back <span class="token operator">=</span> now<span class="token punctuation">;</span>
+                    <span class="token function">ceph_assert</span><span class="token punctuation">(</span>unacknowledged <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token operator">--</span>unacknowledged<span class="token punctuation">;</span>
+                    <span class="token comment">/* if there is no front con, set both stamps. */</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>i<span class="token operator">-></span>second<span class="token punctuation">.</span>con_front <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+                    <span class="token punctuation">&#123;</span>
+                        i<span class="token operator">-></span>second<span class="token punctuation">.</span>last_rx_front <span class="token operator">=</span> now<span class="token punctuation">;</span>
+                        <span class="token function">ceph_assert</span><span class="token punctuation">(</span>unacknowledged <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token operator">--</span>unacknowledged<span class="token punctuation">;</span>
+                    <span class="token punctuation">&#125;</span>
+                <span class="token punctuation">&#125;</span>
+                <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>con <span class="token operator">==</span> i<span class="token operator">-></span>second<span class="token punctuation">.</span>con_front<span class="token punctuation">)</span>
+                <span class="token punctuation">&#123;</span>
+                    <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">25</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"handle_osd_ping got reply from osd."</span> <span class="token operator">&lt;&lt;</span> from
+                             <span class="token operator">&lt;&lt;</span> <span class="token string">" first_tx "</span> <span class="token operator">&lt;&lt;</span> i<span class="token operator">-></span>second<span class="token punctuation">.</span>first_tx
+                             <span class="token operator">&lt;&lt;</span> <span class="token string">" last_tx "</span> <span class="token operator">&lt;&lt;</span> i<span class="token operator">-></span>second<span class="token punctuation">.</span>last_tx
+                             <span class="token operator">&lt;&lt;</span> <span class="token string">" last_rx_back "</span> <span class="token operator">&lt;&lt;</span> i<span class="token operator">-></span>second<span class="token punctuation">.</span>last_rx_back
+                             <span class="token operator">&lt;&lt;</span> <span class="token string">" last_rx_front "</span> <span class="token operator">&lt;&lt;</span> i<span class="token operator">-></span>second<span class="token punctuation">.</span>last_rx_front
+                             <span class="token operator">&lt;&lt;</span> <span class="token string">" -> "</span> <span class="token operator">&lt;&lt;</span> now
+                             <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+                    i<span class="token operator">-></span>second<span class="token punctuation">.</span>last_rx_front <span class="token operator">=</span> now<span class="token punctuation">;</span>
+                    <span class="token function">ceph_assert</span><span class="token punctuation">(</span>unacknowledged <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token operator">--</span>unacknowledged<span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span>
+
+<span class="token comment">// ...还会记录一些历史信息，这里不分析了。</span>
+
+                <span class="token comment">/* 如果Peer状态正常，清除掉之前不正常的状态 */</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>i<span class="token operator">-></span>second<span class="token punctuation">.</span><span class="token function">is_healthy</span><span class="token punctuation">(</span>now<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">&#123;</span>
+                    <span class="token comment">/* Cancel false reports */</span>
+                    <span class="token keyword">auto</span> failure_queue_entry <span class="token operator">=</span> failure_queue<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span>from<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>failure_queue_entry <span class="token operator">!=</span> failure_queue<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                    <span class="token punctuation">&#123;</span>
+                        <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"handle_osd_ping canceling queued "</span>
+                                 <span class="token operator">&lt;&lt;</span> <span class="token string">"failure report for osd."</span> <span class="token operator">&lt;&lt;</span> from <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+                        failure_queue<span class="token punctuation">.</span><span class="token function">erase</span><span class="token punctuation">(</span>failure_queue_entry<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">&#125;</span>
+
+                    <span class="token keyword">auto</span> failure_pending_entry <span class="token operator">=</span> failure_pending<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span>from<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>failure_pending_entry <span class="token operator">!=</span> failure_pending<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                    <span class="token punctuation">&#123;</span>
+                        <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"handle_osd_ping canceling in-flight "</span>
+                                 <span class="token operator">&lt;&lt;</span> <span class="token string">"failure report for osd."</span> <span class="token operator">&lt;&lt;</span> from <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+                        <span class="token function">send_still_alive</span><span class="token punctuation">(</span>curmap<span class="token operator">-></span><span class="token function">get_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                         from<span class="token punctuation">,</span>
+                                         failure_pending_entry<span class="token operator">-></span>second<span class="token punctuation">.</span>second<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        failure_pending<span class="token punctuation">.</span><span class="token function">erase</span><span class="token punctuation">(</span>failure_pending_entry<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">&#125;</span>
+                <span class="token punctuation">&#125;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token keyword">else</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token comment">/* old replies, deprecated by newly sent pings. */</span>
+                <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"handle_osd_ping no pending ping(sent at "</span> <span class="token operator">&lt;&lt;</span> m<span class="token operator">-></span>ping_stamp
+                         <span class="token operator">&lt;&lt;</span> <span class="token string">") is found, treat as covered by newly sent pings "</span>
+                         <span class="token operator">&lt;&lt;</span> <span class="token string">"and ignore"</span>
+                         <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">break</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* 收到MOSDPing::YOU_DIED包，更新osdmap */</span>
+    <span class="token keyword">case</span> MOSDPing<span class="token double-colon punctuation">::</span>YOU_DIED<span class="token operator">:</span>
+        <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"handle_osd_ping "</span> <span class="token operator">&lt;&lt;</span> m<span class="token operator">-></span><span class="token function">get_source_inst</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                 <span class="token operator">&lt;&lt;</span> <span class="token string">" says i am down in "</span> <span class="token operator">&lt;&lt;</span> m<span class="token operator">-></span>map_epoch <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+        <span class="token function">osdmap_subscribe</span><span class="token punctuation">(</span>curmap<span class="token operator">-></span><span class="token function">get_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    heartbeat_lock<span class="token punctuation">.</span><span class="token function">unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    m<span class="token operator">-></span><span class="token function">put</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+<h3 id="超时检测和上报"><a href="#超时检测和上报" class="headerlink" title="超时检测和上报"></a>超时检测和上报</h3><p>心跳流程分析的差不多了，该进行心跳的超时检测和信息上报了。</p>
+<p>心跳的超时检测，是在<code>OSD::heartbeat_check()</code>方法里检测的：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">OSD</span><span class="token double-colon punctuation">::</span><span class="token function">heartbeat_check</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">ceph_assert</span><span class="token punctuation">(</span><span class="token function">ceph_mutex_is_locked</span><span class="token punctuation">(</span>heartbeat_lock<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    utime_t now <span class="token operator">=</span> <span class="token function">ceph_clock_now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// check for incoming heartbeats (move me elsewhere?)</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>map<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span> HeartbeatInfo<span class="token operator">></span><span class="token double-colon punctuation">::</span>iterator p <span class="token operator">=</span> heartbeat_peers<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+         p <span class="token operator">!=</span> heartbeat_peers<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+         <span class="token operator">++</span>p<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 如果一个心跳还没发呢，先跳过</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>p<span class="token operator">-></span>second<span class="token punctuation">.</span>first_tx <span class="token operator">==</span> <span class="token function">utime_t</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">dout</span><span class="token punctuation">(</span><span class="token number">25</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">"heartbeat_check we haven't sent ping to osd."</span> <span class="token operator">&lt;&lt;</span> p<span class="token operator">-></span>first
+                     <span class="token operator">&lt;&lt;</span> <span class="token string">" yet, skipping"</span> <span class="token operator">&lt;&lt;</span> dendl<span class="token punctuation">;</span>
+            <span class="token keyword">continue</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token comment">// 如果有发生超时的情况</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>p<span class="token operator">-></span>second<span class="token punctuation">.</span><span class="token function">is_unhealthy</span><span class="token punctuation">(</span>now<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            utime_t oldest_deadline <span class="token operator">=</span> p<span class="token operator">-></span>second<span class="token punctuation">.</span>ping_history<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span>second<span class="token punctuation">.</span>first<span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>p<span class="token operator">-></span>second<span class="token punctuation">.</span>last_rx_back <span class="token operator">==</span> <span class="token function">utime_t</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">||</span>
+                p<span class="token operator">-></span>second<span class="token punctuation">.</span>last_rx_front <span class="token operator">==</span> <span class="token function">utime_t</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token comment">// fail</span>
+                <span class="token comment">// 一个返回都没收到，扔failure_queue队列里</span>
+                failure_queue<span class="token punctuation">[</span>p<span class="token operator">-></span>first<span class="token punctuation">]</span> <span class="token operator">=</span> p<span class="token operator">-></span>second<span class="token punctuation">.</span>first_tx<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                <span class="token comment">// fail</span>
+                <span class="token comment">// 收到过返回，但是依然超时了，扔failure_queue队列里</span>
+                failure_queue<span class="token punctuation">[</span>p<span class="token operator">-></span>first<span class="token punctuation">]</span> <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token function">min</span><span class="token punctuation">(</span>p<span class="token operator">-></span>second<span class="token punctuation">.</span>last_rx_back<span class="token punctuation">,</span> p<span class="token operator">-></span>second<span class="token punctuation">.</span>last_rx_front<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这个检测还是比较简单的，那么什么时候上报到Monitor呢？我们慢慢来：</p>
+<p>在<code>OSD:init()</code>阶段，做了这样一件事：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token class-name">OSD</span><span class="token double-colon punctuation">::</span><span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token comment">// ...</span>
+
+  tick_timer_without_osd_lock<span class="token punctuation">.</span><span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// ...</span>
+
+  <span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>lock_guard <span class="token function">l</span><span class="token punctuation">(</span>tick_timer_lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 定时执行一下C_Tick_WithoutOSDLock</span>
+    tick_timer_without_osd_lock<span class="token punctuation">.</span><span class="token function">add_event_after</span><span class="token punctuation">(</span><span class="token function">get_tick_interval</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+						<span class="token keyword">new</span> <span class="token function">C_Tick_WithoutOSDLock</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">class</span> <span class="token class-name">OSD</span><span class="token operator">:</span><span class="token base-clause"><span class="token operator">:</span><span class="token class-name">C_Tick_WithoutOSDLock</span> <span class="token operator">:</span> <span class="token keyword">public</span> <span class="token class-name">Context</span></span> <span class="token punctuation">&#123;</span>
+  OSD <span class="token operator">*</span>osd<span class="token punctuation">;</span>
+  <span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token keyword">explicit</span> <span class="token function">C_Tick_WithoutOSDLock</span><span class="token punctuation">(</span>OSD <span class="token operator">*</span>o<span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">osd</span><span class="token punctuation">(</span>o<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+  <span class="token keyword">void</span> <span class="token function">finish</span><span class="token punctuation">(</span><span class="token keyword">int</span> r<span class="token punctuation">)</span> <span class="token keyword">override</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 实际执行的是OSD::tick_without_osd_lock()</span>
+    osd<span class="token operator">-></span><span class="token function">tick_without_osd_lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在<code>OSD::tick_without_osd_lock()</code>中，做了很多事情，其中就包括OSD心跳超时的检测和Monitor的上报：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">OSD</span><span class="token double-colon punctuation">::</span><span class="token function">tick_without_osd_lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token comment">// ...</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">is_active</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token function">is_waiting_for_healthy</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token punctuation">&#123;</span>
+      std<span class="token double-colon punctuation">::</span>lock_guard l<span class="token punctuation">&#123;</span>heartbeat_lock<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+      <span class="token comment">// 检测心跳超时</span>
+      <span class="token function">heartbeat_check</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    map_lock<span class="token punctuation">.</span><span class="token function">lock_shared</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    std<span class="token double-colon punctuation">::</span>lock_guard <span class="token function">l</span><span class="token punctuation">(</span>mon_report_lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// mon report?</span>
+    <span class="token comment">// 根据情况上报Monitor，最长不超过osd_mon_report_interval</span>
+    utime_t now <span class="token operator">=</span> <span class="token function">ceph_clock_now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>service<span class="token punctuation">.</span><span class="token function">need_fullness_update</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">||</span>
+	now <span class="token operator">-</span> last_mon_report <span class="token operator">></span> cct<span class="token operator">-></span>_conf<span class="token operator">-></span>osd_mon_report_interval<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      last_mon_report <span class="token operator">=</span> now<span class="token punctuation">;</span>
+      <span class="token function">send_full_update</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token comment">// 上报失败的OSD</span>
+      <span class="token function">send_failures</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token comment">// 等待下次tick</span>
+  tick_timer_without_osd_lock<span class="token punctuation">.</span><span class="token function">add_event_after</span><span class="token punctuation">(</span><span class="token function">get_tick_interval</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+					      <span class="token keyword">new</span> <span class="token function">C_Tick_WithoutOSDLock</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>再看看<code>OSD::send_failures()</code>:</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">OSD</span><span class="token double-colon punctuation">::</span><span class="token function">send_failures</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token comment">// ...</span>
+
+  <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>failure_queue<span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">int</span> osd <span class="token operator">=</span> failure_queue<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span>first<span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>failure_pending<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>osd<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+          <span class="token keyword">int</span> failed_for <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token keyword">double</span><span class="token punctuation">)</span><span class="token punctuation">(</span>now <span class="token operator">-</span> failure_queue<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span>second<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token comment">// 给Monitor发个MOSDFailure消息，带上失效OSD的各种信息</span>
+          monc<span class="token operator">-></span><span class="token function">send_mon_message</span><span class="token punctuation">(</span>
+              <span class="token keyword">new</span> <span class="token function">MOSDFailure</span><span class="token punctuation">(</span>
+                  monc<span class="token operator">-></span><span class="token function">get_fsid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                  osd<span class="token punctuation">,</span>
+                  osdmap<span class="token operator">-></span><span class="token function">get_addrs</span><span class="token punctuation">(</span>osd<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                  failed_for<span class="token punctuation">,</span>
+                  osdmap<span class="token operator">-></span><span class="token function">get_epoch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+          failure_pending<span class="token punctuation">[</span>osd<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">make_pair</span><span class="token punctuation">(</span>failure_queue<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span>second<span class="token punctuation">,</span>
+                                            osdmap<span class="token operator">-></span><span class="token function">get_addrs</span><span class="token punctuation">(</span>osd<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      failure_queue<span class="token punctuation">.</span><span class="token function">erase</span><span class="token punctuation">(</span>osd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>到此，OSD针对心跳的部分就基本结束了。剩下来就要看Monitor收到MOSDFailure消息之后怎么处理了。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Ceph/" rel="tag"># Ceph</a>
+              <a href="/tags/OSD%E5%BF%83%E8%B7%B3/" rel="tag"># OSD心跳</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># 源码分析</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/02/16/networkmanager-tutorial/" rel="prev" title="NetworkManager简单教程">
+                  <i class="fa fa-chevron-left"></i> NetworkManager简单教程
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/03/18/ceph-osd-mark-down/" rel="next" title="Ceph Monitor标记OSD DOWN分析">
+                  Ceph Monitor标记OSD DOWN分析 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"5bd96d4a62d0d8b9878e2dda980093f9"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="这个问题是很久之前解决的，现在想起来，还是把之前的问题解决过程总结一下。问题的起因是内部的一个Socket代理，用户对独享数据库的所有请求都需要经过这个Socket代理，某天一个用户反馈，切换到独享数据库之后，页面响应变得异常的慢，大概从1s左右直接到了60s左右，明显是有问题的，首先让用户开了xhprof看了一下，发现用户一个页面牵涉到了超过1000次SQL查询，这1000多次查询占据了绝大部分">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TCP神奇的40ms延迟">
+<meta property="og:url" content="https://www.ichenfu.com/2017/09/13/tcp-40ms-delay/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="这个问题是很久之前解决的，现在想起来，还是把之前的问题解决过程总结一下。问题的起因是内部的一个Socket代理，用户对独享数据库的所有请求都需要经过这个Socket代理，某天一个用户反馈，切换到独享数据库之后，页面响应变得异常的慢，大概从1s左右直接到了60s左右，明显是有问题的，首先让用户开了xhprof看了一下，发现用户一个页面牵涉到了超过1000次SQL查询，这1000多次查询占据了绝大部分">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.ichenfu.com/images/socket_proxy_tcpdump.png">
+<meta property="article:published_time" content="2017-09-13T01:57:44.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.300Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="TCP Nalge">
+<meta property="article:tag" content="TCP_NODELAY">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.ichenfu.com/images/socket_proxy_tcpdump.png">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2017/09/13/tcp-40ms-delay/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2017/09/13/tcp-40ms-delay/","path":"2017/09/13/tcp-40ms-delay/","title":"TCP神奇的40ms延迟"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>TCP神奇的40ms延迟 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/09/13/tcp-40ms-delay/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="TCP神奇的40ms延迟 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          TCP神奇的40ms延迟
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017年9月13日 9:57 9:57:44" itemprop="dateCreated datePublished" datetime="2017-09-13T09:57:44+08:00">2017年9月13日 9:57</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">网络编程</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>这个问题是很久之前解决的，现在想起来，还是把之前的问题解决过程总结一下。<br>问题的起因是内部的一个Socket代理，用户对独享数据库的所有请求都需要经过这个Socket代理，某天一个用户反馈，切换到独享数据库之后，页面响应变得异常的慢，大概从1s左右直接到了60s左右，明显是有问题的，首先让用户开了xhprof看了一下，发现用户一个页面牵涉到了超过1000次SQL查询，这1000多次查询占据了绝大部分的时间，因为仅仅切换了数据库，所以问题的原因肯定还是数据库相关。<br>这个场景还是稍微有点特殊，一个页面里有超过1000次SQL查询的设计也不算合理，所以，我们就编写了测试用例，在PHP中，查询数据库1000次，测试直接连接数据库，和通过Socket代理连接数据库的情况：最后发现直连的速度非常快，但是过代理则慢的不可接受了，很明显是代理的问题。<br>于是我们尝试在代理机器上抓包分析一下：</p>
+<p><img src="/images/socket_proxy_tcpdump.png" alt="tcpdump"></p>
+<p>其中<code>10.67.15.102</code>是我们Web运行环境的机器IP，<code>10.67.15.212</code>是Socket代理所在的机器<code>10.13.144.139</code>是数据库所在的机器，从id为22953的数据包开始，到22957，是一个SQL查询从Web运行环境到数据库的整个过程：</p>
+<pre><code>id为22953：运行环境102发送select语句到Socket代理212。数据包长度为296byte 时间：23.877515
+id为22954：Socket代理212发送了一部分select语句128byte到数据库139。       时间：23.877611
+id为22955：Socket代理212回运行环境103的ack。                             时间：23.917294
+id为22956：数据库139回Socket代理212的ack。                               时间：23.918398
+id为22957：Socket代理212发送剩余部分select语句168byte到数据库139。       时间：23.918415
+</code></pre>
+<span id="more"></span>
+<p>这其中有个很奇怪的现象，就是运行环境发送给代理的一条完整的SQL语句，在代理收到并发给数据库的过程中，是分了22954和22957两个数据包发送的，而且，这两次发送之间间隔了<code>23.918415-23.877611=0.0408040s</code>，为什么一个数据包要分两次发送，而且还要间隔差不多40ms呢？首先想到的是不是代码有问题，于是我们在代理机器上strace了一下，看下程序运行的具体状态：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">18</span>:42:52.119359 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">38391536</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">38391536</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">&lt;</span><span class="token number">0.00017</span><span class="token operator"><span class="token file-descriptor important">5</span>></span>
+<span class="token number">18</span>:42:52.119672 recvfrom<span class="token punctuation">(</span><span class="token number">8</span>, <span class="token string">"<span class="token entity" title="\240">\240</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\3">\3</span>SELECT cat_id, cat_name, parent_id, is_show FROM <span class="token variable"><span class="token variable">`</span>jiewang300<span class="token variable">`</span></span>.<span class="token variable"><span class="token variable">`</span>jw_category<span class="token variable">`</span></span>WHERE parent_id = '1401' AND is_show = 1 ORDER B"</span>, <span class="token number">128</span>, <span class="token number">0</span>, NULL, NULL<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">128</span> <span class="token operator">&lt;</span><span class="token number">0.00001</span><span class="token operator"><span class="token file-descriptor important">4</span>></span>
+<span class="token number">18</span>:42:52.119758 recvfrom<span class="token punctuation">(</span><span class="token number">8</span>, <span class="token string">"Y sort_order ASC, cat_id ASC limit 8"</span>, <span class="token number">128</span>, <span class="token number">0</span>, NULL, NULL<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">36</span> <span class="token operator">&lt;</span><span class="token number">0.00001</span><span class="token operator"><span class="token file-descriptor important">6</span>></span>
+<span class="token number">18</span>:42:52.119823 recvfrom<span class="token punctuation">(</span><span class="token number">8</span>, 0x24a4494, <span class="token number">92</span>, <span class="token number">0</span>, <span class="token number">0</span>, <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span> <span class="token operator">&lt;</span><span class="token number">0.00001</span><span class="token operator"><span class="token file-descriptor important">3</span>></span>
+<span class="token number">18</span>:42:52.119929 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLOUT, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">38394672</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">38394672</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">&lt;</span><span class="token number">0.00002</span><span class="token operator"><span class="token file-descriptor important">2</span>></span>
+<span class="token number">18</span>:42:52.120074 sendto<span class="token punctuation">(</span><span class="token number">9</span>, <span class="token string">"<span class="token entity" title="\240">\240</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\3">\3</span>SELECT cat_id, cat_name, parent_id, is_show FROM <span class="token variable"><span class="token variable">`</span>jiewang300<span class="token variable">`</span></span>.<span class="token variable"><span class="token variable">`</span>jw_category<span class="token variable">`</span></span>WHERE parent_id = '1401' AND is_show = 1 ORDER B"</span>, <span class="token number">128</span>, <span class="token number">0</span>, NULL, <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">128</span> <span class="token operator">&lt;</span><span class="token number">0.00005</span><span class="token operator"><span class="token file-descriptor important">2</span>></span>
+<span class="token number">18</span>:42:52.120238 sendto<span class="token punctuation">(</span><span class="token number">9</span>, <span class="token string">"Y sort_order ASC, cat_id ASC limit 8"</span>, <span class="token number">36</span>, <span class="token number">0</span>, NULL, <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">36</span> <span class="token operator">&lt;</span><span class="token number">0.00002</span><span class="token operator"><span class="token file-descriptor important">2</span>></span>
+<span class="token number">18</span>:42:52.120406 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">38394672</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">38394672</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">&lt;</span><span class="token number">0.04108</span><span class="token operator"><span class="token file-descriptor important">2</span>></span>
+<span class="token number">18</span>:42:52.161624 recvfrom<span class="token punctuation">(</span><span class="token number">9</span>, <span class="token string">"<span class="token entity" title="\1">\1</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\1">\1</span><span class="token entity" title="\4">\4</span>B<span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\2">\2</span><span class="token entity" title="\3">\3</span>def<span class="token entity" title="\n">\n</span>jiewang300<span class="token entity" title="\v">\v</span>jw_category<span class="token entity" title="\v">\v</span>jw_category<span class="token entity" title="\6">\6</span>cat_id<span class="token entity" title="\6">\6</span>cat_id<span class="token entity" title="\f">\f</span>?<span class="token entity" title="\0">\0</span><span class="token entity" title="\5">\5</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\2">\2</span>#B<span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span>F<span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\3">\3</span><span class="token entity" title="\3">\3</span>def<span class="token entity" title="\n">\n</span>jiewang300<span class="token entity" title="\v">\v</span>jw_category<span class="token entity" title="\v">\v</span>jw_category<span class="token entity" title="\10">\10</span>cat_name<span class="token entity" title="\10">\10</span>"</span>, <span class="token number">128</span>, <span class="token number">0</span>, NULL, NU
+<span class="token number">18</span>:42:52.161736 recvfrom<span class="token punctuation">(</span><span class="token number">9</span>, <span class="token string">"cat_name<span class="token entity" title="\f">\f</span>!<span class="token entity" title="\0">\0</span><span class="token entity" title="\16">\16</span><span class="token entity" title="\1">\1</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\375">\375</span><span class="token entity" title="\1">\1</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span>H<span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\4">\4</span><span class="token entity" title="\3">\3</span>def<span class="token entity" title="\n">\n</span>jiewang300<span class="token entity" title="\v">\v</span>jw_category<span class="token entity" title="\v">\v</span>jw_category<span class="token entity" title="\t">\t</span>parent_id<span class="token entity" title="\t">\t</span>parent_id<span class="token entity" title="\f">\f</span>?<span class="token entity" title="\0">\0</span><span class="token entity" title="\5">\5</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\2">\2</span>)@<span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span>D<span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\5">\5</span><span class="token entity" title="\3">\3</span>def<span class="token entity" title="\n">\n</span>jiewang300<span class="token entity" title="\v">\v</span>jw_category"</span>, <span class="token number">128</span>, <span class="token number">0</span>, NUL<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其中fd 8是和Web运行环境的连接fd，fd 9是和数据库连接的fd，可以看到，程序接收和发送的buffer大小都是128字节，同时，根据第一列的时间可以看到，程序接收完所有数据，就立马通过<code>sendto</code>将数据发送出去了，所以这个40ms的数据包发送延迟应该不是代理程序的问题（不过针对这种场景，可能128字节buffer有点太小了，这也是可以优化的一个点）</p>
+<p>不是程序的问题，那肯定就是内核或者其他什么原因导致了这个延迟了，于是搜索了一番，发现确实是内核导致了这个延迟，具体牵扯到两个TCP的机制<code>Nagle&#39;s algorithm</code>和<code>TCP delayed acknowledgment</code>,最主要的原因还是因为这个<code>Nagle&#39;s algorithm</code>。<br><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Nagle's_algorithm">Wiki</a>上的解释如下：</p>
+<blockquote><p>Nagle’s algorithm is a means of improving the efficiency of TCP&#x2F;IP networks by reducing the number of packets that need to be sent over the network. It was defined by John Nagle while working for Ford Aerospace. It was published in 1984 as a Request for Comments (RFC) with title Congestion Control in IP&#x2F;TCP Internetworks (see RFC 896).</p>
+<p>The RFC describes what he called the “small-packet problem”, where an application repeatedly emits data in small chunks, frequently only 1 byte in size. Since TCP packets have a 40-byte header (20 bytes for TCP, 20 bytes for IPv4), this results in a 41-byte packet for 1 byte of useful information, a huge overhead. This situation often occurs in Telnet sessions, where most keypresses generate a single byte of data that is transmitted immediately. Worse, over slow links, many such packets can be in transit at the same time, potentially leading to congestion collapse.</p>
+<p>Nagle’s algorithm works by combining a number of small outgoing messages and sending them all at once. Specifically, as long as there is a sent packet for which the sender has received no acknowledgment, the sender should keep buffering its output until it has a full packet’s worth of output, thus allowing output to be sent all at once.</p>
+</blockquote>
+
+<p>大致意思就是Nagle算法会避免发送小的数据包，增加网络利用率，但是这么做会导致更大的延时。<br>这个算法大致的伪代码是这样的：</p>
+<pre class="line-numbers language-ruby" data-language="ruby"><code class="language-ruby"><span class="token keyword">if</span> there is <span class="token keyword">new</span> data to send
+    <span class="token keyword">if</span> the window size <span class="token operator">>=</span> <span class="token constant">MSS</span> <span class="token keyword">and</span> available data is <span class="token operator">>=</span> <span class="token constant">MSS</span>
+        send complete <span class="token constant">MSS</span> segment now
+    <span class="token keyword">else</span>
+        <span class="token keyword">if</span> there is unconfirmed data sill <span class="token keyword">in</span> the pipe
+            enqueue data <span class="token keyword">in</span> the buffer <span class="token keyword">until</span> an acknowledge is received
+        <span class="token keyword">else</span>
+            send data immediately
+        <span class="token keyword">end</span> <span class="token keyword">if</span>
+    <span class="token keyword">end</span> <span class="token keyword">if</span>
+<span class="token keyword">end</span> <span class="token keyword">if</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>从伪代码可以看出，在发送队列里有没有确认的数据，并且，新数据包的大小又小于MSS，那么该算法会触发，数据会被缓存，直到待发送的数据总大小大于MSS或者收到了确认的Ack。<br>其实如果正常来看，这个算法没有问题，因为只要对端回复了ack，数据还是可以立即发送的，但是如果对端开启了<code>TCP delayed acknowledgment</code>功能，数据包的ack被延迟发送，那么，这两个功能一起作用，就会导致延迟。</p>
+<p>那怎么避免这个情况发生呢，既然是两个机制共同作用导致的，那就任意破坏其中一个就可以了。关闭<code>TCP delayed acknowledgment</code>功能，或者关闭<code>Nagle&#39;s algorithm</code>，很显然，关闭<code>TCP delayed acknowledgment</code>是不明智的，因为多回复的那个ack，实际并没有很大的必要，反而还多增加了延迟。<br>好在TCP提供了关闭<code>Nagle&#39;s algorithm</code>的办法，也就是使用<code>setsockopt</code>设置<code>TCP_NODELAY</code>选项，即可关闭<code>Nagle&#39;s algorithm</code>。</p>
+<p>在程序中设置了<code>TCP_NODELAY</code>选项后，问题解决。</p>
+<p>参考：</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://blog.csdn.net/zhangskd/article/details/7712002">http://blog.csdn.net/zhangskd/article/details/7712002</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/TCP-Nalge/" rel="tag"># TCP Nalge</a>
+              <a href="/tags/TCP-NODELAY/" rel="tag"># TCP_NODELAY</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/08/31/syslog-facility-and-severity/" rel="prev" title="syslog协议的Facility, Severity数字代号和PRI计算">
+                  <i class="fa fa-chevron-left"></i> syslog协议的Facility, Severity数字代号和PRI计算
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/11/20/rpmbuild-not-strip/" rel="next" title="使用rpmbuild打包时不对文件进行strip操作">
+                  使用rpmbuild打包时不对文件进行strip操作 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"0b5764240ccf0c4907093a5c6574c41c"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

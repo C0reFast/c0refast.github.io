@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="Ceph官网上介绍了使用ceph-deploy工具部署Ceph集群的方法，但是手工部署的方法文档中写的不够详细，花了点时间研究了一下，下面是手工部署一个简单的Ceph集群的步骤，先说怎么部署Monitor。 Monitor是Ceph的核心，用于存储所有的元信息，这里部署的是一个3 Monitor的集群，出于简单考虑，这三个Monitor被我放在了同一台机器上，实际部署的话，还是要放在不同的机器上保">
+<meta property="og:type" content="article">
+<meta property="og:title" content="纯手动部署Ceph之Monitor部署">
+<meta property="og:url" content="https://www.ichenfu.com/2017/02/07/ceph-monitor-manual-deployment/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="Ceph官网上介绍了使用ceph-deploy工具部署Ceph集群的方法，但是手工部署的方法文档中写的不够详细，花了点时间研究了一下，下面是手工部署一个简单的Ceph集群的步骤，先说怎么部署Monitor。 Monitor是Ceph的核心，用于存储所有的元信息，这里部署的是一个3 Monitor的集群，出于简单考虑，这三个Monitor被我放在了同一台机器上，实际部署的话，还是要放在不同的机器上保">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-02-07T02:49:37.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.290Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="Ceph">
+<meta property="article:tag" content="Monitor">
+<meta property="article:tag" content="部署">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2017/02/07/ceph-monitor-manual-deployment/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2017/02/07/ceph-monitor-manual-deployment/","path":"2017/02/07/ceph-monitor-manual-deployment/","title":"纯手动部署Ceph之Monitor部署"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>纯手动部署Ceph之Monitor部署 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%A8%E5%B1%80%E9%85%8D%E7%BD%AE"><span class="nav-number">1.</span> <span class="nav-text">全局配置</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Monitor%E6%80%BB%E9%85%8D%E7%BD%AE"><span class="nav-number">2.</span> <span class="nav-text">Monitor总配置</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%AF%8F%E4%B8%AAMonitor%E5%88%86%E5%88%AB%E7%9A%84%E9%85%8D%E7%BD%AE"><span class="nav-number">3.</span> <span class="nav-text">每个Monitor分别的配置</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%A2%E6%88%B7%E7%AB%AFkeyring%E9%85%8D%E7%BD%AE"><span class="nav-number">4.</span> <span class="nav-text">客户端keyring配置</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/02/07/ceph-monitor-manual-deployment/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="纯手动部署Ceph之Monitor部署 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          纯手动部署Ceph之Monitor部署
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017年2月7日 10:49 10:49:37" itemprop="dateCreated datePublished" datetime="2017-02-07T10:49:37+08:00">2017年2月7日 10:49</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>Ceph官网上介绍了使用ceph-deploy工具部署Ceph集群的方法，但是手工部署的方法文档中写的不够详细，花了点时间研究了一下，下面是手工部署一个简单的Ceph集群的步骤，先说怎么部署Monitor。</p>
+<p>Monitor是Ceph的核心，用于存储所有的元信息，这里部署的是一个3 Monitor的集群，出于简单考虑，这三个Monitor被我放在了同一台机器上，实际部署的话，还是要放在不同的机器上保持高可用。</p>
+<span id="more"></span>
+
+<p>首先需要安装好对应的包，这里用了一台CentOS 7的机器进行部署，使用了Ceph官方提供的安装源，使用jewel版本。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># rpm -Uvh https://download.ceph.com/rpm-jewel/el7/noarch/ceph-release-1-0.el7.noarch.rpm</span>
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># yum install -y ceph</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>然后开始准备配置文件，第一步需要生成一个uuid，这个uuid就是整个Ceph集群的唯一标识。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># uuidgen </span>
+def5bc47-3d8a-4ca0-9cd6-77243339ab0f<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>再给三个Monitor起一个名字，这边取mon0, mon1, mon2，然后就可以生成对应的配置文件：</p>
+<blockquote><p>[root@test ~]# cat &#x2F;etc&#x2F;ceph&#x2F;ceph.conf </p>
+<h1 id="全局配置"><a href="#全局配置" class="headerlink" title="全局配置"></a>全局配置</h1><p>[global]<br>fsid &#x3D; def5bc47-3d8a-4ca0-9cd6-77243339ab0f     # 集群ID<br>auth cluster required &#x3D; cephx                   # 打开cephx授权<br>auth service required &#x3D; cephx<br>auth client required &#x3D; cephx<br>public network &#x3D; 10.67.0.0&#x2F;16                   # 集群工作的网络段<br>osd journal size &#x3D; 1024<br>osd pool default size &#x3D; 2<br>osd pool default min size &#x3D; 1<br>osd pool default pg num &#x3D; 512<br>osd pool default pgp num &#x3D; 512<br>log file &#x3D; &#x2F;data0&#x2F;logs&#x2F;ceph&#x2F;$cluster-$name.log<br>run_dir &#x3D; &#x2F;data0&#x2F;ceph</p>
+<h1 id="Monitor总配置"><a href="#Monitor总配置" class="headerlink" title="Monitor总配置"></a>Monitor总配置</h1><p>[mon]<br>mon initial members &#x3D; mon0,mon1,mon2<br>mon data &#x3D; &#x2F;data0&#x2F;ceph&#x2F;mon&#x2F;$name<br>log file &#x3D; &#x2F;data0&#x2F;logs&#x2F;ceph&#x2F;$name.log</p>
+<h1 id="每个Monitor分别的配置"><a href="#每个Monitor分别的配置" class="headerlink" title="每个Monitor分别的配置"></a>每个Monitor分别的配置</h1><p>[mon.mon0]<br>name     &#x3D; mon0<br>mon addr &#x3D; 10.67.15.100:6789<br>mon host &#x3D; 10.67.15.100:6789<br>log dir &#x3D; &#x2F;data0&#x2F;logs&#x2F;ceph<br>[mon.mon1]<br>name     &#x3D; mon1<br>mon addr &#x3D; 10.67.15.100:6790<br>mon host &#x3D; 10.67.15.100:6790<br>log dir &#x3D; &#x2F;data0&#x2F;logs&#x2F;ceph<br>[mon.mon2]<br>name     &#x3D; mon2<br>mon addr &#x3D; 10.67.21.100:6791<br>mon host &#x3D; 10.67.21.100:6791<br>log dir &#x3D; &#x2F;data0&#x2F;logs&#x2F;ceph</p>
+<h1 id="客户端keyring配置"><a href="#客户端keyring配置" class="headerlink" title="客户端keyring配置"></a>客户端keyring配置</h1><p>[client.admin]<br>keyring &#x3D; &#x2F;etc&#x2F;ceph&#x2F;ceph.client.admin.keyring</p>
+</blockquote>
+
+<p>由于是单机的3 Monitor，所以分配了6789,6790,6791三个不同的端口。</p>
+<p>配置文件准备好，然后开始生成keyring：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-authtool --create-keyring /etc/ceph/ceph.mon.keyring --gen-key -n mon. --cap mon 'allow *' #生成Monitor的keyring</span>
+creating /etc/ceph/ceph.mon.keyring
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-authtool --create-keyring /etc/ceph/ceph.client.admin.keyring --gen-key -n client.admin --set-uid=0 --cap mon 'allow *' --cap osd 'allow *' --cap mds 'allow' #生产管理keyring</span>
+creating /etc/ceph/ceph.client.admin.keyring
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-authtool /etc/ceph/ceph.mon.keyring --import-keyring /etc/ceph/ceph.client.admin.keyring    # 将管理keyring导入到Monitor中</span>
+importing contents of /etc/ceph/ceph.client.admin.keyring into /etc/ceph/ceph.mon.keyring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>生成Monitor map：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># monmaptool --create --add mon0 10.67.15.100:6789 --fsid def5bc47-3d8a-4ca0-9cd6-77243339ab0f /etc/ceph/monmap</span>
+monmaptool: monmap <span class="token function">file</span> /etc/ceph/monmap
+monmaptool: <span class="token builtin class-name">set</span> fsid to def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+monmaptool: writing epoch <span class="token number">0</span> to /etc/ceph/monmap <span class="token punctuation">(</span><span class="token number">1</span> monitors<span class="token punctuation">)</span>
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># monmaptool --add mon1 10.67.15.100:6790 --fsid def5bc47-3d8a-4ca0-9cd6-77243339ab0f /etc/ceph/monmap</span>
+monmaptool: monmap <span class="token function">file</span> /etc/ceph/monmap
+monmaptool: <span class="token builtin class-name">set</span> fsid to def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+monmaptool: writing epoch <span class="token number">0</span> to /etc/ceph/monmap <span class="token punctuation">(</span><span class="token number">2</span> monitors<span class="token punctuation">)</span>
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># monmaptool --add mon2 10.67.15.100:6791 --fsid def5bc47-3d8a-4ca0-9cd6-77243339ab0f /etc/ceph/monmap</span>
+monmaptool: monmap <span class="token function">file</span> /etc/ceph/monmap
+monmaptool: <span class="token builtin class-name">set</span> fsid to def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+monmaptool: writing epoch <span class="token number">0</span> to /etc/ceph/monmap <span class="token punctuation">(</span><span class="token number">3</span> monitors<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>初始化Monitor的文件系统：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-mon --mkfs -i mon0 --monmap /etc/ceph/monmap --keyring /etc/ceph/ceph.mon.keyring </span>
+ceph-mon: <span class="token builtin class-name">set</span> fsid to def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+ceph-mon: created monfs at /data0/ceph/mon/mon.mon0 <span class="token keyword">for</span> mon.mon0
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-mon --mkfs -i mon1 --monmap /etc/ceph/monmap --keyring /etc/ceph/ceph.mon.keyring</span>
+ceph-mon: <span class="token builtin class-name">set</span> fsid to def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+ceph-mon: created monfs at /data0/ceph/mon/mon.mon1 <span class="token keyword">for</span> mon.mon1
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-mon --mkfs -i mon2 --monmap /etc/ceph/monmap --keyring /etc/ceph/ceph.mon.keyring</span>
+ceph-mon: <span class="token builtin class-name">set</span> fsid to def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+ceph-mon: created monfs at /data0/ceph/mon/mon.mon2 <span class="token keyword">for</span> mon.mon2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>启动Monitor：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-mon --id mon0</span>
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-mon --id mon1</span>
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-mon --id mon2</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>启动完成后，Monitor会自动选举出主，这时可以使用ceph -s和ceph osd lspools命令查看集群状态了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph -s</span>
+    cluster def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+     health HEALTH_ERR
+            no osds
+     monmap e1: <span class="token number">3</span> mons at <span class="token punctuation">&#123;</span>mon0<span class="token operator">=</span><span class="token number">10.67</span>.21.37:6789/0,mon1<span class="token operator">=</span><span class="token number">10.67</span>.21.37:6790/0,mon2<span class="token operator">=</span><span class="token number">10.67</span>.21.37:6791/0<span class="token punctuation">&#125;</span>
+            election epoch <span class="token number">4</span>, quorum <span class="token number">0,1</span>,2 mon0,mon1,mon2
+     osdmap e1: <span class="token number">0</span> osds: <span class="token number">0</span> up, <span class="token number">0</span> <span class="token keyword">in</span>
+            flags sortbitwise,require_jewel_osds
+      pgmap v2: <span class="token number">64</span> pgs, <span class="token number">1</span> pools, <span class="token number">0</span> bytes data, <span class="token number">0</span> objects
+            <span class="token number">0</span> kB used, <span class="token number">0</span> kB / <span class="token number">0</span> kB avail
+                  <span class="token number">64</span> creating
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd lspools</span>
+<span class="token number">0</span> rbd,<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>其中ceph -s的状态为HEALTH_ERR，是因为还没有添加osd，所以集群还处于不可用状态。</p>
+<p>到此Ceph集群的Monitor就已经搭建完毕了。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Ceph/" rel="tag"># Ceph</a>
+              <a href="/tags/Monitor/" rel="tag"># Monitor</a>
+              <a href="/tags/%E9%83%A8%E7%BD%B2/" rel="tag"># 部署</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/01/16/kernel-sock-client-example/" rel="prev" title="一个简单的内核Socket Client例子">
+                  <i class="fa fa-chevron-left"></i> 一个简单的内核Socket Client例子
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/02/09/ceph-osd-manual-deployment/" rel="next" title="纯手动部署Ceph之OSD部署">
+                  纯手动部署Ceph之OSD部署 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"157e6b016ff0565827b6516c5aba8b02"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

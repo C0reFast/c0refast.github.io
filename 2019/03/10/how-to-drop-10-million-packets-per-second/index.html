@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="偶然看到一篇cloudflare的博客How to drop 10 million packets per second，如何实现单核情况下一秒钟丢弃1000万个数据包，原文循序渐进，从最简单的用户态丢弃到使用非常新的技术XDP，逐步将单核丢包性能提升到10mpps，很有意思，网上也没有看到原文的中文版本，所以这里顺便翻译一下，看看cloudflare是如何处理类似的情况的。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何在一秒之内丢弃1000万个网络数据包？">
+<meta property="og:url" content="https://www.ichenfu.com/2019/03/10/how-to-drop-10-million-packets-per-second/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="偶然看到一篇cloudflare的博客How to drop 10 million packets per second，如何实现单核情况下一秒钟丢弃1000万个数据包，原文循序渐进，从最简单的用户态丢弃到使用非常新的技术XDP，逐步将单核丢包性能提升到10mpps，很有意思，网上也没有看到原文的中文版本，所以这里顺便翻译一下，看看cloudflare是如何处理类似的情况的。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.ichenfu.com/images/xdp-head.jpg">
+<meta property="og:image" content="https://www.ichenfu.com/images/xdp-layers.jpg">
+<meta property="og:image" content="https://www.ichenfu.com/images/xdp-drop.jpg">
+<meta property="og:image" content="https://www.ichenfu.com/images/xdp-numbers-noxdp.png">
+<meta property="og:image" content="https://www.ichenfu.com/images/xdp-numbers-xdp-1.png">
+<meta property="article:published_time" content="2019-03-10T03:45:53.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.290Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="DDoS">
+<meta property="article:tag" content="iptables，tc">
+<meta property="article:tag" content="XDP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.ichenfu.com/images/xdp-head.jpg">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2019/03/10/how-to-drop-10-million-packets-per-second/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2019/03/10/how-to-drop-10-million-packets-per-second/","path":"2019/03/10/how-to-drop-10-million-packets-per-second/","title":"如何在一秒之内丢弃1000万个网络数据包？"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>如何在一秒之内丢弃1000万个网络数据包？ | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%95%E9%AA%8C%E5%8F%B0"><span class="nav-number">1.</span> <span class="nav-text">试验台</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E9%98%B6%E6%AE%B5-%E5%9C%A8%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E4%B8%AD%E4%B8%A2%E5%BC%83%E5%8C%85"><span class="nav-number">2.</span> <span class="nav-text">第一阶段 在应用程序中丢弃包</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E9%98%B6%E6%AE%B5-%E5%B9%B2%E6%8E%89conntrack"><span class="nav-number">3.</span> <span class="nav-text">第二阶段 干掉conntrack</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E9%98%B6%E6%AE%B5-%E5%88%A9%E7%94%A8BPF%E8%BF%9B%E8%A1%8C%E4%B8%A2%E5%8C%85%E6%93%8D%E4%BD%9C"><span class="nav-number">4.</span> <span class="nav-text">第三阶段 利用BPF进行丢包操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E9%98%B6%E6%AE%B5-%E4%BD%BF%E7%94%A8iptables%E5%9C%A8%E8%B7%AF%E7%94%B1%E9%98%B6%E6%AE%B5%E7%BB%93%E6%9D%9F%E5%90%8E%E4%B8%A2%E5%BC%83"><span class="nav-number">5.</span> <span class="nav-text">第四阶段 使用iptables在路由阶段结束后丢弃</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E9%98%B6%E6%AE%B5-%E4%BD%BF%E7%94%A8iptables%E5%9C%A8%E8%B7%AF%E7%94%B1%E4%B9%8B%E5%89%8D%E4%B8%A2%E5%BC%83"><span class="nav-number">6.</span> <span class="nav-text">第五阶段 使用iptables在路由之前丢弃</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%85%AD%E9%98%B6%E6%AE%B5%EF%BC%8C%E4%BD%BF%E7%94%A8nftables%E5%9C%A8CONNTRACK%E4%B9%8B%E5%89%8D%E4%B8%A2%E5%BC%83"><span class="nav-number">7.</span> <span class="nav-text">第六阶段，使用nftables在CONNTRACK之前丢弃</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%83%E9%98%B6%E6%AE%B5-%E5%88%A9%E7%94%A8tc%E7%9A%84ingress%E7%AD%96%E7%95%A5%E4%B8%A2%E5%8C%85"><span class="nav-number">8.</span> <span class="nav-text">第七阶段 利用tc的ingress策略丢包</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%85%AB%E9%98%B6%E6%AE%B5-XDP-DROP"><span class="nav-number">9.</span> <span class="nav-text">第八阶段 XDP_DROP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2019/03/10/how-to-drop-10-million-packets-per-second/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="如何在一秒之内丢弃1000万个网络数据包？ | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          如何在一秒之内丢弃1000万个网络数据包？
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019年3月10日 11:45 11:45:53" itemprop="dateCreated datePublished" datetime="2019-03-10T11:45:53+08:00">2019年3月10日 11:45</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux-Kernel/" itemprop="url" rel="index"><span itemprop="name">Linux Kernel</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>偶然看到一篇cloudflare的博客<a target="_blank" rel="noopener" href="https://blog.cloudflare.com/how-to-drop-10-million-packets/">How to drop 10 million packets per second</a>，如何实现单核情况下一秒钟丢弃1000万个数据包，原文循序渐进，从最简单的用户态丢弃到使用非常新的技术XDP，逐步将单核丢包性能提升到10mpps，很有意思，网上也没有看到原文的中文版本，所以这里顺便翻译一下，看看cloudflare是如何处理类似的情况的。<span id="more"></span></p>
+<p>在公司内部，我们的抗DDoS团队有时会被人们称作“数据包丢弃者”。当其他团队为流经我们网络的流量做了很多令人兴奋的聪明玩意时，我们也很享受探索如何丢弃这些流量的新方法。<br><img src="/images/xdp-head.jpg"><br>能以最快速度丢掉网络包，对于抵抗DDoS攻击来说，是非常重要的。<br>丢掉发送到我们服务器的数据包，和听上去一样简单，可以在很多层面上进行。每个技术都有他的有点和缺陷，在这篇Blog里，我们会一起看一下我们到目前为止用到的技术。</p>
+<h2 id="试验台"><a href="#试验台" class="headerlink" title="试验台"></a>试验台</h2><p>为了说明方法的相对性能，我们将通过一些基准测试，这些测试是设计好的，可以得到一系列的数据。我们使用了一台Intel的服务器，这台机器有一块10Gbps网卡，机器的其他配置信息其实并不是很重要，因为这些测试的目标是为了显示出操作系统而不是硬件层面的限制。</p>
+<p>我们的测试设置如下：</p>
+<ul>
+<li><p>我们传输大量小的UDP数据包，达到14Mpps（每秒数百万个数据包）。</p>
+</li>
+<li><p>此流量指向目标服务器上的单个CPU。</p>
+</li>
+<li><p>我们测量内核在该CPU上处理的数据包数量。</p>
+</li>
+</ul>
+<p>我们并没有尝试优化用户空间应用程序的速度，也没有尝试提升数据吞吐量 - 相反，我们尝试专门展示内核层的瓶颈。</p>
+<p>生成的流量可以对<code>conntrack</code>施加最大压力 - 数据包使用随机源IP和端口字段。 <code>tcpdump</code>的结果如下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ tcpdump <span class="token parameter variable">-ni</span> vlan100 <span class="token parameter variable">-c</span> <span class="token number">10</span> <span class="token parameter variable">-t</span> udp and dst port <span class="token number">1234</span>
+IP <span class="token number">198.18</span>.40.55.32059 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
+IP <span class="token number">198.18</span>.51.16.30852 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
+IP <span class="token number">198.18</span>.35.51.61823 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
+IP <span class="token number">198.18</span>.44.42.30344 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
+IP <span class="token number">198.18</span>.106.227.38592 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
+IP <span class="token number">198.18</span>.48.67.19533 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
+IP <span class="token number">198.18</span>.49.38.40566 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
+IP <span class="token number">198.18</span>.50.73.22989 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
+IP <span class="token number">198.18</span>.43.204.37895 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
+IP <span class="token number">198.18</span>.104.128.1543 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在目标机器，我们将所有的流量都定向到网卡同一个RX队列上，也就是说所有的数据都只会被一个CPU核处理。我们通过硬件流转向实现这一目标：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">ethtool</span> <span class="token parameter variable">-N</span> ext0 flow-type udp4 dst-ip <span class="token number">198.18</span>.0.12 dst-port <span class="token number">1234</span> action <span class="token number">2</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>基准测试通常也很困难，当我们在准备测试的过程中，我们发现如果系统中有活动的raw socket也会影响性能，事后看很明显，但是也很容易忽略类似的问题。所以在测试之前需要确认没有任何<code>tcpdump</code>进程在运行，可以通过下面的方式查看：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ ss <span class="token parameter variable">-A</span> raw,packet_raw <span class="token parameter variable">-l</span> -p<span class="token operator">|</span><span class="token function">cat</span>
+Netid  State      Recv-Q Send-Q Local Address:Port
+p_raw  UNCONN     <span class="token number">525157</span> <span class="token number">0</span>      *:vlan100          users:<span class="token variable"><span class="token punctuation">((</span>"tcpdump"<span class="token punctuation">,</span>pid<span class="token operator">=</span><span class="token number">23683</span><span class="token punctuation">,</span>fd<span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">))</span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>最后，我们要关闭<code>Intel Turbo Boost</code>特性：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">echo</span> <span class="token number">1</span> <span class="token operator">|</span> <span class="token function">sudo</span> <span class="token function">tee</span> /sys/devices/system/cpu/intel_pstate/no_turbo<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>虽然<code>Turbo Boost</code>很好，而且可以提升至少20%的吞吐量，但是也会极大的影响测试结果的标准差，在开启状态下偏大达到了 ±1.5%，而关闭之后偏差下降到了0.25%。<br><img src="/images/xdp-layers.jpg"></p>
+<h2 id="第一阶段-在应用程序中丢弃包"><a href="#第一阶段-在应用程序中丢弃包" class="headerlink" title="第一阶段 在应用程序中丢弃包"></a>第一阶段 在应用程序中丢弃包</h2><p>让我们从将数据包传递到应用程序并在用户空间代码中忽略它们的想法开始。 对于测试设置，首先需要确保iptables不会影响性能：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-I</span> PREROUTING <span class="token parameter variable">-t</span> mangle <span class="token parameter variable">-d</span> <span class="token number">198.18</span>.0.12 <span class="token parameter variable">-p</span> udp <span class="token parameter variable">--dport</span> <span class="token number">1234</span> <span class="token parameter variable">-j</span> ACCEPT
+iptables <span class="token parameter variable">-I</span> PREROUTING <span class="token parameter variable">-t</span> raw <span class="token parameter variable">-d</span> <span class="token number">198.18</span>.0.12 <span class="token parameter variable">-p</span> udp <span class="token parameter variable">--dport</span> <span class="token number">1234</span> <span class="token parameter variable">-j</span> ACCEPT
+iptables <span class="token parameter variable">-I</span> INPUT <span class="token parameter variable">-t</span> filter <span class="token parameter variable">-d</span> <span class="token number">198.18</span>.0.12 <span class="token parameter variable">-p</span> udp <span class="token parameter variable">--dport</span> <span class="token number">1234</span> <span class="token parameter variable">-j</span> ACCEPT<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>应用程序的代码就是一个简单的循环，获取数据，然后直接丢弃：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">s <span class="token operator">=</span> socket<span class="token punctuation">.</span>socket<span class="token punctuation">(</span>AF_INET<span class="token punctuation">,</span> SOCK_DGRAM<span class="token punctuation">)</span>
+s<span class="token punctuation">.</span>bind<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token string">"0.0.0.0"</span><span class="token punctuation">,</span> <span class="token number">1234</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token keyword">while</span> <span class="token boolean">True</span><span class="token punctuation">:</span>
+    s<span class="token punctuation">.</span>recvmmsg<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><a target="_blank" rel="noopener" href="https://github.com/cloudflare/cloudflare-blog/blob/master/2018-07-dropping-packets/recvmmsg-loop.c">这里有准备好的C代码</a>，运行结果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ ./dropping-packets/recvmmsg-loop
+<span class="token assign-left variable">packets</span><span class="token operator">=</span><span class="token number">171261</span> <span class="token assign-left variable">bytes</span><span class="token operator">=</span><span class="token number">1940176</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>对于这个实现，我们利用<code>ethtool</code>和<a target="_blank" rel="noopener" href="https://blog.cloudflare.com/three-little-tools-mmsum-mmwatch-mmhistogram/"><code>mmwatch工具</code></a>可以实现从硬件队列中以175kpps的速度读取数据包。</p>
+<p>硬件上看接收的速度是14Mpps，但是针对单核处理的RX队列，这些数据包已经无法处理了。可以通过<code>mpstat</code>工具确认：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">watch</span> <span class="token string">'mpstat -u -I SUM -P ALL 1 1|egrep -v Aver'</span>
+01:32:05 PM  CPU    %usr   %nice    %sys %iowait    %irq   %soft  %steal  %guest  %gnice   %idle
+01:32:06 PM    <span class="token number">0</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">2.94</span>    <span class="token number">0.00</span>    <span class="token number">3.92</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>   <span class="token number">93.14</span>
+01:32:06 PM    <span class="token number">1</span>    <span class="token number">2.17</span>    <span class="token number">0.00</span>   <span class="token number">27.17</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>   <span class="token number">70.65</span>
+01:32:06 PM    <span class="token number">2</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>  <span class="token number">100.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>
+01:32:06 PM    <span class="token number">3</span>    <span class="token number">0.95</span>    <span class="token number">0.00</span>    <span class="token number">1.90</span>    <span class="token number">0.95</span>    <span class="token number">0.00</span>    <span class="token number">3.81</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>   <span class="token number">92.38</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到用户代码不是瓶颈，在CPU #1上有 27% sys + 2% userspace的占用，但是CPU #2被网络软中断(SOFTIRQ)占用了100%。</p>
+<p>需要说明的是，使用<code>recvmmsg(2)</code>很重要，在Spectre漏洞被发现的现在，系统调用的成本变得更加高了，我们使用了4.14版本的内核，并开启了KPTI和Retpoline：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">tail</span> <span class="token parameter variable">-n</span> +1 /sys/devices/system/cpu/vulnerabilities/*
+<span class="token operator">==</span><span class="token operator">></span> /sys/devices/system/cpu/vulnerabilities/meltdown <span class="token operator">&lt;=</span><span class="token operator">=</span>
+Mitigation: PTI
+
+<span class="token operator">==</span><span class="token operator">></span> /sys/devices/system/cpu/vulnerabilities/spectre_v1 <span class="token operator">&lt;=</span><span class="token operator">=</span>
+Mitigation: __user pointer sanitization
+
+<span class="token operator">==</span><span class="token operator">></span> /sys/devices/system/cpu/vulnerabilities/spectre_v2 <span class="token operator">&lt;=</span><span class="token operator">=</span>
+Mitigation: Full generic retpoline, IBPB, IBRS_FW<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="第二阶段-干掉conntrack"><a href="#第二阶段-干掉conntrack" class="headerlink" title="第二阶段 干掉conntrack"></a>第二阶段 干掉conntrack</h2><p>我们特别的设计了这个测试，用随机的原IP和端口，用来给conntrack层施加压力。这个可以通过查看conntrack数量的方式确认，在测试中，conntrack数量达到最大：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ conntrack <span class="token parameter variable">-C</span>
+<span class="token number">2095202</span>
+
+$ <span class="token function">sysctl</span> net.netfilter.nf_conntrack_max
+net.netfilter.nf_conntrack_max <span class="token operator">=</span> <span class="token number">2097152</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>也能从<code>dmesg</code>中看到conntrack日志：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span><span class="token number">4029612.456673</span><span class="token punctuation">]</span> nf_conntrack: nf_conntrack: table full, dropping packet
+<span class="token punctuation">[</span><span class="token number">4029612.465787</span><span class="token punctuation">]</span> nf_conntrack: nf_conntrack: table full, dropping packet
+<span class="token punctuation">[</span><span class="token number">4029617.175957</span><span class="token punctuation">]</span> net_ratelimit: <span class="token number">5731</span> callbacks suppressed<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>为了加速我们的测试，把它关掉：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-t</span> raw <span class="token parameter variable">-I</span> PREROUTING <span class="token parameter variable">-d</span> <span class="token number">198.18</span>.0.12 <span class="token parameter variable">-p</span> udp <span class="token parameter variable">-m</span> udp <span class="token parameter variable">--dport</span> <span class="token number">1234</span> <span class="token parameter variable">-j</span> NOTRACK<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>然后重新测试：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ ./dropping-packets/recvmmsg-loop
+<span class="token assign-left variable">packets</span><span class="token operator">=</span><span class="token number">331008</span> <span class="token assign-left variable">bytes</span><span class="token operator">=</span><span class="token number">5296128</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>程序性能里面提升到了333kpps，赞！</p>
+<p>PS：通过<code>SO_BUSY_POLL</code>选项，我们可以将性能提升到470k pps，但是这个是另一个话题了。</p>
+<h2 id="第三阶段-利用BPF进行丢包操作"><a href="#第三阶段-利用BPF进行丢包操作" class="headerlink" title="第三阶段 利用BPF进行丢包操作"></a>第三阶段 利用BPF进行丢包操作</h2><p>更进一步，为什么我们要在用户态进行丢包呢？虽然这个技术不常见，但是我们可以使用<code>setsockopt(SO_ATTACH_FILTER)</code>添加一个cBPF过滤器到一个socket上，让程序在内核态进行丢包操作。<br><a target="_blank" rel="noopener" href="https://github.com/cloudflare/cloudflare-blog/blob/master/2018-07-dropping-packets/bpf-drop.c">这里是代码</a>，运行一下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ ./bpf-drop
+<span class="token assign-left variable">packets</span><span class="token operator">=</span><span class="token number">0</span> <span class="token assign-left variable">bytes</span><span class="token operator">=</span><span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>使用BPF进行丢弃操作（cBPF和eBPF有相似的性能），我们大致达到了512kpps的性能。所有的包都在BPF过滤器中丢弃了，由于依然需要使用到软中断，所以只是省掉了唤醒用户态程序的CPU消耗。</p>
+<h2 id="第四阶段-使用iptables在路由阶段结束后丢弃"><a href="#第四阶段-使用iptables在路由阶段结束后丢弃" class="headerlink" title="第四阶段 使用iptables在路由阶段结束后丢弃"></a>第四阶段 使用iptables在路由阶段结束后丢弃</h2><p>在下个阶段，我们可以简单的设置iptables INPUT规则来丢弃包：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-I</span> INPUT <span class="token parameter variable">-d</span> <span class="token number">198.18</span>.0.12 <span class="token parameter variable">-p</span> udp <span class="token parameter variable">--dport</span> <span class="token number">1234</span> <span class="token parameter variable">-j</span> DROP<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>需要注意的是我们之前已经通过-j NOTRACK关闭了conntrack，这两条规则实现了608kbps的性能。<br>看下iptables的统计信息：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ mmwatch <span class="token string">'iptables -L -v -n -x | head'</span>
+
+Chain INPUT <span class="token punctuation">(</span>policy DROP <span class="token number">0</span> packets, <span class="token number">0</span> bytes<span class="token punctuation">)</span>
+    pkts      bytes target     prot opt <span class="token keyword">in</span>     out     <span class="token builtin class-name">source</span>               destination
+<span class="token number">605</span>.9k/s    <span class="token number">26</span>.7m/s DROP       udp  --  *      *       <span class="token number">0.0</span>.0.0/0            <span class="token number">198.18</span>.0.12          udp dpt:1234<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>600kpps不差了，但是我们能做到更好！</p>
+<h2 id="第五阶段-使用iptables在路由之前丢弃"><a href="#第五阶段-使用iptables在路由之前丢弃" class="headerlink" title="第五阶段 使用iptables在路由之前丢弃"></a>第五阶段 使用iptables在路由之前丢弃</h2><p>有一个更快的方法，就是在包路由之前丢弃，可以通过下面的命令：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-I</span> PREROUTING <span class="token parameter variable">-t</span> raw <span class="token parameter variable">-d</span> <span class="token number">198.18</span>.0.12 <span class="token parameter variable">-p</span> udp <span class="token parameter variable">--dport</span> <span class="token number">1234</span> <span class="token parameter variable">-j</span> DROP<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>这个方法的性能高达1.688pps。<br>这是非常明显的性能提升，我并不是特别明白多了一次路由差距这么大，要么是我们的路由层非常的复杂，或者在服务器的配置上有bug。<br>在任何情况下，通过iptables的<code>raw</code>表进行操作绝对是最快的方法。</p>
+<h2 id="第六阶段，使用nftables在CONNTRACK之前丢弃"><a href="#第六阶段，使用nftables在CONNTRACK之前丢弃" class="headerlink" title="第六阶段，使用nftables在CONNTRACK之前丢弃"></a>第六阶段，使用nftables在CONNTRACK之前丢弃</h2><p>iptables在现在已经有点过时了，更新的玩意是nftables，关于为什么nftables技术更优越，请参阅此<a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=9Zr8XqdET1c">视频</a>。 由于许多原因，Nftables承诺比老旧的iptables更快，其中有一个说法是retpolines（没有间接跳跃的猜测）严重影响了iptables性能。</p>
+<p>由于这篇文章不是关于比较nftables和iptables的速度，让我们尝试一下我能想到的最快的方法：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">nft <span class="token function">add</span> table netdev filter
+nft -- <span class="token function">add</span> chain netdev filter input <span class="token punctuation">&#123;</span> <span class="token builtin class-name">type</span> filter hook ingress device vlan100 priority <span class="token parameter variable">-500</span> <span class="token punctuation">\</span><span class="token punctuation">;</span> policy accept <span class="token punctuation">\</span><span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+nft <span class="token function">add</span> rule netdev filter input <span class="token function">ip</span> daddr <span class="token number">198.18</span>.0.0/24 udp dport <span class="token number">1234</span> counter drop
+nft <span class="token function">add</span> rule netdev filter input ip6 daddr fd00::/64 udp dport <span class="token number">1234</span> counter drop<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>相关的统计信息可以通过这个命令查看：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ mmwatch <span class="token string">'nft --handle list chain netdev filter input'</span>
+table netdev filter <span class="token punctuation">&#123;</span>
+    chain input <span class="token punctuation">&#123;</span>
+        <span class="token builtin class-name">type</span> filter hook ingress device vlan100 priority -500<span class="token punctuation">;</span> policy accept<span class="token punctuation">;</span>
+        <span class="token function">ip</span> daddr <span class="token number">198.18</span>.0.0/24 udp dport <span class="token number">1234</span> counter packets    <span class="token number">1</span>.6m/s bytes    <span class="token number">69</span>.6m/s drop <span class="token comment"># handle 2</span>
+        ip6 daddr fd00::/64 udp dport <span class="token number">1234</span> counter packets <span class="token number">0</span> bytes <span class="token number">0</span> drop <span class="token comment"># handle 3</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>Nftables “ingress” Hook性能卡在了1.53mpps。 这比PREROUTING层中的iptables稍慢。 这令人费解 - 理论上”ingress”在PREROUTING之前发生，所以应该更快。<br>在我们的测试中nftables比iptables略慢，但不是很多。 Nftables仍然更好:P</p>
+<h2 id="第七阶段-利用tc的ingress策略丢包"><a href="#第七阶段-利用tc的ingress策略丢包" class="headerlink" title="第七阶段 利用tc的ingress策略丢包"></a>第七阶段 利用tc的ingress策略丢包</h2><p>有个比较令人震惊的事实是tc(traffic control)的ingress hook发生在PREROUTING之前。tc可以并且确实能做到根据一定的标准来选择并丢弃数据包，但是做法确实比较hacky，所以建议利用<a target="_blank" rel="noopener" href="https://github.com/netoptimizer/network-testing/blob/master/tc/tc_ingress_drop.sh">这个脚本</a>进行设置，我们需要的是一个稍微复杂点的匹配，参考下面的命令：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">tc qdisc <span class="token function">add</span> dev vlan100 ingress
+tc filter <span class="token function">add</span> dev vlan100 parent ffff: prio <span class="token number">4</span> protocol <span class="token function">ip</span> u32 match <span class="token function">ip</span> protocol <span class="token number">17</span> 0xff match <span class="token function">ip</span> dport <span class="token number">1234</span> 0xffff match <span class="token function">ip</span> dst <span class="token number">198.18</span>.0.0/24 flowid <span class="token number">1</span>:1 action drop
+tc filter <span class="token function">add</span> dev vlan100 parent ffff: protocol ipv6 u32 match ip6 dport <span class="token number">1234</span> 0xffff match ip6 dst fd00::/64 flowid <span class="token number">1</span>:1 action drop<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>可以验证：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ mmwatch <span class="token string">'tc -s filter  show dev vlan100  ingress'</span>
+filter parent ffff: protocol <span class="token function">ip</span> pref <span class="token number">4</span> u32 
+filter parent ffff: protocol <span class="token function">ip</span> pref <span class="token number">4</span> u32 fh <span class="token number">800</span>: ht divisor <span class="token number">1</span> 
+filter parent ffff: protocol <span class="token function">ip</span> pref <span class="token number">4</span> u32 fh <span class="token number">800</span>::800 order <span class="token number">2048</span> key ht <span class="token number">800</span> bkt <span class="token number">0</span> flowid <span class="token number">1</span>:1  <span class="token punctuation">(</span>rule hit   <span class="token number">1</span>.8m/s success   <span class="token number">1</span>.8m/s<span class="token punctuation">)</span>
+  match 00110000/00ff0000 at <span class="token number">8</span> <span class="token punctuation">(</span>success   <span class="token number">1</span>.8m/s <span class="token punctuation">)</span> 
+  match 000004d2/0000ffff at <span class="token number">20</span> <span class="token punctuation">(</span>success   <span class="token number">1</span>.8m/s <span class="token punctuation">)</span> 
+  match c612000c/ffffffff at <span class="token number">16</span> <span class="token punctuation">(</span>success   <span class="token number">1</span>.8m/s <span class="token punctuation">)</span> 
+        action order <span class="token number">1</span>: gact action drop
+         random <span class="token builtin class-name">type</span> none pass val <span class="token number">0</span>
+         index <span class="token number">1</span> ref <span class="token number">1</span> <span class="token builtin class-name">bind</span> <span class="token number">1</span> installed <span class="token number">1.0</span>/s sec
+        Action statistics:
+        Sent    <span class="token number">79</span>.7m/s bytes   <span class="token number">1</span>.8m/s pkt <span class="token punctuation">(</span>dropped   <span class="token number">1</span>.8m/s, overlimits <span class="token number">0</span> requeues <span class="token number">0</span><span class="token punctuation">)</span> 
+        backlog 0b 0p requeues <span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>通过tc的ingress hook的u32匹配，可以让我们实现单核1.8mpps的丢包能力，这个很棒！</p>
+<p>但是，我们可以更快一点…</p>
+<h2 id="第八阶段-XDP-DROP"><a href="#第八阶段-XDP-DROP" class="headerlink" title="第八阶段 XDP_DROP"></a>第八阶段 XDP_DROP</h2><p>最后，终极武器是XDP - <a target="_blank" rel="noopener" href="https://prototype-kernel.readthedocs.io/en/latest/networking/XDP/">eXpress Data Path</a>。通过XDP，我们可以在网络驱动层运行eBPF代码。最重要的是，这个阶段发生在分配<code>skbuff</code>内存之前，可以获得超高的速度。</p>
+<p>通常XDP项目包含两部分：</p>
+<ul>
+<li>被加载到内核的eBPB代码</li>
+<li>用户态的加载器，可以将代码加载到正确的网卡，并且控制他们</li>
+</ul>
+<p>编写加载器很难，但是我们可以利用<code>iproute2</code>的这个<a target="_blank" rel="noopener" href="https://cilium.readthedocs.io/en/latest/bpf/#iproute2">新特性</a>，用一个很简单的命令加载：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">ip</span> <span class="token function">link</span> <span class="token builtin class-name">set</span> dev ext0 xdp obj xdp-drop-ebpf.o<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>搞定！<br>这个eBPF的代码在<a target="_blank" rel="noopener" href="https://github.com/cloudflare/cloudflare-blog/blob/master/2018-07-dropping-packets/xdp-drop-ebpf.c">这里</a>。这个程序解析IP数据包，然后寻找对应的特征：IP传输、UDP协议、对应的子网和端口</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">if</span> <span class="token punctuation">(</span>h_proto <span class="token operator">==</span> <span class="token function">htons</span><span class="token punctuation">(</span>ETH_P_IP<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>iph<span class="token operator">-></span>protocol <span class="token operator">==</span> IPPROTO_UDP
+        <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span><span class="token function">htonl</span><span class="token punctuation">(</span>iph<span class="token operator">-></span>daddr<span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">0xFFFFFF00</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0xC6120000</span> <span class="token comment">// 198.18.0.0/24</span>
+        <span class="token operator">&amp;&amp;</span> udph<span class="token operator">-></span>dest <span class="token operator">==</span> <span class="token function">htons</span><span class="token punctuation">(</span><span class="token number">1234</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> XDP_DROP<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>XDP程序需要用现代的<code>clang</code>编译器编译成BPF字节码，完成之后可以加载并验证：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">ip</span> <span class="token function">link</span> show dev ext0
+<span class="token number">4</span>: ext0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> xdp qdisc fq state UP mode DEFAULT group default qlen <span class="token number">1000</span>
+    link/ether <span class="token number">24</span>:8a:07:8a:59:8e brd ff:ff:ff:ff:ff:ff
+    prog/xdp <span class="token function">id</span> <span class="token number">5</span> tag aedc195cc0471f51 jited<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>然后通过<code>ethtool -S</code>查看网卡的统计信息：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ mmwatch <span class="token string">'ethtool -S ext0|egrep "rx"|egrep -v ": 0"|egrep -v "cache|csum"'</span>
+     rx_out_of_buffer:     <span class="token number">4</span>.4m/s
+     rx_xdp_drop:         <span class="token number">10</span>.1m/s
+     rx2_xdp_drop:        <span class="token number">10</span>.1m/s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>利用XDP，我们实现了在单核上，每秒钟丢弃1000万个包！<br><img src="/images/xdp-drop.jpg"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>我们在IPv4和IPv6上重复了实验，并画了这张图：<br><img src="/images/xdp-numbers-noxdp.png"></p>
+<p>总的来说在我们现在的设置下，IPv6比v4要稍微慢一些，需要注意的是IPv6的包也稍微大了一些，所以这性能上的区别还是可以理解的。</p>
+<p>Linux提供了很多过滤数据包的Hook，每个都有不同的性能和易用性。</p>
+<p>对于应对DDoS的场景，在用户态的应用程序里处理这些数据包是合理的，通过调整应用程序，也可以获得不错的性能。<br>而对于有随机源IP和端口的攻击，关闭conntrack的特性来获得性能提升也是值得的，但是conntrack在某些攻击情况下，还是很有用的。<br>针对其他情况下，利用Linux的防火墙来作为抗DDoS的一部分还是很有意义的，在这种情况下要尽量利用”-t raw PREROUTING”这一层，因为这一层比”filter”表要快很多。<br>对于要求更高的工作负载，我们还有XDP，而且他很强大，下面是和上面相同的图表，但是加上了XDP：<br><img src="/images/xdp-numbers-xdp-1.png"></p>
+<p>如果需要重现这些数据，可以看看<a target="_blank" rel="noopener" href="https://github.com/cloudflare/cloudflare-blog/blob/master/2018-07-dropping-packets/README.md">项目代码的README</a>。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/DDoS/" rel="tag"># DDoS</a>
+              <a href="/tags/iptables%EF%BC%8Ctc/" rel="tag"># iptables，tc</a>
+              <a href="/tags/XDP/" rel="tag"># XDP</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/02/20/kubernetes-namespaces-stuck-in-terminating-state/" rel="prev" title="删除K8s Namespace时卡在Terminating状态">
+                  <i class="fa fa-chevron-left"></i> 删除K8s Namespace时卡在Terminating状态
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/03/14/proxy-arp-in-calico/" rel="next" title="Calico网络中的ProxyARP">
+                  Calico网络中的ProxyARP <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"0423808bf0484d3b3c413a1cfc985632"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

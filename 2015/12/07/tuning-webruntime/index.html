@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="事情的原因，是发生在某个晚上的9点30左右，SAE的报警系统突然报出了异常，所有的Web服务器的负载突然变得很高，流量也变得异常的大。这个是很有问题的，在SAE最前面的反向代理上，是部署了SAE自己开发的‘CC防火墙’的，如果出现了异常的被攻击的情况，这些异常的流量是不会到达Web服务器的，现在这些流量都到达了Web服务器，说明要么是攻击没有被正常判断，要没就是这不是一次攻击。 事实上确实这也不是">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记一次SAE Web服务器的调优过程">
+<meta property="og:url" content="https://www.ichenfu.com/2015/12/07/tuning-webruntime/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="事情的原因，是发生在某个晚上的9点30左右，SAE的报警系统突然报出了异常，所有的Web服务器的负载突然变得很高，流量也变得异常的大。这个是很有问题的，在SAE最前面的反向代理上，是部署了SAE自己开发的‘CC防火墙’的，如果出现了异常的被攻击的情况，这些异常的流量是不会到达Web服务器的，现在这些流量都到达了Web服务器，说明要么是攻击没有被正常判断，要没就是这不是一次攻击。 事实上确实这也不是">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.ichenfu.com/images/webruntime-strange-pv.png">
+<meta property="og:image" content="https://www.ichenfu.com/images/webruntime-flame-before.png">
+<meta property="og:image" content="https://www.ichenfu.com/images/webruntime-flame-after.png">
+<meta property="article:published_time" content="2015-12-07T03:12:01.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.300Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="PHP">
+<meta property="article:tag" content="火焰图">
+<meta property="article:tag" content="perf">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.ichenfu.com/images/webruntime-strange-pv.png">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2015/12/07/tuning-webruntime/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2015/12/07/tuning-webruntime/","path":"2015/12/07/tuning-webruntime/","title":"记一次SAE Web服务器的调优过程"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>记一次SAE Web服务器的调优过程 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2015/12/07/tuning-webruntime/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="记一次SAE Web服务器的调优过程 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          记一次SAE Web服务器的调优过程
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2015年12月7日 11:12 11:12:01" itemprop="dateCreated datePublished" datetime="2015-12-07T11:12:01+08:00">2015年12月7日 11:12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>事情的原因，是发生在某个晚上的9点30左右，SAE的报警系统突然报出了异常，所有的Web服务器的负载突然变得很高，流量也变得异常的大。<br>这个是很有问题的，在SAE最前面的反向代理上，是部署了SAE自己开发的‘CC防火墙’的，如果出现了异常的被攻击的情况，这些异常的流量是不会到达<br>Web服务器的，现在这些流量都到达了Web服务器，说明要么是攻击没有被正常判断，要没就是这不是一次攻击。</p>
+<p>事实上确实这也不是一次攻击。</p>
+<p>随后的分析，我们发现了一堆比较‘奇怪’的应用，为什么说‘奇怪’呢，因为这些应用的访问趋势是这样子的：</p>
+<p><img src="/images/webruntime-strange-pv.png"></p>
+<p>这是其中一个应用的数据，然而在这个应用的帐号下面，大约有十个类似的应用，都是这样的趋势，所以对于我们的Web服务器来说，在特定的时刻要接受<br>接近10倍左右的流量，对于当前的规模就有点‘顶不住’了。</p>
+<span id="more"></span>
+
+<p>所以讨论过后，大家的想法还是要对Web服务器进行扩容，来满足这样突发的流量增长。但与此同时，Web服务器也有些不一样的异常，在报警的时候，系统负载<br>比较高，CPU也没有什么空闲了，但是有个比较特殊的现象，就是system占用的CPU比user占用的CPU要高，这是明显不合理的，一般情况下，system占用CPU较高<br>意味着系统可能存在瓶颈，比如大量的锁争用等情况。</p>
+<p>所以，在着手准备扩容Web服务器的同时，也尝试对现有系统进行一些性能分析，看是否能找到瓶颈，便于做一些优化，提升单Web服务器的容量。</p>
+<p>分析的第一步，就是要收集系统运行时的信息，因此我们使用了 <code>perf</code> 这个工具，在系统中对httpd进程进行了抓取，并使用<br><a target="_blank" rel="noopener" href="https://github.com/brendangregg/FlameGraph">FlameGraph</a>生成相应的火焰图。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ perf record <span class="token parameter variable">-g</span> <span class="token parameter variable">-a</span> <span class="token comment"># 等待收集一段时间后Ctrl-c 退出</span>
+$ perf script <span class="token operator">|</span> stackcollapse-perf.pl <span class="token operator">|</span> flamegraph.pl <span class="token operator">></span> flame.svg<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>最终生成的火焰图如下：</p>
+<p><img src="/images/webruntime-flame-before.png"></p>
+<p>看到这个图，一切都明白了，系统在此阶段调用了太多的connect，尝试建立TCP连接，造成了大量的系统开销，从而影响了整体的性能。<br>那么为什么会导致这个问题？</p>
+<p>用户的代码逻辑非常简单，只是从memcache中取出一个值，然后做一个简单的转换，然后输出。那么，问题就出在了memcache上。</p>
+<p>这其实是一个历史遗留问题，SAE的Web服务器是一个纯共享的环境，用户与用户之间，可以做到请求与请求之间的隔离，因此，服务器上的<br>每个httpd进程都可以为所有的应用服务，实现动态调度，这样的设计，保证了资源的高利用性，能够实现资源利用的最大化。</p>
+<p>在当初实现资源隔离的时候，对于memcache，用户初始化memcache时总会帮他建立一个独立的连接，当使用完成，再把连接断掉。<br>问题就出在了这里，当应用访问量很大，每个请求占用的时间又很短，就出现了频繁和memcache建立连接-断开，又建立连接-断开的死循环。<br>造成的系统开销非常巨大。</p>
+<p>找到了原因，那对应的解决办法就简单了，只需要修改memcache的扩展，把短链接修改为长连接就好，除此之外，如果遇到连接断掉的情况，则<br>尝试重新连接，保证一个用户的使用不会影响到下个用户。<br>就这样，最突出的问题就基本解决了。</p>
+<p>当然，对于用户来说，其实完全不用关心用的是长连接或者是短连接，不需要调整代码，初始化的Memcache自动地就变成了长连接，完全没有感知。</p>
+<p>再看一看调整之后的火焰图：</p>
+<p><img src="/images/webruntime-flame-after.png"></p>
+<p>好了不少，没有像之前的火焰图那样非常夸张，相对的消耗都比较平均。</p>
+<p>最后在一台即将上线的机器上使用ab测试了一下。</p>
+<p>修改前：</p>
+<pre class="line-numbers language-none"><code class="language-none">Concurrency Level:      100
+Time taken for tests:   77.282 seconds
+Complete requests:      100000
+Failed requests:        3863
+   (Connect: 0, Receive: 0, Length: 3863, Exceptions: 0)
+Write errors:           0
+Non-2xx responses:      3863
+Total transferred:      29684301 bytes
+HTML transferred:       9357111 bytes
+Requests per second:    1293.96 [#&#x2F;sec] (mean)
+Time per request:       77.282 [ms] (mean)
+Time per request:       0.773 [ms] (mean, across all concurrent requests)
+Transfer rate:          375.10 [Kbytes&#x2F;sec] received<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>修改后：</p>
+<pre class="line-numbers language-none"><code class="language-none">Concurrency Level:      100
+Time taken for tests:   16.554 seconds
+Complete requests:      100000
+Failed requests:        6080
+   (Connect: 0, Receive: 0, Length: 6080, Exceptions: 0)
+Write errors:           0
+Non-2xx responses:      6086
+Total transferred:      29450237 bytes
+HTML transferred:       9218982 bytes
+Requests per second:    6040.76 [#&#x2F;sec] (mean)
+Time per request:       16.554 [ms] (mean)
+Time per request:       0.166 [ms] (mean, across all concurrent requests)
+Transfer rate:          1737.32 [Kbytes&#x2F;sec] received<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>QPS 从1293.96 [#&#x2F;sec] 提升到了6040.76 [#&#x2F;sec]，效果还是比较明显的。</p>
+<p>修改了memcache的逻辑，又加上扩容了几台服务器，之后，就没有再出现报警的情况，问题算是得到比较好的解决。</p>
+<p>当然，使用了长连接之后，服务器维护的连接数会有很大的提升，基本上从原来了200个连接上升到接近2000个连接，不过对于我们的服务器来说，<br>这些连接其实不算什么，所以其实也不会有太大的影响，和长连接带来的性能提升相比，还是相当值得的。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/PHP/" rel="tag"># PHP</a>
+              <a href="/tags/%E7%81%AB%E7%84%B0%E5%9B%BE/" rel="tag"># 火焰图</a>
+              <a href="/tags/perf/" rel="tag"># perf</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2015/03/25/cgroups-memory-fuzzy-usage/" rel="prev" title="Cgroups Memory子系统数据不正确的问题">
+                  <i class="fa fa-chevron-left"></i> Cgroups Memory子系统数据不正确的问题
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2016/05/08/cve-2016-3714/" rel="next" title="CVE-2016-3714 - ImageMagick漏洞分析和解决">
+                  CVE-2016-3714 - ImageMagick漏洞分析和解决 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"4a61cf2675a89a352e0a12415873fc68"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

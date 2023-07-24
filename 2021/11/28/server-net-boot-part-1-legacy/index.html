@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="最近花了很多时间、调研了服务器的网络启动方案，目的呢是想设计并实现一个更加统一和标准化的装机系统尽最大努力把物理机、裸金属、虚拟机、以及基于裸金属的虚拟机的操作系统镜像和装机方案融合起来，同时能适应现代的硬件。本来以为是一件很轻松的事情，毕竟基于PXE的方案已经运行很多年了，似乎简单的修改一些问题、老方案上打打补丁就能很好的实现。但现实又被疯狂打脸，因为面对多个OEM厂商提供的服务器、每家厂商不同">
+<meta property="og:type" content="article">
+<meta property="og:title" content="服务器网络启动方式探索Part1：Legacy启动篇">
+<meta property="og:url" content="https://www.ichenfu.com/2021/11/28/server-net-boot-part-1-legacy/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="最近花了很多时间、调研了服务器的网络启动方案，目的呢是想设计并实现一个更加统一和标准化的装机系统尽最大努力把物理机、裸金属、虚拟机、以及基于裸金属的虚拟机的操作系统镜像和装机方案融合起来，同时能适应现代的硬件。本来以为是一件很轻松的事情，毕竟基于PXE的方案已经运行很多年了，似乎简单的修改一些问题、老方案上打打补丁就能很好的实现。但现实又被疯狂打脸，因为面对多个OEM厂商提供的服务器、每家厂商不同">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-11-28T07:41:38.000Z">
+<meta property="article:modified_time" content="2021-11-29T02:08:02.527Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="UEFI">
+<meta property="article:tag" content="Legacy">
+<meta property="article:tag" content="PXE">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2021/11/28/server-net-boot-part-1-legacy/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2021/11/28/server-net-boot-part-1-legacy/","path":"2021/11/28/server-net-boot-part-1-legacy/","title":"服务器网络启动方式探索Part1：Legacy启动篇"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>服务器网络启动方式探索Part1：Legacy启动篇 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#UEFI-Legacy-Boot-PXE"><span class="nav-number">1.</span> <span class="nav-text">UEFI Legacy Boot + PXE</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UEFI-Legacy-Boot-iPXE"><span class="nav-number">2.</span> <span class="nav-text">UEFI Legacy Boot + iPXE</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/11/28/server-net-boot-part-1-legacy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="服务器网络启动方式探索Part1：Legacy启动篇 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          服务器网络启动方式探索Part1：Legacy启动篇
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021年11月28日 15:41 15:41:38" itemprop="dateCreated datePublished" datetime="2021-11-28T15:41:38+08:00">2021年11月28日 15:41</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年11月29日 10:08 10:08:02" itemprop="dateModified" datetime="2021-11-29T10:08:02+08:00">2021年11月29日 10:08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>最近花了很多时间、调研了服务器的网络启动方案，目的呢是想设计并实现一个更加统一和标准化的装机系统尽最大努力把物理机、裸金属、虚拟机、以及基于裸金属的虚拟机的操作系统镜像和装机方案融合起来，同时能适应现代的硬件。<br>本来以为是一件很轻松的事情，毕竟基于PXE的方案已经运行很多年了，似乎简单的修改一些问题、老方案上打打补丁就能很好的实现。但现实又被疯狂打脸，因为面对多个OEM厂商提供的服务器、每家厂商不同的BMC管理系统、每家厂商不同的接口格式和功能。在没有统一服务器供应商或者基于ODM方案之前，似乎那个“完美”的方案并不很容易实现。</p>
+<p>不过呢，这些问题也都不重要，关键是在整个调研的过程中，也是补足了很多似懂非懂、一知半解的技术细节，也算是一个非常大的提升了，其实短期的妥协方案，也不影响最终的实现效果。所以准备写写这段时间学习到的知识，也算是补足了之前网络上找不到技术细节的坑吧，本篇算是第一部分吧，从最简单的开始，说说当前Legacy Boot相关的网络启动方案。</p>
+<span id="more"></span>
+
+<h2 id="UEFI-Legacy-Boot-PXE"><a href="#UEFI-Legacy-Boot-PXE" class="headerlink" title="UEFI Legacy Boot + PXE"></a>UEFI Legacy Boot + PXE</h2><p>虽然现在所有的服务器厂商都将<code>BIOS</code>的实现换成了<code>UEFI</code>，但为了兼容性考虑，所有的厂商依然提供老的<code>BIOS</code>形式的基于<code>MBR</code>的<code>Legacy</code>引导方式，在这个模式下，通过PXE可以实现最基础的功能。</p>
+<p>在Legacy模式下，简单来说，PXE是通过网卡内置的一个小固件（PXE Client）实现的。大致的流程可以总结成这样：在系统启动的时候，会启动网卡里的<code>PXE Client</code>，固件启动后、会发起DHCP请求、当DHCP服务器收到<code>PXE Client</code>的DHCP请求后，会通过预定义的字段返回给客户端IP地址信息、TFTP地址信息、以及需要加载的<code>bootloader</code>的名字。<code>PXE Client</code>收到这些信息后，首先会配置IP地址，此时网络就可以通信了，再根据TFTP的地址和名字信息获取到<code>bootloader</code>并执行，剩下的，就由<code>bootloader</code>去拉起内核和OS。</p>
+<p>接下来我们尝试搭建一个<code>PXE Server</code>试试：</p>
+<p>首先<code>PXE Server</code>依赖两个组件：DHCP Server和TFTP，先配置DHCP Server：</p>
+<p>这里使用<code>isc-dhcp-server</code>，附上配置文件：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">option domain-name-servers <span class="token number">10.1</span>.1.1<span class="token punctuation">;</span>
+option routers <span class="token number">10.1</span>.1.1<span class="token punctuation">;</span>
+default-lease-time <span class="token number">14400</span><span class="token punctuation">;</span>
+ddns-update-style none<span class="token punctuation">;</span>
+subnet <span class="token number">10.1</span>.1.0 netmask <span class="token number">255.255</span>.255.0 <span class="token punctuation">&#123;</span>
+    range dynamic-bootp <span class="token number">10.1</span>.1.100 <span class="token number">10.1</span>.1.120<span class="token punctuation">;</span>
+    default-lease-time <span class="token number">14400</span><span class="token punctuation">;</span>
+    max-lease-time <span class="token number">172800</span><span class="token punctuation">;</span>
+    next-server <span class="token number">10.1</span>.1.10<span class="token punctuation">;</span>   <span class="token comment">#关键配置！用于指明tftp server的地址</span>
+    filename <span class="token string">"pxelinux.0"</span><span class="token punctuation">;</span>   <span class="token comment">#关键配置！用于指明bootloader的名字</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其他部分的配置并不重要，针对PXE启动来说，最重要的配置只有<code>next-server</code>和<code>filename</code>，<code>next-server</code>指明了tftp server服务器的地址，<code>filename</code>指明了<code>bootloader</code>的名字，有了这俩信息，<code>PXE Client</code>就可以去tftp上去获取bootloader并加载了。</p>
+<p>接下来，配置tftp。tftp其实不需要配置，安装并启动就行了。主要是需要准备好启动所需要的bootloader和内核、initrd等文件。在配置文件里的<code>pxelinux.0</code>是从哪来的呢？为了简单、一般来说PXE里不使用grub作为<code>bootloader</code>、使用最多的还是<code>PXELINUX</code>，他是<code>syslinux</code>的一部分，所以很简单，只需要安装<code>syslinux</code>就行了，在我的CentOS系统里，这个文件在<code>/usr/share/syslinux/pxelinux.0</code>。直接拷贝到tftp root目录下就行。需要注意的是，在<code>syslinux</code> 5.0以上的版本，还需要把<code>ldlinux.c32</code>这个文件同步拷贝到tftp root下。</p>
+<p>有了<code>bootloader</code>、还需要<code>bootloader</code>配置文件，针对<code>pxelinux</code>而言，默认会根据以下的顺序加载配置文件：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">/pxelinux.cfg/b8945908-d6a6-41a9-611d-74a6ab80b83d
+/pxelinux.cfg/01-88-99-aa-bb-cc-dd
+/pxelinux.cfg/C0A8025B
+/pxelinux.cfg/C0A8025
+/pxelinux.cfg/C0A802
+/pxelinux.cfg/C0A80
+/pxelinux.cfg/C0A8
+/pxelinux.cfg/C0A
+/pxelinux.cfg/C0
+/pxelinux.cfg/C
+/pxelinux.cfg/default<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其中根目录指的是和<code>pxelinux.0</code>相同的目录，具体每个文件所代表的含义，可以参考<a target="_blank" rel="noopener" href="https://wiki.syslinux.org/wiki/index.php?title=PXELINUX">PXELINUX的文档</a>这么做的目的呢，是为了方便同一个PXE Server为多个机器服务，每个机器可以通过单独的配置文件进行配置，而不用为每台客户端配置一个PXE Server了。实际上、有一个广泛使用的装机系统<code>cobbler</code>、也是基于这个特性，来解决不同机器的不同装机配置问题的。</p>
+<p>在我们只有一台机器的情况下，默认写一个<code>pxelinux.cfg/default</code>文件就行了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">DEFAULT test-pxe-boot
+LABEL test-pxe-boot
+  MENU LABEL ^Test Boot
+  KERNEL vmlinuz
+  APPEND <span class="token assign-left variable">initrd</span><span class="token operator">=</span>initrd.img<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>配置文件很简单，指明KERNEL和initrd的位置就行，默认情况下这些文件依然会从tftp里去取。至于<code>vmlinuz</code>和<code>initrd.img</code>这两个文件的获取，这里就不多说了，最简单的办法，就是从发行版的iso安装镜像里去找就可以了。</p>
+<p>到目前为止，一个最简单的PXE Server就搭建完成了。已经可以测试是否能拉起一个RamOS了。当然，我们用的<code>PXELINUX</code>还有很多高级的用法，比如基于http去加载kernel和initrd，从而绕开tftp协议进行加速，或者通过dhcpd下发一些配置等等，这里就不多说了，可以继续参考<a target="_blank" rel="noopener" href="https://wiki.syslinux.org/wiki/index.php?title=PXELINUX">PXELINUX的文档</a>。</p>
+<h2 id="UEFI-Legacy-Boot-iPXE"><a href="#UEFI-Legacy-Boot-iPXE" class="headerlink" title="UEFI Legacy Boot + iPXE"></a>UEFI Legacy Boot + iPXE</h2><p>基于PXE的启动已经很成熟了，但是对于PXE的一个重要依赖，tftp来说，大家还是会觉得他太慢了，毕竟tftp还是比较适用于小文件的传输，在实际的应用中，如果你的initrd.img比较大的话，那么需要花的时间就比较可观了，根据我自己的测试，大概传输200M左右的数据至少也需要60s，即使你用的是25GbE的网卡，依然是这个速度。那么，有没有支持更多协议的方法呢？</p>
+<p>答案自然是有的，那就是iPXE，相比于比较原始的PXE来说，iPXE极大的增强了功能，根据<a target="_blank" rel="noopener" href="https://ipxe.org/">官网</a>的描述，相比PXE来说，主要有以下的提升：</p>
+<blockquote><ul>
+<li>boot from a web server via HTTP</li>
+<li>boot from an iSCSI SAN</li>
+<li>boot from a Fibre Channel SAN via FCoE</li>
+<li>boot from an AoE SAN</li>
+<li>boot from a wireless network</li>
+<li>boot from a wide-area network</li>
+<li>boot from an Infiniband network</li>
+<li>control the boot process with a script</li>
+</ul>
+</blockquote>
+
+<p>可以看到，功能和可编程性提升了很多，尤其重要的，一个是可以支持HTTP协议了，另外还有脚本执行能力，易用性大幅度的提升了。</p>
+<p>而对于iPXE，主要有两种使用方式，一种方式，就是把iPXE直接烧进网卡的ROM里，替换掉网卡老的PXE ROM，这样就直接启动到iPXE环境了，另外一种，就是使用链式加载的模式，iPXE支持通过PXE环境、ISO、UEFI、以及其他引导器运行，也就是说，可以先通过PXE启动到iPXE环境，再对iPXE环境进行配置，从而实现系统启动。</p>
+<p>这里主要还是会以链式加载的方式进行试验，相比直接刷ROM的方式，兼容性和可操作性都比较好。</p>
+<p>那首先第一步还是要实现PXE的配置，只是这次的bootloader要从<code>PXELINUX</code>换成了<code>iPXE</code>，对于DHCP Server来说，配置不会变化太大：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">option domain-name-servers <span class="token number">10.1</span>.1.1<span class="token punctuation">;</span>
+option routers <span class="token number">10.1</span>.1.1<span class="token punctuation">;</span>
+default-lease-time <span class="token number">14400</span><span class="token punctuation">;</span>
+ddns-update-style none<span class="token punctuation">;</span>
+subnet <span class="token number">10.1</span>.1.0 netmask <span class="token number">255.255</span>.255.0 <span class="token punctuation">&#123;</span>
+    range dynamic-bootp <span class="token number">10.1</span>.1.100 <span class="token number">10.1</span>.1.120<span class="token punctuation">;</span>
+    default-lease-time <span class="token number">14400</span><span class="token punctuation">;</span>
+    max-lease-time <span class="token number">172800</span><span class="token punctuation">;</span>
+    next-server <span class="token number">10.1</span>.1.10<span class="token punctuation">;</span>  <span class="token comment">#关键配置！用于指明tftp server的地址</span>
+    filename <span class="token string">"ipxe.pxe"</span><span class="token punctuation">;</span>    <span class="token comment">#关键配置！用于指明ipxe的名字</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，只要把filename换成ipxe的名字就可以了，而这个<code>ipxe.pxe</code>，可以从<a target="_blank" rel="noopener" href="http://boot.ipxe.org/">http://boot.ipxe.org</a>直接下载，顺便说一下，这个网站里还包括了其他环境使用的iPXE，比如UFEI使用的，或者iso、U盘启动使用的启动文件，触类旁通，可以根据需求下载不同的文件。</p>
+<p>配置好DHCP Server、下载好文件之后，只要一启动，iPXE就会被拉起。但是问题还没结束，为什么呢，因为iPXE被拉起之后，还是会通过DHCP协议获取IP地址和其他启动的配置，但是思考一下，当iPXE获取DHCP配置的时候，按我们现在的配置，服务器依然会把<code>filename: ipxe.pxe</code>返回给iPXE客户端，然后iPXE拉起iPXE，如此反复，进入了一个死循环。</p>
+<p>所以得需要有个办法来打破这个死循环，对于这个问题，官方也给出了对应的<a target="_blank" rel="noopener" href="https://ipxe.org/howto/chainloading">方案</a>，一种是将脚本直接嵌入到ipxe文件里，另外一个，就是通过配置DHCP Server实现，由于将脚本嵌入到ipxe文件里需要自己编译，那肯定不是个简单的方案，所以这里还是优先通过配置DHCP Server完成目标。</p>
+<p>先想想原理，其实也比较简单，如果DHCP Server能感知到客户端是PXE还是iPXE，如果是PXE，就把”ipxe.pxe”作为文件名传给客户端，如果是iPXE，就把iPXE Script的文件名传给客户端，这样一个简单的if判断，就可以打破这个死循环了，而iPXE确实给我们一个非常明确的区分方式：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">option domain-name-servers <span class="token number">10.1</span>.1.1<span class="token punctuation">;</span>
+option routers <span class="token number">10.1</span>.1.1<span class="token punctuation">;</span>
+default-lease-time <span class="token number">14400</span><span class="token punctuation">;</span>
+ddns-update-style none<span class="token punctuation">;</span>
+subnet <span class="token number">10.1</span>.1.0 netmask <span class="token number">255.255</span>.255.0 <span class="token punctuation">&#123;</span>
+    range dynamic-bootp <span class="token number">10.1</span>.1.100 <span class="token number">10.1</span>.1.120<span class="token punctuation">;</span>
+    default-lease-time <span class="token number">14400</span><span class="token punctuation">;</span>
+    max-lease-time <span class="token number">172800</span><span class="token punctuation">;</span>
+    next-server <span class="token number">10.1</span>.1.10<span class="token punctuation">;</span>   <span class="token comment">#关键配置！用于指明tftp server的地址</span>
+    <span class="token keyword">if</span> exists user-class and option user-class <span class="token operator">=</span> <span class="token string">"iPXE"</span> <span class="token punctuation">&#123;</span> <span class="token comment">#根据user-class字段来判断客户端类型</span>
+      filename <span class="token string">"http://10.1.1.10/boot.script"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+      filename <span class="token string">"ipxe.pxe"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>对于iPXE来说，在发送DHCP请求的时候，会加上一个user-class Option，值是”iPXE”，根据这个信息，我们就可以区分到底现在是PXE环境还是iPXE环境了。然后就是filename的配置，因为iPXE支持http协议，所以在filename字段，就可以直接填一个URL了，这样就可以把boot.script放到一个HTTP服务器上了。一个最简单的boot.script可以这样写：</p>
+<pre class="line-numbers language-none"><code class="language-none">#!ipxe
+
+kernel http:&#x2F;&#x2F;10.1.1.10&#x2F;vmlinuz initrd&#x3D;initrd.img
+initrd http:&#x2F;&#x2F;10.1.1.10&#x2F;initrd.img
+boot<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>因为支持HTTP协议，内核和initrd.img文件也都可以放在HTTP服务器上了，相比用tftp协议去获取，速度快了10倍不止。同样的，因为支持HTTP协议，对于多台机器同时装机的需求，可以实现的方式就更多了。一个最简单的思路就是使用php或者其他编程语言实现一个页面，在DHCP服务器把返回filename配置成<code>http://10.1.1.10/boot.php</code>，然后程序里根据不同机器的配置，生成不同的<code>ipxe script</code>。iPXE根据不同机器的不同script，来定制化不同的启动逻辑。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>到这里，基于UEFI Legacy Boot的网络启动方式基本就说完了，当初PXE协议的设计者们的思路还是十分清晰的。而每个bootloader对于在PXE环境下多配置文件的支持，也是很早就设计好的，在上面的这些例子里，特别是PXE的例子，除了<code>PXELINUX</code>之外，理论上<code>grub</code>或者其他bootloader，都可以很好的完成类似的任务，比如grub的配置文件加载顺序，也可以找到非常完整的<a target="_blank" rel="noopener" href="https://www.gnu.org/software/grub/manual/grub/html_node/Network.html">文档</a>。而对于后来者iPXE，确实功能上增强了不少，可编程性也有了很大的提升，同时自身也可以作为bootloader，相比之下，确实iPXE会是一个非常好的选择。</p>
+<p>下一篇我们再说说UFEI模式下的网络启动，尽情期待！</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/UEFI/" rel="tag"># UEFI</a>
+              <a href="/tags/Legacy/" rel="tag"># Legacy</a>
+              <a href="/tags/PXE/" rel="tag"># PXE</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/10/23/wsl2-ubuntu-dockerd-iptables-problem/" rel="prev" title="WSL2 Ubuntu 21.04原生Docker无法运行的问题">
+                  <i class="fa fa-chevron-left"></i> WSL2 Ubuntu 21.04原生Docker无法运行的问题
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/12/25/server-net-boot-part-2-uefi/" rel="next" title="服务器网络启动方式探索Part2：UEFI启动篇">
+                  服务器网络启动方式探索Part2：UEFI启动篇 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"50a368e41c4bb18999519f67aaf63fba"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

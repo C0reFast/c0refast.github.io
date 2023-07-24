@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="本篇是Building a Consistent Hashing Ring 第三到第五部分的翻译，上篇翻译了原文的第一到第三部分，在第三到第五部分中，引入了分区概念，多副本，多可用区，以及权重的概念，更加接近一个高可用的实际一致性环">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Building a Consistent Hashing Ring Part3-Part5(构建一个一致性哈希环 Part3-Part5)">
+<meta property="og:url" content="https://www.ichenfu.com/2017/04/23/building-a-consistent-hashing-ring-3-5/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="本篇是Building a Consistent Hashing Ring 第三到第五部分的翻译，上篇翻译了原文的第一到第三部分，在第三到第五部分中，引入了分区概念，多副本，多可用区，以及权重的概念，更加接近一个高可用的实际一致性环">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-04-23T08:58:32.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.290Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="Consistent Hashing">
+<meta property="article:tag" content="Swift Ring">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2017/04/23/building-a-consistent-hashing-ring-3-5/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2017/04/23/building-a-consistent-hashing-ring-3-5/","path":"2017/04/23/building-a-consistent-hashing-ring-3-5/","title":"Building a Consistent Hashing Ring Part3-Part5(构建一个一致性哈希环 Part3-Part5)"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Building a Consistent Hashing Ring Part3-Part5(构建一个一致性哈希环 Part3-Part5) | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Part-3"><span class="nav-number">1.</span> <span class="nav-text">Part 3</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Part-4"><span class="nav-number">2.</span> <span class="nav-text">Part 4</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Part-5"><span class="nav-number">3.</span> <span class="nav-text">Part 5</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Summary"><span class="nav-number">4.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/04/23/building-a-consistent-hashing-ring-3-5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Building a Consistent Hashing Ring Part3-Part5(构建一个一致性哈希环 Part3-Part5) | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Building a Consistent Hashing Ring Part3-Part5(构建一个一致性哈希环 Part3-Part5)
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017年4月23日 16:58 16:58:32" itemprop="dateCreated datePublished" datetime="2017-04-23T16:58:32+08:00">2017年4月23日 16:58</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/OpenStack-Swift/" itemprop="url" rel="index"><span itemprop="name">OpenStack Swift</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>本篇是<a target="_blank" rel="noopener" href="https://docs.openstack.org/swift/latest/ring_background.html">Building a Consistent Hashing Ring</a> 第三到第五部分的翻译，上篇翻译了原文的第一到第三部分，在第三到第五部分中，引入了分区概念，多副本，多可用区，以及权重的概念，更加接近一个高可用的实际一致性环<span id="more"></span></p>
+<h2 id="Part-3"><a href="#Part-3" class="headerlink" title="Part 3"></a>Part 3</h2><p>在本系列的第2部分中，我们实现了一种算法，在集群添加新节点时也能够很好地运行。我们使用了可以独立分配给物理节点的1000个虚拟节点，这样我们可以最小化添加节点时移动的数据量。</p>
+<p>虚拟节点数量确定了我们可以拥有多少物理节点。例如，如果您有1000个虚拟节点，并且尝试添加一个第1001个物理节点，那么在不替换任何物理节点的情况下是没有虚拟节点可以分配的，最终只会剩下1000个活动的物理节点。</p>
+<p>不幸的是，在集群的整个生命周期中，在不进行很多细致的工作的情况下，创建时确定的虚拟节点的数量几乎永远无法改变。例如，可以将原有的一个虚拟节点拆成两个，而且将拆出的两个新虚拟节点分配给同一个物理节点，这样可以实现增加一倍的虚拟节点数量。然而，如果物理节点需要借助虚拟节点的id来更好地存储数据（例如，所有数据可能存储在&#x2F;[虚拟节点id]&#x2F;[数据id]目录中），则必须要移动数据来适应虚拟节点数量变化了。而且在移动的过程中，新旧位置都必须要有数据，很难或者基本不可能实现原子性操作。</p>
+<p>所以稍微往前想一下：改变虚拟节点的数量可能是一件付出远比收益大的工作，但请记住，对于某些应用程序可能会是很有好处的。</p>
+<p>解决这个限制的最简单的方法是使限制足够高，这样就不用怕遇到需要扩充的情况了。例如，如果我们认为集群永远不会拥有超过60000个物理节点，那么我们就可以设置6万个虚拟节点。</p>
+<p>此外，我们应该在我们的计算中考虑一下节点的相对大小。例如，一年之后，我们可能会拥有处理当前节点的两倍容量的物理节点。因此，我们希望虚拟节点数量翻倍，这样应该将虚拟节点的估计值提高到120000。</p>
+<p>为每个物理节点保留100个虚拟节点会是一个很好的规则。这样可以实现对任何给定节点的负载进行1％的调整，即使在最大容量情况下，这样的调整影响也很小。所以，对于一个最多包含60000个物理节点的集群，我们会有6,000,000个虚拟节点。</p>
+<p>600万虚拟节点看起来很多，让人觉得可能会用到太多的内存。但唯一需要存储的结构是虚拟节点到实际节点映射关系。所需的内存大小大概为600万乘以2字节（存储从0到65,535的真实节点ID）大约需要12MB的内存，对于现阶段的机器来说，这并不是一件难事。</p>
+<p>即使算上Python存储类型的所有开销，也没有什么可担心的。稍微修改了一下上面的代码，扩展成60000个物理和6,000,000个虚拟节点，将list更改为array(‘H’)，最高也只用了27MB的常驻内存，这还包括了两个环。</p>
+<p>这时候可以换一种说法了，可以将这些这些虚拟节点叫做“分区”(partitions)。这将使我们更容易辨别之前所讨论的两种节点类型。另外，将它叫做分区也是有道理的，因为它确实是一个不间断的哈希空间的一部分。</p>
+<p>我们也会始终保持分区个数为2的幂。这样可以使用哈希的位操作而不是模数来确定分区了。虽然并没有快多少，但好歹快一点点。所以，下面就是更新后的哈希环代码，使用8,388,608 (2**23)个分区和65,536个节点。我们已经提取了样本数据id集，并检查了分布情况，以确保没有破坏任何东西。</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> array <span class="token keyword">import</span> array
+<span class="token keyword">from</span> hashlib <span class="token keyword">import</span> md5
+<span class="token keyword">from</span> struct <span class="token keyword">import</span> unpack_from
+
+PARTITION_POWER <span class="token operator">=</span> <span class="token number">23</span>
+PARTITION_SHIFT <span class="token operator">=</span> <span class="token number">32</span> <span class="token operator">-</span> PARTITION_POWER
+NODE_COUNT <span class="token operator">=</span> <span class="token number">65536</span>
+DATA_ID_COUNT <span class="token operator">=</span> <span class="token number">100000000</span>
+
+part2node <span class="token operator">=</span> array<span class="token punctuation">(</span><span class="token string">'H'</span><span class="token punctuation">)</span>
+<span class="token keyword">for</span> part <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span><span class="token number">2</span> <span class="token operator">**</span> PARTITION_POWER<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    part2node<span class="token punctuation">.</span>append<span class="token punctuation">(</span>part <span class="token operator">%</span> NODE_COUNT<span class="token punctuation">)</span>
+node_counts <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">*</span> NODE_COUNT
+<span class="token keyword">for</span> data_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>DATA_ID_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    data_id <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span>
+    part <span class="token operator">=</span> unpack_from<span class="token punctuation">(</span><span class="token string">'>I'</span><span class="token punctuation">,</span> md5<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span>digest<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">>></span> PARTITION_SHIFT
+    node_id <span class="token operator">=</span> part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span>
+    node_counts<span class="token punctuation">[</span>node_id<span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+desired_count <span class="token operator">=</span> DATA_ID_COUNT <span class="token operator">/</span> NODE_COUNT
+<span class="token keyword">print</span> <span class="token string">'%d: Desired data ids per node'</span> <span class="token operator">%</span> desired_count
+max_count <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span>node_counts<span class="token punctuation">)</span>
+over <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>max_count <span class="token operator">-</span> desired_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Most data ids on one node, %.02f%% over'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>max_count<span class="token punctuation">,</span> over<span class="token punctuation">)</span>
+min_count <span class="token operator">=</span> <span class="token builtin">min</span><span class="token punctuation">(</span>node_counts<span class="token punctuation">)</span>
+under <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>desired_count <span class="token operator">-</span> min_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Least data ids on one node, %.02f%% under'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>min_count<span class="token punctuation">,</span> under<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>运行结果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">1525</span>: Desired data ids per <span class="token function">node</span>
+<span class="token number">1683</span>: Most data ids on one node, <span class="token number">10.36</span>% over
+<span class="token number">1360</span>: Least data ids on one node, <span class="token number">10.82</span>% under<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>额 +-10%似乎有点高，但是我重新以65,536个分区和256个节点的情况运行了一次，得到+-0.4%，所以原因是因为1亿个样本对于8百万的分区数来说太小了。 样本量太大会使运行时间过长，所以我们将数字缩小了点。 （可以肯定的是，我用完整的版本重新运行了一个100亿数据id的样本集，得到+-1%的结果，但是一共花了了6.5个小时）。</p>
+<h2 id="Part-4"><a href="#Part-4" class="headerlink" title="Part 4"></a>Part 4</h2><p>在本系列的第3部分中，我们进一步讨论了分区（虚拟节点），并基于此清理了代码。现在，我们来谈谈如何提高集群中数据的持久性和可用性。</p>
+<p>对于很多的分布式数据存储，数据持久性是非常重要的。无论是RAID阵列或独立的数据副本都是需要的。虽然RAID会增加数据持久性，但它不会增加可用性 - 如果RAID机器崩溃了，数据可能是安全的，但是在修复完成之前，数据是无法被访问的。如果我们在不同机器上保留数据的多个副本，即使机器崩溃，在修复损坏的机器时，其他副本仍然是可用的。</p>
+<p>实现这种多副本持久性&#x2F;可用性的最简单简单方法就是将节点进行分组并使用独立的哈希环。例如，要实现三数据副本的行业标准，您可以将节点分为三组，每组都有自己的环，每个组将收到每个数据项的副本。这可以工作地很好，但是缺点在于如果需要扩充容量，就需要一下子添加三个节点，而且，当有一个节点丢失时，基本上也就相当于少了三倍的容量。</p>
+<p>作为替代，我们用一个不同但是通用的方法来满足我们的需求。这可以通过从起点沿着哈希环走动，并寻找其他不同的节点来完成。下面的代码是支持不同副本数量的（测试时将数量设置为了3）：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> array <span class="token keyword">import</span> array
+<span class="token keyword">from</span> hashlib <span class="token keyword">import</span> md5
+<span class="token keyword">from</span> struct <span class="token keyword">import</span> unpack_from
+
+REPLICAS <span class="token operator">=</span> <span class="token number">3</span>
+PARTITION_POWER <span class="token operator">=</span> <span class="token number">16</span>
+PARTITION_SHIFT <span class="token operator">=</span> <span class="token number">32</span> <span class="token operator">-</span> PARTITION_POWER
+PARTITION_MAX <span class="token operator">=</span> <span class="token number">2</span> <span class="token operator">**</span> PARTITION_POWER <span class="token operator">-</span> <span class="token number">1</span>
+NODE_COUNT <span class="token operator">=</span> <span class="token number">256</span>
+DATA_ID_COUNT <span class="token operator">=</span> <span class="token number">10000000</span>
+
+part2node <span class="token operator">=</span> array<span class="token punctuation">(</span><span class="token string">'H'</span><span class="token punctuation">)</span>
+<span class="token keyword">for</span> part <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span><span class="token number">2</span> <span class="token operator">**</span> PARTITION_POWER<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    part2node<span class="token punctuation">.</span>append<span class="token punctuation">(</span>part <span class="token operator">%</span> NODE_COUNT<span class="token punctuation">)</span>
+node_counts <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">*</span> NODE_COUNT
+<span class="token keyword">for</span> data_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>DATA_ID_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    data_id <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span>
+    part <span class="token operator">=</span> unpack_from<span class="token punctuation">(</span><span class="token string">'>I'</span><span class="token punctuation">,</span>
+        md5<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span>digest<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">>></span> PARTITION_SHIFT
+    node_ids <span class="token operator">=</span> <span class="token punctuation">[</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span><span class="token punctuation">]</span>
+    node_counts<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+    <span class="token comment"># 按顺序往下选三个没有选中的节点</span>
+    <span class="token keyword">for</span> replica <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> REPLICAS<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">while</span> part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span> <span class="token keyword">in</span> node_ids<span class="token punctuation">:</span>
+            part <span class="token operator">+=</span> <span class="token number">1</span>
+            <span class="token keyword">if</span> part <span class="token operator">></span> PARTITION_MAX<span class="token punctuation">:</span>
+                part <span class="token operator">=</span> <span class="token number">0</span>
+        node_ids<span class="token punctuation">.</span>append<span class="token punctuation">(</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span><span class="token punctuation">)</span>
+        node_counts<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+desired_count <span class="token operator">=</span> DATA_ID_COUNT <span class="token operator">/</span> NODE_COUNT <span class="token operator">*</span> REPLICAS
+<span class="token keyword">print</span> <span class="token string">'%d: Desired data ids per node'</span> <span class="token operator">%</span> desired_count
+max_count <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span>node_counts<span class="token punctuation">)</span>
+over <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>max_count <span class="token operator">-</span> desired_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Most data ids on one node, %.02f%% over'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>max_count<span class="token punctuation">,</span> over<span class="token punctuation">)</span>
+min_count <span class="token operator">=</span> <span class="token builtin">min</span><span class="token punctuation">(</span>node_counts<span class="token punctuation">)</span>
+under <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>desired_count <span class="token operator">-</span> min_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Least data ids on one node, %.02f%% under'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>min_count<span class="token punctuation">,</span> under<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>运行结果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">117186</span>: Desired data ids per <span class="token function">node</span>
+<span class="token number">118133</span>: Most data ids on one node, <span class="token number">0.81</span>% over
+<span class="token number">116093</span>: Least data ids on one node, <span class="token number">0.93</span>% under<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>很不错，数据不均衡小于1％。但是，还是有几个问题。</p>
+<p>首先，由于我们最初将分区对应到物理节点，因此某个物理节点上的所有分区在其他两个物理节点上都有有额外的副本。问题是当一台机器故障时，另两个物理节点上的负载将增加一台机器的量。为了能更好地分发故障转移产生的负载，最好在开始分配分区时将分区打乱。</p>
+<p>还有一个比较难解释的问题，就是是处理机器的物理分离。想像一下，一个机架只能放16台机器。因此256个节点需要16个机架。对于当前的代码，如果整个机架出现问题（电源问题，网络问题等），很有可能某些数据的三个副本都在该机架中，变得无法访问。因此我们可以给节点引入一个区域的概念，然后确保每个副本都存储在不同的区域中，从而解决这个缺陷。</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> array <span class="token keyword">import</span> array
+<span class="token keyword">from</span> hashlib <span class="token keyword">import</span> md5
+<span class="token keyword">from</span> random <span class="token keyword">import</span> shuffle
+<span class="token keyword">from</span> struct <span class="token keyword">import</span> unpack_from
+
+REPLICAS <span class="token operator">=</span> <span class="token number">3</span>
+PARTITION_POWER <span class="token operator">=</span> <span class="token number">16</span>
+PARTITION_SHIFT <span class="token operator">=</span> <span class="token number">32</span> <span class="token operator">-</span> PARTITION_POWER
+PARTITION_MAX <span class="token operator">=</span> <span class="token number">2</span> <span class="token operator">**</span> PARTITION_POWER <span class="token operator">-</span> <span class="token number">1</span>
+NODE_COUNT <span class="token operator">=</span> <span class="token number">256</span>
+ZONE_COUNT <span class="token operator">=</span> <span class="token number">16</span>
+DATA_ID_COUNT <span class="token operator">=</span> <span class="token number">10000000</span>
+
+node2zone <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token comment"># 将256个节点平均分配到16个不同的区域中</span>
+<span class="token keyword">while</span> <span class="token builtin">len</span><span class="token punctuation">(</span>node2zone<span class="token punctuation">)</span> <span class="token operator">&lt;</span> NODE_COUNT<span class="token punctuation">:</span>
+    zone <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token keyword">while</span> zone <span class="token operator">&lt;</span> ZONE_COUNT <span class="token keyword">and</span> <span class="token builtin">len</span><span class="token punctuation">(</span>node2zone<span class="token punctuation">)</span> <span class="token operator">&lt;</span> NODE_COUNT<span class="token punctuation">:</span>
+        node2zone<span class="token punctuation">.</span>append<span class="token punctuation">(</span>zone<span class="token punctuation">)</span>
+        zone <span class="token operator">+=</span> <span class="token number">1</span>
+part2node <span class="token operator">=</span> array<span class="token punctuation">(</span><span class="token string">'H'</span><span class="token punctuation">)</span>
+<span class="token keyword">for</span> part <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span><span class="token number">2</span> <span class="token operator">**</span> PARTITION_POWER<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    part2node<span class="token punctuation">.</span>append<span class="token punctuation">(</span>part <span class="token operator">%</span> NODE_COUNT<span class="token punctuation">)</span>
+<span class="token comment"># 关键的一步，将所有的分区全部打乱</span>
+shuffle<span class="token punctuation">(</span>part2node<span class="token punctuation">)</span>
+node_counts <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">*</span> NODE_COUNT
+zone_counts <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">*</span> ZONE_COUNT
+<span class="token keyword">for</span> data_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>DATA_ID_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    data_id <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span>
+    part <span class="token operator">=</span> unpack_from<span class="token punctuation">(</span><span class="token string">'>I'</span><span class="token punctuation">,</span> md5<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span>digest<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">>></span> PARTITION_SHIFT
+    node_ids <span class="token operator">=</span> <span class="token punctuation">[</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span><span class="token punctuation">]</span>
+    zones <span class="token operator">=</span> <span class="token punctuation">[</span>node2zone<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+    node_counts<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+    zone_counts<span class="token punctuation">[</span>zones<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+    <span class="token keyword">for</span> replica <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> REPLICAS<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token comment"># 分配副本节点时忽略在同一个区域的节点</span>
+        <span class="token keyword">while</span> part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span> <span class="token keyword">in</span> node_ids <span class="token keyword">and</span> node2zone<span class="token punctuation">[</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token keyword">in</span> zones<span class="token punctuation">:</span>
+            part <span class="token operator">+=</span> <span class="token number">1</span>
+            <span class="token keyword">if</span> part <span class="token operator">></span> PARTITION_MAX<span class="token punctuation">:</span>
+                part <span class="token operator">=</span> <span class="token number">0</span>
+        node_ids<span class="token punctuation">.</span>append<span class="token punctuation">(</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span><span class="token punctuation">)</span>
+        zones<span class="token punctuation">.</span>append<span class="token punctuation">(</span>node2zone<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+        node_counts<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+        zone_counts<span class="token punctuation">[</span>zones<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+desired_count <span class="token operator">=</span> DATA_ID_COUNT <span class="token operator">/</span> NODE_COUNT <span class="token operator">*</span> REPLICAS
+<span class="token keyword">print</span> <span class="token string">'%d: Desired data ids per node'</span> <span class="token operator">%</span> desired_count
+max_count <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span>node_counts<span class="token punctuation">)</span>
+over <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>max_count <span class="token operator">-</span> desired_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Most data ids on one node, %.02f%% over'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>max_count<span class="token punctuation">,</span> over<span class="token punctuation">)</span>
+min_count <span class="token operator">=</span> <span class="token builtin">min</span><span class="token punctuation">(</span>node_counts<span class="token punctuation">)</span>
+under <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>desired_count <span class="token operator">-</span> min_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Least data ids on one node, %.02f%% under'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>min_count<span class="token punctuation">,</span> under<span class="token punctuation">)</span>
+desired_count <span class="token operator">=</span> DATA_ID_COUNT <span class="token operator">/</span> ZONE_COUNT <span class="token operator">*</span> REPLICAS
+<span class="token keyword">print</span> <span class="token string">'%d: Desired data ids per zone'</span> <span class="token operator">%</span> desired_count
+max_count <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span>zone_counts<span class="token punctuation">)</span>
+over <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>max_count <span class="token operator">-</span> desired_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Most data ids in one zone, %.02f%% over'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>max_count<span class="token punctuation">,</span> over<span class="token punctuation">)</span>
+min_count <span class="token operator">=</span> <span class="token builtin">min</span><span class="token punctuation">(</span>zone_counts<span class="token punctuation">)</span>
+under <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>desired_count <span class="token operator">-</span> min_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Least data ids in one zone, %.02f%% under'</span> <span class="token operator">%</span>  <span class="token punctuation">(</span>min_count<span class="token punctuation">,</span> under<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>运行结果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">117186</span>: Desired data ids per <span class="token function">node</span>
+<span class="token number">118782</span>: Most data ids on one node, <span class="token number">1.36</span>% over
+<span class="token number">115632</span>: Least data ids on one node, <span class="token number">1.33</span>% under
+<span class="token number">1875000</span>: Desired data ids per zone
+<span class="token number">1878533</span>: Most data ids <span class="token keyword">in</span> one zone, <span class="token number">0.19</span>% over
+<span class="token number">1869070</span>: Least data ids <span class="token keyword">in</span> one zone, <span class="token number">0.32</span>% under<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到将分区打乱，并且引入区域概念影响了我们的分配，但结果仍然是足够好的。 这个测试在我的机器上运行了大约64秒。</p>
+<p>有一种更加常见的方式可以替换上面的代码。 这个方法根本不使用分区，而是将锚点分配给散列空间中的节点。 给定一个散列，只需要沿着锚环就能找到地一个节点，同样的可以继续找到其他节点。 为了达到和虚拟节点相同的效果，每个真实节点会被分配多个锚点。</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> bisect <span class="token keyword">import</span> bisect_left
+<span class="token keyword">from</span> hashlib <span class="token keyword">import</span> md5
+<span class="token keyword">from</span> struct <span class="token keyword">import</span> unpack_from
+
+REPLICAS <span class="token operator">=</span> <span class="token number">3</span>
+NODE_COUNT <span class="token operator">=</span> <span class="token number">256</span>
+ZONE_COUNT <span class="token operator">=</span> <span class="token number">16</span>
+DATA_ID_COUNT <span class="token operator">=</span> <span class="token number">10000000</span>
+VNODE_COUNT <span class="token operator">=</span> <span class="token number">100</span>
+
+node2zone <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token keyword">while</span> <span class="token builtin">len</span><span class="token punctuation">(</span>node2zone<span class="token punctuation">)</span> <span class="token operator">&lt;</span> NODE_COUNT<span class="token punctuation">:</span>
+    zone <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token keyword">while</span> zone <span class="token operator">&lt;</span> ZONE_COUNT <span class="token keyword">and</span> <span class="token builtin">len</span><span class="token punctuation">(</span>node2zone<span class="token punctuation">)</span> <span class="token operator">&lt;</span> NODE_COUNT<span class="token punctuation">:</span>
+        node2zone<span class="token punctuation">.</span>append<span class="token punctuation">(</span>zone<span class="token punctuation">)</span>
+        zone <span class="token operator">+=</span> <span class="token number">1</span>
+hash2index <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+index2node <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token keyword">for</span> node <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>NODE_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">for</span> vnode <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>VNODE_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        hsh <span class="token operator">=</span> unpack_from<span class="token punctuation">(</span><span class="token string">'>I'</span><span class="token punctuation">,</span> md5<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>node<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span>digest<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+        index <span class="token operator">=</span> bisect_left<span class="token punctuation">(</span>hash2index<span class="token punctuation">,</span> hsh<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> index <span class="token operator">></span> <span class="token builtin">len</span><span class="token punctuation">(</span>hash2index<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            index <span class="token operator">=</span> <span class="token number">0</span>
+        hash2index<span class="token punctuation">.</span>insert<span class="token punctuation">(</span>index<span class="token punctuation">,</span> hsh<span class="token punctuation">)</span>
+        index2node<span class="token punctuation">.</span>insert<span class="token punctuation">(</span>index<span class="token punctuation">,</span> node<span class="token punctuation">)</span>
+node_counts <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">*</span> NODE_COUNT
+zone_counts <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">*</span> ZONE_COUNT
+<span class="token keyword">for</span> data_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>DATA_ID_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    data_id <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span>
+    hsh <span class="token operator">=</span> unpack_from<span class="token punctuation">(</span><span class="token string">'>I'</span><span class="token punctuation">,</span> md5<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span>digest<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+    index <span class="token operator">=</span> bisect_left<span class="token punctuation">(</span>hash2index<span class="token punctuation">,</span> hsh<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> index <span class="token operator">>=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>hash2index<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        index <span class="token operator">=</span> <span class="token number">0</span>
+    node_ids <span class="token operator">=</span> <span class="token punctuation">[</span>index2node<span class="token punctuation">[</span>index<span class="token punctuation">]</span><span class="token punctuation">]</span>
+    zones <span class="token operator">=</span> <span class="token punctuation">[</span>node2zone<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+    node_counts<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+    zone_counts<span class="token punctuation">[</span>zones<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+    <span class="token keyword">for</span> replica <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> REPLICAS<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">while</span> index2node<span class="token punctuation">[</span>index<span class="token punctuation">]</span> <span class="token keyword">in</span> node_ids <span class="token keyword">and</span> node2zone<span class="token punctuation">[</span>index2node<span class="token punctuation">[</span>index<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token keyword">in</span> zones<span class="token punctuation">:</span>
+            index <span class="token operator">+=</span> <span class="token number">1</span>
+            <span class="token keyword">if</span> index <span class="token operator">>=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>hash2index<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                index <span class="token operator">=</span> <span class="token number">0</span>
+        node_ids<span class="token punctuation">.</span>append<span class="token punctuation">(</span>index2node<span class="token punctuation">[</span>index<span class="token punctuation">]</span><span class="token punctuation">)</span>
+        zones<span class="token punctuation">.</span>append<span class="token punctuation">(</span>node2zone<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+        node_counts<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+        zone_counts<span class="token punctuation">[</span>zones<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+desired_count <span class="token operator">=</span> DATA_ID_COUNT <span class="token operator">/</span> NODE_COUNT <span class="token operator">*</span> REPLICAS
+<span class="token keyword">print</span> <span class="token string">'%d: Desired data ids per node'</span> <span class="token operator">%</span> desired_count
+max_count <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span>node_counts<span class="token punctuation">)</span>
+over <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>max_count <span class="token operator">-</span> desired_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Most data ids on one node, %.02f%% over'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>max_count<span class="token punctuation">,</span> over<span class="token punctuation">)</span>
+min_count <span class="token operator">=</span> <span class="token builtin">min</span><span class="token punctuation">(</span>node_counts<span class="token punctuation">)</span>
+under <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>desired_count <span class="token operator">-</span> min_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Least data ids on one node, %.02f%% under'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>min_count<span class="token punctuation">,</span> under<span class="token punctuation">)</span>
+desired_count <span class="token operator">=</span> DATA_ID_COUNT <span class="token operator">/</span> ZONE_COUNT <span class="token operator">*</span> REPLICAS
+<span class="token keyword">print</span> <span class="token string">'%d: Desired data ids per zone'</span> <span class="token operator">%</span> desired_count
+max_count <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span>zone_counts<span class="token punctuation">)</span>
+over <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>max_count <span class="token operator">-</span> desired_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Most data ids in one zone, %.02f%% over'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>max_count<span class="token punctuation">,</span> over<span class="token punctuation">)</span>
+min_count <span class="token operator">=</span> <span class="token builtin">min</span><span class="token punctuation">(</span>zone_counts<span class="token punctuation">)</span>
+under <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>desired_count <span class="token operator">-</span> min_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+<span class="token keyword">print</span> <span class="token string">'%d: Least data ids in one zone, %.02f%% under'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>min_count<span class="token punctuation">,</span> under<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>结果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">117186</span>: Desired data ids per <span class="token function">node</span>
+<span class="token number">351282</span>: Most data ids on one node, <span class="token number">199.76</span>% over
+<span class="token number">15965</span>: Least data ids on one node, <span class="token number">86.38</span>% under
+<span class="token number">1875000</span>: Desired data ids per zone
+<span class="token number">2248496</span>: Most data ids <span class="token keyword">in</span> one zone, <span class="token number">19.92</span>% over
+<span class="token number">1378013</span>: Least data ids <span class="token keyword">in</span> one zone, <span class="token number">26.51</span>% under<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>运行这个测试需要花上15分钟的时间！然后看起来这个方法对于控制数据分布效果不是很好，所以需要添加更多的虚拟节点，当然这样也会需要消耗更多的内存，而且查找时也会消耗更多时间。对于根据id查找节点这一最常用的操作，还是有改进空间的（例如，将每个虚拟节点的故障转移节点预先分配好），但是从第一部分开始我们都没有做相关的优化，所以暂时还是先保持原样。<br>在下一节中，我们会将这些封装一下，变成一个Python模块。</p>
+<h2 id="Part-5"><a href="#Part-5" class="headerlink" title="Part 5"></a>Part 5</h2><p>在第四部分中，我们实现了一个支持复制和区域概念的环，或者说，至少部分实现了。在最后一部分中，我们会将这些封装成一个Pyhton的模块，然后，再加上最后的一个功能。<br>首先，我们将创建哈希环的操作和测试哈希环的操作分开：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> array <span class="token keyword">import</span> array
+<span class="token keyword">from</span> hashlib <span class="token keyword">import</span> md5
+<span class="token keyword">from</span> random <span class="token keyword">import</span> shuffle
+<span class="token keyword">from</span> struct <span class="token keyword">import</span> unpack_from
+<span class="token keyword">from</span> time <span class="token keyword">import</span> time
+
+<span class="token keyword">class</span> <span class="token class-name">Ring</span><span class="token punctuation">(</span><span class="token builtin">object</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> nodes<span class="token punctuation">,</span> part2node<span class="token punctuation">,</span> replicas<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>nodes <span class="token operator">=</span> nodes
+        self<span class="token punctuation">.</span>part2node <span class="token operator">=</span> part2node
+        self<span class="token punctuation">.</span>replicas <span class="token operator">=</span> replicas
+        partition_power <span class="token operator">=</span> <span class="token number">1</span>
+        <span class="token keyword">while</span> <span class="token number">2</span> <span class="token operator">**</span> partition_power <span class="token operator">&lt;</span> <span class="token builtin">len</span><span class="token punctuation">(</span>part2node<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            partition_power <span class="token operator">+=</span> <span class="token number">1</span>
+        <span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>part2node<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">2</span> <span class="token operator">**</span> partition_power<span class="token punctuation">:</span>
+            <span class="token keyword">raise</span> Exception<span class="token punctuation">(</span><span class="token string">"part2node's length is not an "</span>
+                            <span class="token string">"exact power of 2"</span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>partition_shift <span class="token operator">=</span> <span class="token number">32</span> <span class="token operator">-</span> partition_power
+
+    <span class="token keyword">def</span> <span class="token function">get_nodes</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> data_id<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        data_id <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span>
+        part <span class="token operator">=</span> unpack_from<span class="token punctuation">(</span><span class="token string">'>I'</span><span class="token punctuation">,</span>
+           md5<span class="token punctuation">(</span>data_id<span class="token punctuation">)</span><span class="token punctuation">.</span>digest<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">>></span> self<span class="token punctuation">.</span>partition_shift
+        node_ids <span class="token operator">=</span> <span class="token punctuation">[</span>self<span class="token punctuation">.</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span><span class="token punctuation">]</span>
+        zones <span class="token operator">=</span> <span class="token punctuation">[</span>self<span class="token punctuation">.</span>nodes<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+        <span class="token keyword">for</span> replica <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> self<span class="token punctuation">.</span>replicas<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token keyword">while</span> self<span class="token punctuation">.</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span> <span class="token keyword">in</span> node_ids <span class="token keyword">and</span> \
+                   self<span class="token punctuation">.</span>nodes<span class="token punctuation">[</span>self<span class="token punctuation">.</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token keyword">in</span> zones<span class="token punctuation">:</span>
+                part <span class="token operator">+=</span> <span class="token number">1</span>
+                <span class="token keyword">if</span> part <span class="token operator">>=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>part2node<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                    part <span class="token operator">=</span> <span class="token number">0</span>
+            node_ids<span class="token punctuation">.</span>append<span class="token punctuation">(</span>self<span class="token punctuation">.</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span><span class="token punctuation">)</span>
+            zones<span class="token punctuation">.</span>append<span class="token punctuation">(</span>self<span class="token punctuation">.</span>nodes<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token punctuation">[</span>self<span class="token punctuation">.</span>nodes<span class="token punctuation">[</span>n<span class="token punctuation">]</span> <span class="token keyword">for</span> n <span class="token keyword">in</span> node_ids<span class="token punctuation">]</span>
+
+<span class="token keyword">def</span> <span class="token function">build_ring</span><span class="token punctuation">(</span>nodes<span class="token punctuation">,</span> partition_power<span class="token punctuation">,</span> replicas<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    begin <span class="token operator">=</span> time<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    part2node <span class="token operator">=</span> array<span class="token punctuation">(</span><span class="token string">'H'</span><span class="token punctuation">)</span>
+    <span class="token keyword">for</span> part <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span><span class="token number">2</span> <span class="token operator">**</span> partition_power<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        part2node<span class="token punctuation">.</span>append<span class="token punctuation">(</span>part <span class="token operator">%</span> <span class="token builtin">len</span><span class="token punctuation">(</span>nodes<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    shuffle<span class="token punctuation">(</span>part2node<span class="token punctuation">)</span>
+    ring <span class="token operator">=</span> Ring<span class="token punctuation">(</span>nodes<span class="token punctuation">,</span> part2node<span class="token punctuation">,</span> replicas<span class="token punctuation">)</span>
+    <span class="token keyword">print</span> <span class="token string">'%.02fs to build ring'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> begin<span class="token punctuation">)</span>
+    <span class="token keyword">return</span> ring
+
+<span class="token keyword">def</span> <span class="token function">test_ring</span><span class="token punctuation">(</span>ring<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    begin <span class="token operator">=</span> time<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    DATA_ID_COUNT <span class="token operator">=</span> <span class="token number">10000000</span>
+    node_counts <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+    zone_counts <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+    <span class="token keyword">for</span> data_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>DATA_ID_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">for</span> node <span class="token keyword">in</span> ring<span class="token punctuation">.</span>get_nodes<span class="token punctuation">(</span>data_id<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            node_counts<span class="token punctuation">[</span>node<span class="token punctuation">[</span><span class="token string">'id'</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> node_counts<span class="token punctuation">.</span>get<span class="token punctuation">(</span>node<span class="token punctuation">[</span><span class="token string">'id'</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span>
+            zone_counts<span class="token punctuation">[</span>node<span class="token punctuation">[</span><span class="token string">'zone'</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> zone_counts<span class="token punctuation">.</span>get<span class="token punctuation">(</span>node<span class="token punctuation">[</span><span class="token string">'zone'</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span>
+    <span class="token keyword">print</span> <span class="token string">'%ds to test ring'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> begin<span class="token punctuation">)</span>
+    desired_count <span class="token operator">=</span> DATA_ID_COUNT <span class="token operator">/</span> <span class="token builtin">len</span><span class="token punctuation">(</span>ring<span class="token punctuation">.</span>nodes<span class="token punctuation">)</span> <span class="token operator">*</span> REPLICAS
+    <span class="token keyword">print</span> <span class="token string">'%d: Desired data ids per node'</span> <span class="token operator">%</span> desired_count
+    max_count <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span>node_counts<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    over <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>max_count <span class="token operator">-</span> desired_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+    <span class="token keyword">print</span> <span class="token string">'%d: Most data ids on one node, %.02f%% over'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>max_count<span class="token punctuation">,</span> over<span class="token punctuation">)</span>
+    min_count <span class="token operator">=</span> <span class="token builtin">min</span><span class="token punctuation">(</span>node_counts<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    under <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>desired_count <span class="token operator">-</span> min_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+    <span class="token keyword">print</span> <span class="token string">'%d: Least data ids on one node, %.02f%% under'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>min_count<span class="token punctuation">,</span> under<span class="token punctuation">)</span>
+    zone_count <span class="token operator">=</span> <span class="token builtin">len</span><span class="token punctuation">(</span><span class="token builtin">set</span><span class="token punctuation">(</span>n<span class="token punctuation">[</span><span class="token string">'zone'</span><span class="token punctuation">]</span> <span class="token keyword">for</span> n <span class="token keyword">in</span> ring<span class="token punctuation">.</span>nodes<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    desired_count <span class="token operator">=</span> DATA_ID_COUNT <span class="token operator">/</span> zone_count <span class="token operator">*</span> ring<span class="token punctuation">.</span>replicas
+    <span class="token keyword">print</span> <span class="token string">'%d: Desired data ids per zone'</span> <span class="token operator">%</span> desired_count
+    max_count <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span>zone_counts<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    over <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>max_count <span class="token operator">-</span> desired_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+    <span class="token keyword">print</span> <span class="token string">'%d: Most data ids in one zone, %.02f%% over'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>max_count<span class="token punctuation">,</span> over<span class="token punctuation">)</span>
+    min_count <span class="token operator">=</span> <span class="token builtin">min</span><span class="token punctuation">(</span>zone_counts<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    under <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span>desired_count <span class="token operator">-</span> min_count<span class="token punctuation">)</span> <span class="token operator">/</span> desired_count
+    <span class="token keyword">print</span> <span class="token string">'%d: Least data ids in one zone, %.02f%% under'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>min_count<span class="token punctuation">,</span> under<span class="token punctuation">)</span>
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">'__main__'</span><span class="token punctuation">:</span>
+    PARTITION_POWER <span class="token operator">=</span> <span class="token number">16</span>
+    REPLICAS <span class="token operator">=</span> <span class="token number">3</span>
+    NODE_COUNT <span class="token operator">=</span> <span class="token number">256</span>
+    ZONE_COUNT <span class="token operator">=</span> <span class="token number">16</span>
+    nodes <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+    <span class="token keyword">while</span> <span class="token builtin">len</span><span class="token punctuation">(</span>nodes<span class="token punctuation">)</span> <span class="token operator">&lt;</span> NODE_COUNT<span class="token punctuation">:</span>
+        zone <span class="token operator">=</span> <span class="token number">0</span>
+        <span class="token keyword">while</span> zone <span class="token operator">&lt;</span> ZONE_COUNT <span class="token keyword">and</span> <span class="token builtin">len</span><span class="token punctuation">(</span>nodes<span class="token punctuation">)</span> <span class="token operator">&lt;</span> NODE_COUNT<span class="token punctuation">:</span>
+            node_id <span class="token operator">=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>nodes<span class="token punctuation">)</span>
+            nodes<span class="token punctuation">[</span>node_id<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token string">'id'</span><span class="token punctuation">:</span> node_id<span class="token punctuation">,</span> <span class="token string">'zone'</span><span class="token punctuation">:</span> zone<span class="token punctuation">&#125;</span>
+            zone <span class="token operator">+=</span> <span class="token number">1</span>
+    ring <span class="token operator">=</span> build_ring<span class="token punctuation">(</span>nodes<span class="token punctuation">,</span> PARTITION_POWER<span class="token punctuation">,</span> REPLICAS<span class="token punctuation">)</span>
+    test_ring<span class="token punctuation">(</span>ring<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>结果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">0</span>.06s to build ring
+82s to <span class="token builtin class-name">test</span> ring
+<span class="token number">117186</span>: Desired data ids per <span class="token function">node</span>
+<span class="token number">118773</span>: Most data ids on one node, <span class="token number">1.35</span>% over
+<span class="token number">115801</span>: Least data ids on one node, <span class="token number">1.18</span>% under
+<span class="token number">1875000</span>: Desired data ids per zone
+<span class="token number">1878339</span>: Most data ids <span class="token keyword">in</span> one zone, <span class="token number">0.18</span>% over
+<span class="token number">1869914</span>: Least data ids <span class="token keyword">in</span> one zone, <span class="token number">0.27</span>% under<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>测试我们的哈系环需要比较长的时间，但这主要是因为我们将很多的变量从数组换成了字典。 用字典存储节点好处是，可以直接附加想要的任何节点信息（IP地址，TCP端口，驱动器路径等）。 我们还会进一步测试中，目前的数据分布情况还是不错的。<br>最后，我们将最后一个特性添加到哈希环中，也就是权重。权重的用处在于，在一个哈希环的整个生命周期中，后期添加的节点，很可能比前期添加的节点拥有更多的容量，对于这次的测试，我们将模拟所有节点中有一半的节点拥有两倍的权重。所以，我们需要修改<code>build_ring</code>函数，将节点的权重考虑进去，分配给权重高的节点更多的分区。由于修改比较大，所以直接贴出代码:</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> array <span class="token keyword">import</span> array
+<span class="token keyword">from</span> hashlib <span class="token keyword">import</span> md5
+<span class="token keyword">from</span> random <span class="token keyword">import</span> shuffle
+<span class="token keyword">from</span> struct <span class="token keyword">import</span> unpack_from
+<span class="token keyword">from</span> time <span class="token keyword">import</span> time
+
+<span class="token keyword">class</span> <span class="token class-name">Ring</span><span class="token punctuation">(</span><span class="token builtin">object</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> nodes<span class="token punctuation">,</span> part2node<span class="token punctuation">,</span> replicas<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>nodes <span class="token operator">=</span> nodes
+        self<span class="token punctuation">.</span>part2node <span class="token operator">=</span> part2node
+        self<span class="token punctuation">.</span>replicas <span class="token operator">=</span> replicas
+        partition_power <span class="token operator">=</span> <span class="token number">1</span>
+        <span class="token keyword">while</span> <span class="token number">2</span> <span class="token operator">**</span> partition_power <span class="token operator">&lt;</span> <span class="token builtin">len</span><span class="token punctuation">(</span>part2node<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            partition_power <span class="token operator">+=</span> <span class="token number">1</span>
+        <span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>part2node<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">2</span> <span class="token operator">**</span> partition_power<span class="token punctuation">:</span>
+            <span class="token keyword">raise</span> Exception<span class="token punctuation">(</span><span class="token string">"part2node's length is not an "</span>
+                            <span class="token string">"exact power of 2"</span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>partition_shift <span class="token operator">=</span> <span class="token number">32</span> <span class="token operator">-</span> partition_power
+
+    <span class="token keyword">def</span> <span class="token function">get_nodes</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> data_id<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        data_id <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>data_id<span class="token punctuation">)</span>
+        part <span class="token operator">=</span> unpack_from<span class="token punctuation">(</span><span class="token string">'>I'</span><span class="token punctuation">,</span>
+           md5<span class="token punctuation">(</span>data_id<span class="token punctuation">)</span><span class="token punctuation">.</span>digest<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">>></span> self<span class="token punctuation">.</span>partition_shift
+        node_ids <span class="token operator">=</span> <span class="token punctuation">[</span>self<span class="token punctuation">.</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span><span class="token punctuation">]</span>
+        zones <span class="token operator">=</span> <span class="token punctuation">[</span>self<span class="token punctuation">.</span>nodes<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+        <span class="token keyword">for</span> replica <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> self<span class="token punctuation">.</span>replicas<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token keyword">while</span> self<span class="token punctuation">.</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span> <span class="token keyword">in</span> node_ids <span class="token keyword">and</span> \
+                   self<span class="token punctuation">.</span>nodes<span class="token punctuation">[</span>self<span class="token punctuation">.</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token keyword">in</span> zones<span class="token punctuation">:</span>
+                part <span class="token operator">+=</span> <span class="token number">1</span>
+                <span class="token keyword">if</span> part <span class="token operator">>=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>part2node<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                    part <span class="token operator">=</span> <span class="token number">0</span>
+            node_ids<span class="token punctuation">.</span>append<span class="token punctuation">(</span>self<span class="token punctuation">.</span>part2node<span class="token punctuation">[</span>part<span class="token punctuation">]</span><span class="token punctuation">)</span>
+            zones<span class="token punctuation">.</span>append<span class="token punctuation">(</span>self<span class="token punctuation">.</span>nodes<span class="token punctuation">[</span>node_ids<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token punctuation">[</span>self<span class="token punctuation">.</span>nodes<span class="token punctuation">[</span>n<span class="token punctuation">]</span> <span class="token keyword">for</span> n <span class="token keyword">in</span> node_ids<span class="token punctuation">]</span>
+
+<span class="token keyword">def</span> <span class="token function">build_ring</span><span class="token punctuation">(</span>nodes<span class="token punctuation">,</span> partition_power<span class="token punctuation">,</span> replicas<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    begin <span class="token operator">=</span> time<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    parts <span class="token operator">=</span> <span class="token number">2</span> <span class="token operator">**</span> partition_power
+    <span class="token comment"># 计算总权重</span>
+    total_weight <span class="token operator">=</span> <span class="token builtin">float</span><span class="token punctuation">(</span><span class="token builtin">sum</span><span class="token punctuation">(</span>n<span class="token punctuation">[</span><span class="token string">'weight'</span><span class="token punctuation">]</span> <span class="token keyword">for</span> n <span class="token keyword">in</span> nodes<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">for</span> node <span class="token keyword">in</span> nodes<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token comment"># 每个节点应该分配的分区数量</span>
+        node<span class="token punctuation">[</span><span class="token string">'desired_parts'</span><span class="token punctuation">]</span> <span class="token operator">=</span> parts <span class="token operator">/</span> total_weight <span class="token operator">*</span> node<span class="token punctuation">[</span><span class="token string">'weight'</span><span class="token punctuation">]</span>
+    part2node <span class="token operator">=</span> array<span class="token punctuation">(</span><span class="token string">'H'</span><span class="token punctuation">)</span>
+    <span class="token keyword">for</span> part <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span><span class="token number">2</span> <span class="token operator">**</span> partition_power<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">for</span> node <span class="token keyword">in</span> nodes<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token comment"># 如果节点还有配额，就直接分配了</span>
+            <span class="token keyword">if</span> node<span class="token punctuation">[</span><span class="token string">'desired_parts'</span><span class="token punctuation">]</span> <span class="token operator">>=</span> <span class="token number">1</span><span class="token punctuation">:</span>
+                node<span class="token punctuation">[</span><span class="token string">'desired_parts'</span><span class="token punctuation">]</span> <span class="token operator">-=</span> <span class="token number">1</span>
+                part2node<span class="token punctuation">.</span>append<span class="token punctuation">(</span>node<span class="token punctuation">[</span><span class="token string">'id'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+                <span class="token keyword">break</span>
+        <span class="token comment"># 处理不能整除的情况</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            <span class="token keyword">for</span> node <span class="token keyword">in</span> nodes<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+                <span class="token keyword">if</span> node<span class="token punctuation">[</span><span class="token string">'desired_parts'</span><span class="token punctuation">]</span> <span class="token operator">>=</span> <span class="token number">0</span><span class="token punctuation">:</span>
+                    node<span class="token punctuation">[</span><span class="token string">'desired_parts'</span><span class="token punctuation">]</span> <span class="token operator">-=</span> <span class="token number">1</span>
+                    part2node<span class="token punctuation">.</span>append<span class="token punctuation">(</span>node<span class="token punctuation">[</span><span class="token string">'id'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+                    <span class="token keyword">break</span>
+    shuffle<span class="token punctuation">(</span>part2node<span class="token punctuation">)</span>
+    ring <span class="token operator">=</span> Ring<span class="token punctuation">(</span>nodes<span class="token punctuation">,</span> part2node<span class="token punctuation">,</span> replicas<span class="token punctuation">)</span>
+    <span class="token keyword">print</span> <span class="token string">'%.02fs to build ring'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> begin<span class="token punctuation">)</span>
+    <span class="token keyword">return</span> ring
+
+<span class="token keyword">def</span> <span class="token function">test_ring</span><span class="token punctuation">(</span>ring<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    begin <span class="token operator">=</span> time<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    DATA_ID_COUNT <span class="token operator">=</span> <span class="token number">10000000</span>
+    node_counts <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+    zone_counts <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+    <span class="token keyword">for</span> data_id <span class="token keyword">in</span> <span class="token builtin">xrange</span><span class="token punctuation">(</span>DATA_ID_COUNT<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">for</span> node <span class="token keyword">in</span> ring<span class="token punctuation">.</span>get_nodes<span class="token punctuation">(</span>data_id<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            node_counts<span class="token punctuation">[</span>node<span class="token punctuation">[</span><span class="token string">'id'</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> \
+                node_counts<span class="token punctuation">.</span>get<span class="token punctuation">(</span>node<span class="token punctuation">[</span><span class="token string">'id'</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span>
+            zone_counts<span class="token punctuation">[</span>node<span class="token punctuation">[</span><span class="token string">'zone'</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> \
+                zone_counts<span class="token punctuation">.</span>get<span class="token punctuation">(</span>node<span class="token punctuation">[</span><span class="token string">'zone'</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span>
+    <span class="token keyword">print</span> <span class="token string">'%ds to test ring'</span> <span class="token operator">%</span> <span class="token punctuation">(</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> begin<span class="token punctuation">)</span>
+    total_weight <span class="token operator">=</span> <span class="token builtin">float</span><span class="token punctuation">(</span><span class="token builtin">sum</span><span class="token punctuation">(</span>n<span class="token punctuation">[</span><span class="token string">'weight'</span><span class="token punctuation">]</span> <span class="token keyword">for</span> n <span class="token keyword">in</span>
+                             ring<span class="token punctuation">.</span>nodes<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    max_over <span class="token operator">=</span> <span class="token number">0</span>
+    max_under <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token keyword">for</span> node <span class="token keyword">in</span> ring<span class="token punctuation">.</span>nodes<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        desired <span class="token operator">=</span> DATA_ID_COUNT <span class="token operator">*</span> REPLICAS <span class="token operator">*</span> \
+            node<span class="token punctuation">[</span><span class="token string">'weight'</span><span class="token punctuation">]</span> <span class="token operator">/</span> total_weight
+        diff <span class="token operator">=</span> node_counts<span class="token punctuation">[</span>node<span class="token punctuation">[</span><span class="token string">'id'</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">-</span> desired
+        <span class="token keyword">if</span> diff <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">:</span>
+            over <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> diff <span class="token operator">/</span> desired
+            <span class="token keyword">if</span> over <span class="token operator">></span> max_over<span class="token punctuation">:</span>
+                max_over <span class="token operator">=</span> over
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            under <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span><span class="token operator">-</span>diff<span class="token punctuation">)</span> <span class="token operator">/</span> desired
+            <span class="token keyword">if</span> under <span class="token operator">></span> max_under<span class="token punctuation">:</span>
+                max_under <span class="token operator">=</span> under
+    <span class="token keyword">print</span> <span class="token string">'%.02f%% max node over'</span> <span class="token operator">%</span> max_over
+    <span class="token keyword">print</span> <span class="token string">'%.02f%% max node under'</span> <span class="token operator">%</span> max_under
+    max_over <span class="token operator">=</span> <span class="token number">0</span>
+    max_under <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token keyword">for</span> zone <span class="token keyword">in</span> <span class="token builtin">set</span><span class="token punctuation">(</span>n<span class="token punctuation">[</span><span class="token string">'zone'</span><span class="token punctuation">]</span> <span class="token keyword">for</span> n <span class="token keyword">in</span>
+                    ring<span class="token punctuation">.</span>nodes<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        zone_weight <span class="token operator">=</span> <span class="token builtin">sum</span><span class="token punctuation">(</span>n<span class="token punctuation">[</span><span class="token string">'weight'</span><span class="token punctuation">]</span> <span class="token keyword">for</span> n <span class="token keyword">in</span>
+            ring<span class="token punctuation">.</span>nodes<span class="token punctuation">.</span>itervalues<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">if</span> n<span class="token punctuation">[</span><span class="token string">'zone'</span><span class="token punctuation">]</span> <span class="token operator">==</span> zone<span class="token punctuation">)</span>
+        desired <span class="token operator">=</span> DATA_ID_COUNT <span class="token operator">*</span> REPLICAS <span class="token operator">*</span> zone_weight <span class="token operator">/</span> total_weight
+        diff <span class="token operator">=</span> zone_counts<span class="token punctuation">[</span>zone<span class="token punctuation">]</span> <span class="token operator">-</span> desired
+        <span class="token keyword">if</span> diff <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">:</span>
+            over <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> diff <span class="token operator">/</span> desired
+            <span class="token keyword">if</span> over <span class="token operator">></span> max_over<span class="token punctuation">:</span>
+                max_over <span class="token operator">=</span> over
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            under <span class="token operator">=</span> <span class="token number">100.0</span> <span class="token operator">*</span> <span class="token punctuation">(</span><span class="token operator">-</span>diff<span class="token punctuation">)</span> <span class="token operator">/</span> desired
+            <span class="token keyword">if</span> under <span class="token operator">></span> max_under<span class="token punctuation">:</span>
+                max_under <span class="token operator">=</span> under
+    <span class="token keyword">print</span> <span class="token string">'%.02f%% max zone over'</span> <span class="token operator">%</span> max_over
+    <span class="token keyword">print</span> <span class="token string">'%.02f%% max zone under'</span> <span class="token operator">%</span> max_under
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">'__main__'</span><span class="token punctuation">:</span>
+    PARTITION_POWER <span class="token operator">=</span> <span class="token number">16</span>
+    REPLICAS <span class="token operator">=</span> <span class="token number">3</span>
+    NODE_COUNT <span class="token operator">=</span> <span class="token number">256</span>
+    ZONE_COUNT <span class="token operator">=</span> <span class="token number">16</span>
+    nodes <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+    <span class="token keyword">while</span> <span class="token builtin">len</span><span class="token punctuation">(</span>nodes<span class="token punctuation">)</span> <span class="token operator">&lt;</span> NODE_COUNT<span class="token punctuation">:</span>
+        zone <span class="token operator">=</span> <span class="token number">0</span>
+        <span class="token keyword">while</span> zone <span class="token operator">&lt;</span> ZONE_COUNT <span class="token keyword">and</span> <span class="token builtin">len</span><span class="token punctuation">(</span>nodes<span class="token punctuation">)</span> <span class="token operator">&lt;</span> NODE_COUNT<span class="token punctuation">:</span>
+            node_id <span class="token operator">=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>nodes<span class="token punctuation">)</span>
+            nodes<span class="token punctuation">[</span>node_id<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token string">'id'</span><span class="token punctuation">:</span> node_id<span class="token punctuation">,</span> <span class="token string">'zone'</span><span class="token punctuation">:</span> zone<span class="token punctuation">,</span>
+                              <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">1.0</span> <span class="token operator">+</span> <span class="token punctuation">(</span>node_id <span class="token operator">%</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span>
+            zone <span class="token operator">+=</span> <span class="token number">1</span>
+    ring <span class="token operator">=</span> build_ring<span class="token punctuation">(</span>nodes<span class="token punctuation">,</span> PARTITION_POWER<span class="token punctuation">,</span> REPLICAS<span class="token punctuation">)</span>
+    test_ring<span class="token punctuation">(</span>ring<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>结果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">0</span>.88s to build ring
+86s to <span class="token builtin class-name">test</span> ring
+<span class="token number">1.66</span>% max over
+<span class="token number">1.46</span>% max under
+<span class="token number">0.28</span>% max zone over
+<span class="token number">0.23</span>% max zone under<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>所以在引入了不同权重的节点后，结果还是不错的。我用随机的1到100的权重重新运行了一下代码，得到7.35%低于&#x2F;18.12%高于预期的不均衡度，对于不同区域为0.24%&#x2F;0.22%，考虑到这样夸张的权重情况下，结果还是非常好的。</p>
+<h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><p>希望这个系列能比较好的介绍清楚如何创建一个哈希环。 此代码也基本上就是OpenStack Swift环的工作原理了，对于Swift来说，它的环还有许多额外的优化，例如把每个副本存储分开，以及许多用于构建，验证和以其他方式处理环的额外功能。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Consistent-Hashing/" rel="tag"># Consistent Hashing</a>
+              <a href="/tags/Swift-Ring/" rel="tag"># Swift Ring</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/04/17/building-a-consistent-hashing-ring-1-2/" rel="prev" title="Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2)">
+                  <i class="fa fa-chevron-left"></i> Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2)
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/04/25/cgroups-pids-controller/" rel="next" title="利用Cgroups的pids子系统限制进程(线程)数量">
+                  利用Cgroups的pids子系统限制进程(线程)数量 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"e133e4f2c3ec70835810b8a76186b062"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

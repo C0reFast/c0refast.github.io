@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="最近需要修改一下Apache的BasicAuth模块，顺便简单分析一下。 首先是 mod_authn_file, 这个模块从文件中读取用户名和密码组合，并逐一check看用户名和密码是否符合。代码在 modules&#x2F;aaa&#x2F;mod_authn_file.c。 static const authn_provider authn_file_provider &#x3D; &amp;#123;     &amp;chec">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Apache 2.2 Basic Auth">
+<meta property="og:url" content="https://www.ichenfu.com/2017/01/08/apache-basic-auth/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="最近需要修改一下Apache的BasicAuth模块，顺便简单分析一下。 首先是 mod_authn_file, 这个模块从文件中读取用户名和密码组合，并逐一check看用户名和密码是否符合。代码在 modules&#x2F;aaa&#x2F;mod_authn_file.c。 static const authn_provider authn_file_provider &#x3D; &amp;#123;     &amp;chec">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-01-08T11:42:19.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.280Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="Apache">
+<meta property="article:tag" content="BasicAuth">
+<meta property="article:tag" content="htpasswd">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2017/01/08/apache-basic-auth/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2017/01/08/apache-basic-auth/","path":"2017/01/08/apache-basic-auth/","title":"Apache 2.2 Basic Auth"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Apache 2.2 Basic Auth | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/01/08/apache-basic-auth/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Apache 2.2 Basic Auth | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Apache 2.2 Basic Auth
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017年1月8日 19:42 19:42:19" itemprop="dateCreated datePublished" datetime="2017-01-08T19:42:19+08:00">2017年1月8日 19:42</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">源码分析</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>最近需要修改一下Apache的BasicAuth模块，顺便简单分析一下。</p>
+<p>首先是 <code>mod_authn_file</code>, 这个模块从文件中读取用户名和密码组合，并逐一check看用户名和密码是否符合。代码在 <code>modules/aaa/mod_authn_file.c</code>。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">static</span> <span class="token keyword">const</span> authn_provider authn_file_provider <span class="token operator">=</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token operator">&amp;</span>check_password<span class="token punctuation">,</span>
+    <span class="token operator">&amp;</span>get_realm_hash<span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token comment">//注册一个叫file的AuthProvider，主要是两个函数check_password和get_realm_hash</span>
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">register_hooks</span><span class="token punctuation">(</span>apr_pool_t <span class="token operator">*</span>p<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">ap_register_provider</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> AUTHN_PROVIDER_GROUP<span class="token punctuation">,</span> <span class="token string">"file"</span><span class="token punctuation">,</span> <span class="token string">"0"</span><span class="token punctuation">,</span>
+                         <span class="token operator">&amp;</span>authn_file_provider<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span id="more"></span>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">    <span class="token keyword">static</span> authn_status <span class="token function">check_password</span><span class="token punctuation">(</span>request_rec <span class="token operator">*</span>r<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>user<span class="token punctuation">,</span>
+                                       <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>password<span class="token punctuation">)</span>
+    <span class="token punctuation">&#123;</span>
+        authn_file_config_rec <span class="token operator">*</span>conf <span class="token operator">=</span> <span class="token function">ap_get_module_config</span><span class="token punctuation">(</span>r<span class="token operator">-></span>per_dir_config<span class="token punctuation">,</span>
+                                                           <span class="token operator">&amp;</span>authn_file_module<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ap_configfile_t <span class="token operator">*</span>f<span class="token punctuation">;</span>
+        <span class="token keyword">char</span> l<span class="token punctuation">[</span>MAX_STRING_LEN<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        apr_status_t status<span class="token punctuation">;</span>
+        <span class="token keyword">char</span> <span class="token operator">*</span>file_password <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>conf<span class="token operator">-></span>pwfile<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">ap_log_rerror</span><span class="token punctuation">(</span>APLOG_MARK<span class="token punctuation">,</span> APLOG_ERR<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> r<span class="token punctuation">,</span>
+                          <span class="token string">"AuthUserFile not specified in the configuration"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> AUTH_GENERAL_ERROR<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token comment">//打开配置的AuthUserFile文件   </span>
+        status <span class="token operator">=</span> <span class="token function">ap_pcfg_openfile</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>f<span class="token punctuation">,</span> r<span class="token operator">-></span>pool<span class="token punctuation">,</span> conf<span class="token operator">-></span>pwfile<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>status <span class="token operator">!=</span> APR_SUCCESS<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">ap_log_rerror</span><span class="token punctuation">(</span>APLOG_MARK<span class="token punctuation">,</span> APLOG_ERR<span class="token punctuation">,</span> status<span class="token punctuation">,</span> r<span class="token punctuation">,</span>
+                          <span class="token string">"Could not open password file: %s"</span><span class="token punctuation">,</span> conf<span class="token operator">-></span>pwfile<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> AUTH_GENERAL_ERROR<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token comment">//一行一行读取</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span><span class="token function">ap_cfg_getline</span><span class="token punctuation">(</span>l<span class="token punctuation">,</span> MAX_STRING_LEN<span class="token punctuation">,</span> f<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>rpw<span class="token punctuation">,</span> <span class="token operator">*</span>w<span class="token punctuation">;</span>
+    
+            <span class="token comment">/* Skip # or blank lines. */</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>l<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token char">'#'</span><span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token punctuation">(</span><span class="token operator">!</span>l<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">continue</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+    
+            rpw <span class="token operator">=</span> l<span class="token punctuation">;</span>
+            w <span class="token operator">=</span> <span class="token function">ap_getword</span><span class="token punctuation">(</span>r<span class="token operator">-></span>pool<span class="token punctuation">,</span> <span class="token operator">&amp;</span>rpw<span class="token punctuation">,</span> <span class="token char">':'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">//UserName相同，把密码记上</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">strcmp</span><span class="token punctuation">(</span>user<span class="token punctuation">,</span> w<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                file_password <span class="token operator">=</span> <span class="token function">ap_getword</span><span class="token punctuation">(</span>r<span class="token operator">-></span>pool<span class="token punctuation">,</span> <span class="token operator">&amp;</span>rpw<span class="token punctuation">,</span> <span class="token char">':'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token function">ap_cfg_closefile</span><span class="token punctuation">(</span>f<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">//没有找到密码，说明用户名不存在</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>file_password<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">return</span> AUTH_USER_NOT_FOUND<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token comment">//调用apr_password_validate，验证密码正确性。</span>
+        status <span class="token operator">=</span> <span class="token function">apr_password_validate</span><span class="token punctuation">(</span>password<span class="token punctuation">,</span> file_password<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>status <span class="token operator">!=</span> APR_SUCCESS<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">return</span> AUTH_DENIED<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    
+        <span class="token keyword">return</span> AUTH_GRANTED<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>其中apr_password_validate的实现在 <code>srclib/apr-util/crypto/apr_passwd.c</code></p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">    <span class="token function">APU_DECLARE</span><span class="token punctuation">(</span>apr_status_t<span class="token punctuation">)</span> <span class="token function">apr_password_validate</span><span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>passwd<span class="token punctuation">,</span> 
+                                                    <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>hash<span class="token punctuation">)</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token keyword">char</span> sample<span class="token punctuation">[</span><span class="token number">200</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression"><span class="token operator">!</span><span class="token function">defined</span><span class="token punctuation">(</span>WIN32<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span><span class="token function">defined</span><span class="token punctuation">(</span>BEOS<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span><span class="token function">defined</span><span class="token punctuation">(</span>NETWARE<span class="token punctuation">)</span></span></span>
+        <span class="token keyword">char</span> <span class="token operator">*</span>crypt_pw<span class="token punctuation">;</span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>hash<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token char">'$'</span>
+            <span class="token operator">&amp;&amp;</span> hash<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token char">'2'</span>
+            <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span>hash<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token char">'a'</span> <span class="token operator">||</span> hash<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token char">'y'</span><span class="token punctuation">)</span>
+            <span class="token operator">&amp;&amp;</span> hash<span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token char">'$'</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">_crypt_blowfish_rn</span><span class="token punctuation">(</span>passwd<span class="token punctuation">,</span> hash<span class="token punctuation">,</span> sample<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>sample<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+                <span class="token keyword">return</span> <span class="token function">APR_FROM_OS_ERROR</span><span class="token punctuation">(</span>errno<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">strncmp</span><span class="token punctuation">(</span>hash<span class="token punctuation">,</span> apr1_id<span class="token punctuation">,</span> <span class="token function">strlen</span><span class="token punctuation">(</span>apr1_id<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">/*
+             * The hash was created using our custom algorithm.
+             */</span>
+            <span class="token function">apr_md5_encode</span><span class="token punctuation">(</span>passwd<span class="token punctuation">,</span> hash<span class="token punctuation">,</span> sample<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>sample<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">strncmp</span><span class="token punctuation">(</span>hash<span class="token punctuation">,</span> APR_SHA1PW_ID<span class="token punctuation">,</span> APR_SHA1PW_IDLEN<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+             <span class="token function">apr_sha1_base64</span><span class="token punctuation">(</span>passwd<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span><span class="token function">strlen</span><span class="token punctuation">(</span>passwd<span class="token punctuation">)</span><span class="token punctuation">,</span> sample<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">/*
+             * It's not our algorithm, so feed it to crypt() if possible.
+             */</span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression"><span class="token function">defined</span><span class="token punctuation">(</span>WIN32<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token function">defined</span><span class="token punctuation">(</span>BEOS<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token function">defined</span><span class="token punctuation">(</span>NETWARE<span class="token punctuation">)</span></span></span>
+            <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token function">strcmp</span><span class="token punctuation">(</span>passwd<span class="token punctuation">,</span> hash<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">?</span> APR_SUCCESS <span class="token operator">:</span> APR_EMISMATCH<span class="token punctuation">;</span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">elif</span> <span class="token expression"><span class="token function">defined</span><span class="token punctuation">(</span>CRYPT_R_CRYPTD<span class="token punctuation">)</span></span></span>
+            apr_status_t rv<span class="token punctuation">;</span>
+            CRYPTD <span class="token operator">*</span>buffer <span class="token operator">=</span> <span class="token function">malloc</span><span class="token punctuation">(</span><span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token operator">*</span>buffer<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>buffer <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+                <span class="token keyword">return</span> APR_ENOMEM<span class="token punctuation">;</span>
+            crypt_pw <span class="token operator">=</span> <span class="token function">crypt_r</span><span class="token punctuation">(</span>passwd<span class="token punctuation">,</span> hash<span class="token punctuation">,</span> buffer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>crypt_pw<span class="token punctuation">)</span>
+                rv <span class="token operator">=</span> APR_EMISMATCH<span class="token punctuation">;</span>
+            <span class="token keyword">else</span>
+                rv <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token function">strcmp</span><span class="token punctuation">(</span>crypt_pw<span class="token punctuation">,</span> hash<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">?</span> APR_SUCCESS <span class="token operator">:</span> APR_EMISMATCH<span class="token punctuation">;</span>
+            <span class="token function">free</span><span class="token punctuation">(</span>buffer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> rv<span class="token punctuation">;</span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">elif</span> <span class="token expression"><span class="token function">defined</span><span class="token punctuation">(</span>CRYPT_R_STRUCT_CRYPT_DATA<span class="token punctuation">)</span></span></span>
+            apr_status_t rv<span class="token punctuation">;</span>
+            <span class="token keyword">struct</span> <span class="token class-name">crypt_data</span> <span class="token operator">*</span>buffer <span class="token operator">=</span> <span class="token function">malloc</span><span class="token punctuation">(</span><span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token operator">*</span>buffer<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>buffer <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+                <span class="token keyword">return</span> APR_ENOMEM<span class="token punctuation">;</span>
+    
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">ifdef</span> <span class="token expression">__GLIBC_PREREQ</span></span>
+            <span class="token comment">/*
+             * For not too old glibc (>= 2.3.2), it's enough to set
+             * buffer.initialized = 0. For &lt; 2.3.2 and for other platforms,
+             * we need to zero the whole struct.
+             */</span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression"><span class="token function">__GLIBC_PREREQ</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">)</span></span></span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">USE_CRYPT_DATA_INITALIZED</span></span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+    
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">ifdef</span> <span class="token expression">USE_CRYPT_DATA_INITALIZED</span></span>
+            buffer<span class="token operator">-></span>initialized <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">else</span></span>
+            <span class="token function">memset</span><span class="token punctuation">(</span>buffer<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token operator">*</span>buffer<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+    
+            crypt_pw <span class="token operator">=</span> <span class="token function">crypt_r</span><span class="token punctuation">(</span>passwd<span class="token punctuation">,</span> hash<span class="token punctuation">,</span> buffer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>crypt_pw<span class="token punctuation">)</span>
+                rv <span class="token operator">=</span> APR_EMISMATCH<span class="token punctuation">;</span>
+            <span class="token keyword">else</span>
+                rv <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token function">strcmp</span><span class="token punctuation">(</span>crypt_pw<span class="token punctuation">,</span> hash<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">?</span> APR_SUCCESS <span class="token operator">:</span> APR_EMISMATCH<span class="token punctuation">;</span>
+            <span class="token function">free</span><span class="token punctuation">(</span>buffer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> rv<span class="token punctuation">;</span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">else</span></span>
+            <span class="token comment">/* Do a bit of sanity checking since we know that crypt_r()
+             * should always be used for threaded builds on AIX, and
+             * problems in configure logic can result in the wrong
+             * choice being made.
+             */</span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression"><span class="token function">defined</span><span class="token punctuation">(</span>_AIX<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> APR_HAS_THREADS</span></span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">error</span> <span class="token expression">Configuration error<span class="token operator">!</span>  <span class="token function">crypt_r</span><span class="token punctuation">(</span><span class="token punctuation">)</span> should have been selected<span class="token operator">!</span></span></span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+            <span class="token punctuation">&#123;</span>
+                apr_status_t rv<span class="token punctuation">;</span>
+    
+                <span class="token comment">/* Handle thread safety issues by holding a mutex around the
+                 * call to crypt().
+                 */</span>
+                <span class="token function">crypt_mutex_lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                crypt_pw <span class="token operator">=</span> <span class="token function">crypt</span><span class="token punctuation">(</span>passwd<span class="token punctuation">,</span> hash<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>crypt_pw<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                    rv <span class="token operator">=</span> APR_EMISMATCH<span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span>
+                <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                    rv <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token function">strcmp</span><span class="token punctuation">(</span>crypt_pw<span class="token punctuation">,</span> hash<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">?</span> APR_SUCCESS <span class="token operator">:</span> APR_EMISMATCH<span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span>
+                <span class="token function">crypt_mutex_unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">return</span> rv<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+    <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token function">strcmp</span><span class="token punctuation">(</span>sample<span class="token punctuation">,</span> hash<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">?</span> APR_SUCCESS <span class="token operator">:</span> APR_EMISMATCH<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上面的实现根据平台的不同，以及传进来的hash的格式不一样，会调用不一样的算法，主要是有MD5,SHA，crypt等几种方式，每种方式生成的hash的格式不一样，从hash的格式既可以区分。</p>
+<p>下面看一下 <code>mod_auth_basic</code>,文件在 <code>modules/aaa/mod_auth_basic.c</code>。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">register_hooks</span><span class="token punctuation">(</span>apr_pool_t <span class="token operator">*</span>p<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">//注册一个authenticate_basic_user方法</span>
+    <span class="token function">ap_hook_check_user_id</span><span class="token punctuation">(</span>authenticate_basic_user<span class="token punctuation">,</span><span class="token constant">NULL</span><span class="token punctuation">,</span><span class="token constant">NULL</span><span class="token punctuation">,</span>APR_HOOK_MIDDLE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">authenticate_basic_user</span><span class="token punctuation">(</span>request_rec <span class="token operator">*</span>r<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    auth_basic_config_rec <span class="token operator">*</span>conf <span class="token operator">=</span> <span class="token function">ap_get_module_config</span><span class="token punctuation">(</span>r<span class="token operator">-></span>per_dir_config<span class="token punctuation">,</span>
+                                                       <span class="token operator">&amp;</span>auth_basic_module<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>sent_user<span class="token punctuation">,</span> <span class="token operator">*</span>sent_pw<span class="token punctuation">,</span> <span class="token operator">*</span>current_auth<span class="token punctuation">;</span>
+    <span class="token keyword">int</span> res<span class="token punctuation">;</span>
+    authn_status auth_result<span class="token punctuation">;</span>
+    authn_provider_list <span class="token operator">*</span>current_provider<span class="token punctuation">;</span>
+
+    <span class="token comment">/* Are we configured to be Basic auth? */</span>
+    current_auth <span class="token operator">=</span> <span class="token function">ap_auth_type</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>current_auth <span class="token operator">||</span> <span class="token function">strcasecmp</span><span class="token punctuation">(</span>current_auth<span class="token punctuation">,</span> <span class="token string">"Basic"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> DECLINED<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* We need an authentication realm. */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">ap_auth_name</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">ap_log_rerror</span><span class="token punctuation">(</span>APLOG_MARK<span class="token punctuation">,</span> APLOG_ERR<span class="token punctuation">,</span>
+                      <span class="token number">0</span><span class="token punctuation">,</span> r<span class="token punctuation">,</span> <span class="token string">"need AuthName: %s"</span><span class="token punctuation">,</span> r<span class="token operator">-></span>uri<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> HTTP_INTERNAL_SERVER_ERROR<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    r<span class="token operator">-></span>ap_auth_type <span class="token operator">=</span> <span class="token string">"Basic"</span><span class="token punctuation">;</span>
+    <span class="token comment">//拿到用户和密码</span>
+    res <span class="token operator">=</span> <span class="token function">get_basic_auth</span><span class="token punctuation">(</span>r<span class="token punctuation">,</span> <span class="token operator">&amp;</span>sent_user<span class="token punctuation">,</span> <span class="token operator">&amp;</span>sent_pw<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>res<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> res<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    current_provider <span class="token operator">=</span> conf<span class="token operator">-></span>providers<span class="token punctuation">;</span>
+    <span class="token keyword">do</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">const</span> authn_provider <span class="token operator">*</span>provider<span class="token punctuation">;</span>
+
+        <span class="token comment">/* For now, if a provider isn't set, we'll be nice and use the file
+         * provider.
+         */</span>
+        <span class="token comment">//找到配置的AuthProvider</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>current_provider<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            provider <span class="token operator">=</span> <span class="token function">ap_lookup_provider</span><span class="token punctuation">(</span>AUTHN_PROVIDER_GROUP<span class="token punctuation">,</span>
+                                          AUTHN_DEFAULT_PROVIDER<span class="token punctuation">,</span> <span class="token string">"0"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>provider <span class="token operator">||</span> <span class="token operator">!</span>provider<span class="token operator">-></span>check_password<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token function">ap_log_rerror</span><span class="token punctuation">(</span>APLOG_MARK<span class="token punctuation">,</span> APLOG_ERR<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> r<span class="token punctuation">,</span>
+                              <span class="token string">"No Authn provider configured"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                auth_result <span class="token operator">=</span> AUTH_GENERAL_ERROR<span class="token punctuation">;</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token function">apr_table_setn</span><span class="token punctuation">(</span>r<span class="token operator">-></span>notes<span class="token punctuation">,</span> AUTHN_PROVIDER_NAME_NOTE<span class="token punctuation">,</span> AUTHN_DEFAULT_PROVIDER<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+            provider <span class="token operator">=</span> current_provider<span class="token operator">-></span>provider<span class="token punctuation">;</span>
+            <span class="token function">apr_table_setn</span><span class="token punctuation">(</span>r<span class="token operator">-></span>notes<span class="token punctuation">,</span> AUTHN_PROVIDER_NAME_NOTE<span class="token punctuation">,</span> current_provider<span class="token operator">-></span>provider_name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token comment">//调用provider的check_password函数，也就是上面的check_password</span>
+        auth_result <span class="token operator">=</span> provider<span class="token operator">-></span><span class="token function">check_password</span><span class="token punctuation">(</span>r<span class="token punctuation">,</span> sent_user<span class="token punctuation">,</span> sent_pw<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token function">apr_table_unset</span><span class="token punctuation">(</span>r<span class="token operator">-></span>notes<span class="token punctuation">,</span> AUTHN_PROVIDER_NAME_NOTE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">/* Something occured. Stop checking. */</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>auth_result <span class="token operator">!=</span> AUTH_USER_NOT_FOUND<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token comment">/* If we're not really configured for providers, stop now. */</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>conf<span class="token operator">-></span>providers<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        current_provider <span class="token operator">=</span> current_provider<span class="token operator">-></span>next<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">while</span> <span class="token punctuation">(</span>current_provider<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">//根据情况返回对应的状态码，记录错误信息。</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>auth_result <span class="token operator">!=</span> AUTH_GRANTED<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">int</span> return_code<span class="token punctuation">;</span>
+
+        <span class="token comment">/* If we're not authoritative, then any error is ignored. */</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>conf<span class="token operator">-></span>authoritative<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> auth_result <span class="token operator">!=</span> AUTH_DENIED<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">return</span> DECLINED<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token keyword">switch</span> <span class="token punctuation">(</span>auth_result<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">case</span> AUTH_DENIED<span class="token operator">:</span>
+            <span class="token function">ap_log_rerror</span><span class="token punctuation">(</span>APLOG_MARK<span class="token punctuation">,</span> APLOG_ERR<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> r<span class="token punctuation">,</span>
+                      <span class="token string">"user %s: authentication failure for \"%s\": "</span>
+                      <span class="token string">"Password Mismatch"</span><span class="token punctuation">,</span>
+                      sent_user<span class="token punctuation">,</span> r<span class="token operator">-></span>uri<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            return_code <span class="token operator">=</span> HTTP_UNAUTHORIZED<span class="token punctuation">;</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token keyword">case</span> AUTH_USER_NOT_FOUND<span class="token operator">:</span>
+            <span class="token function">ap_log_rerror</span><span class="token punctuation">(</span>APLOG_MARK<span class="token punctuation">,</span> APLOG_ERR<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> r<span class="token punctuation">,</span>
+                      <span class="token string">"user %s not found: %s"</span><span class="token punctuation">,</span> sent_user<span class="token punctuation">,</span> r<span class="token operator">-></span>uri<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            return_code <span class="token operator">=</span> HTTP_UNAUTHORIZED<span class="token punctuation">;</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token keyword">case</span> AUTH_GENERAL_ERROR<span class="token operator">:</span>
+        <span class="token keyword">default</span><span class="token operator">:</span>
+            <span class="token comment">/* We'll assume that the module has already said what its error
+             * was in the logs.
+             */</span>
+            return_code <span class="token operator">=</span> HTTP_INTERNAL_SERVER_ERROR<span class="token punctuation">;</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token comment">/* If we're returning 403, tell them to try again. */</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>return_code <span class="token operator">==</span> HTTP_UNAUTHORIZED<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">note_basic_auth_failure</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> return_code<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">return</span> OK<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>其中<code>get_basic_auth</code></p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">get_basic_auth</span><span class="token punctuation">(</span>request_rec <span class="token operator">*</span>r<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span><span class="token operator">*</span>user<span class="token punctuation">,</span>
+                          <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span><span class="token operator">*</span>pw<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>auth_line<span class="token punctuation">;</span>
+    <span class="token keyword">char</span> <span class="token operator">*</span>decoded_line<span class="token punctuation">;</span>
+    <span class="token keyword">int</span> length<span class="token punctuation">;</span>
+
+    <span class="token comment">/* Get the appropriate header */</span>
+    <span class="token comment">//根据请求类型获取请求头值</span>
+    auth_line <span class="token operator">=</span> <span class="token function">apr_table_get</span><span class="token punctuation">(</span>r<span class="token operator">-></span>headers_in<span class="token punctuation">,</span> <span class="token punctuation">(</span>PROXYREQ_PROXY <span class="token operator">==</span> r<span class="token operator">-></span>proxyreq<span class="token punctuation">)</span>
+                                              <span class="token operator">?</span> <span class="token string">"Proxy-Authorization"</span>
+                                              <span class="token operator">:</span> <span class="token string">"Authorization"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>auth_line<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">note_basic_auth_failure</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> HTTP_UNAUTHORIZED<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">//判断是不是Basic认证</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">strcasecmp</span><span class="token punctuation">(</span><span class="token function">ap_getword</span><span class="token punctuation">(</span>r<span class="token operator">-></span>pool<span class="token punctuation">,</span> <span class="token operator">&amp;</span>auth_line<span class="token punctuation">,</span> <span class="token char">' '</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"Basic"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">/* Client tried to authenticate using wrong auth scheme */</span>
+        <span class="token function">ap_log_rerror</span><span class="token punctuation">(</span>APLOG_MARK<span class="token punctuation">,</span> APLOG_ERR<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> r<span class="token punctuation">,</span>
+                      <span class="token string">"client used wrong authentication scheme: %s"</span><span class="token punctuation">,</span> r<span class="token operator">-></span>uri<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">note_basic_auth_failure</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> HTTP_UNAUTHORIZED<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* Skip leading spaces. */</span>
+    <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token function">apr_isspace</span><span class="token punctuation">(</span><span class="token operator">*</span>auth_line<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        auth_line<span class="token operator">++</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">//Baisc认证是base64 encode的，decode一下，拿到用户名和密码</span>
+    decoded_line <span class="token operator">=</span> <span class="token function">apr_palloc</span><span class="token punctuation">(</span>r<span class="token operator">-></span>pool<span class="token punctuation">,</span> <span class="token function">apr_base64_decode_len</span><span class="token punctuation">(</span>auth_line<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    length <span class="token operator">=</span> <span class="token function">apr_base64_decode</span><span class="token punctuation">(</span>decoded_line<span class="token punctuation">,</span> auth_line<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">/* Null-terminate the string. */</span>
+    decoded_line<span class="token punctuation">[</span>length<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token char">'\0'</span><span class="token punctuation">;</span>
+
+    <span class="token operator">*</span>user <span class="token operator">=</span> <span class="token function">ap_getword_nulls</span><span class="token punctuation">(</span>r<span class="token operator">-></span>pool<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span><span class="token operator">*</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>decoded_line<span class="token punctuation">,</span> <span class="token char">':'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token operator">*</span>pw <span class="token operator">=</span> decoded_line<span class="token punctuation">;</span>
+
+    <span class="token comment">/* set the user, even though the user is unauthenticated at this point */</span>
+    r<span class="token operator">-></span>user <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span><span class="token punctuation">)</span> <span class="token operator">*</span>user<span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> OK<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Apache/" rel="tag"># Apache</a>
+              <a href="/tags/BasicAuth/" rel="tag"># BasicAuth</a>
+              <a href="/tags/htpasswd/" rel="tag"># htpasswd</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/01/03/jd-vm/" rel="prev" title="京东云主机试用">
+                  <i class="fa fa-chevron-left"></i> 京东云主机试用
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/01/13/decode-hex-string/" rel="next" title="类似\xe4\xb8\xad等字符串的解码">
+                  类似\xe4\xb8\xad等字符串的解码 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"32937ba519db4c1c06e2d067b9a6bc96"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

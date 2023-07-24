@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="最近接到一个需求：把K8s的认证和授权体系，整合到我们内部的系统中，使得我们内部系统的用户，可以无缝的直接访问K8s集群，同时也需要限制好用户对应namespace的权限。 对于需求的用户授权也就是authorization (authz)部分，实现思路还是比较简单的，毕竟K8s的RBAC实现相对来说还是非常完善的，而且RBAC对于我们目前的用户和组织权限管理理念十分的接近。所以只需要将目前系统里">
+<meta property="og:type" content="article">
+<meta property="og:title" content="实现一个Kubernetes的身份认证代理服务">
+<meta property="og:url" content="https://www.ichenfu.com/2022/03/20/implement-a-k8s-authenticating-proxy/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="最近接到一个需求：把K8s的认证和授权体系，整合到我们内部的系统中，使得我们内部系统的用户，可以无缝的直接访问K8s集群，同时也需要限制好用户对应namespace的权限。 对于需求的用户授权也就是authorization (authz)部分，实现思路还是比较简单的，毕竟K8s的RBAC实现相对来说还是非常完善的，而且RBAC对于我们目前的用户和组织权限管理理念十分的接近。所以只需要将目前系统里">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-03-20T08:41:36.000Z">
+<meta property="article:modified_time" content="2022-04-28T05:53:29.134Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="authenticating-proxy">
+<meta property="article:tag" content="kubectl token">
+<meta property="article:tag" content="RBAC">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2022/03/20/implement-a-k8s-authenticating-proxy/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2022/03/20/implement-a-k8s-authenticating-proxy/","path":"2022/03/20/implement-a-k8s-authenticating-proxy/","title":"实现一个Kubernetes的身份认证代理服务"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>实现一个Kubernetes的身份认证代理服务 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/03/20/implement-a-k8s-authenticating-proxy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="实现一个Kubernetes的身份认证代理服务 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          实现一个Kubernetes的身份认证代理服务
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022年3月20日 16:41 16:41:36" itemprop="dateCreated datePublished" datetime="2022-03-20T16:41:36+08:00">2022年3月20日 16:41</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022年4月28日 13:53 13:53:29" itemprop="dateModified" datetime="2022-04-28T13:53:29+08:00">2022年4月28日 13:53</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>最近接到一个需求：把K8s的认证和授权体系，整合到我们内部的系统中，使得我们内部系统的用户，可以无缝的直接访问K8s集群，同时也需要限制好用户对应namespace的权限。</p>
+<p>对于需求的用户授权也就是authorization (authz)部分，实现思路还是比较简单的，毕竟K8s的<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/access-authn-authz/rbac/">RBAC</a>实现相对来说还是非常完善的，而且RBAC对于我们目前的用户和组织权限管理理念十分的接近。所以只需要将目前系统里的用户权限和组织关系，对应到一系列的RBAC Role和RoleBinding里，就可以实现对于用户权限的精细化控制。</p>
+<p>而对于用户的认证authentication (authn)部分，K8s提供了非常多的<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/access-authn-authz/authentication/">身份认证策略</a>。但是如文档里明确的一点：</p>
+<span id="more"></span>
+<blockquote><p>Kubernetes 假定普通用户是由一个与集群无关的服务通过以下方式之一进行管理的：</p>
+<ul>
+<li>负责分发私钥的管理员</li>
+<li>类似 Keystone 或者 Google Accounts 这类用户数据库</li>
+<li>包含用户名和密码列表的文件<br>有鉴于此，Kubernetes 并不包含用来代表普通用户账号的对象。 普通用户的信息无法通过API调用添加到集群中。</li>
+</ul>
+</blockquote>
+
+<p>K8s并不自己管理用户实体，所以是没有办法像RBAC那样，通过创建一个“User”资源，来把某个用户添加到集群里的。</p>
+<p>其实这个特点，对于系统集成来说，可能更是一个优点，因为这直接避免了第三方系统的用户属性和K8s“用户”属性可能存在的不兼容问题。</p>
+<p>而对于目前的需求而言，需要做到以下几点：</p>
+<ol>
+<li>最好是基于Token实现，并且这个Token由我们自己的系统生成，同一个Token，既可以调用原有的API，也可以调用K8s的API。</li>
+<li>尽可能保证K8s兼容性，最好用户可以无缝的，不需要经过复杂的配置，直接使用kubectl访问到集群。</li>
+<li>记录所有用户的访问记录以便于各种审计工作。</li>
+</ol>
+<p>针对这几个需求，又通读了一遍文档之后，最终决定使用<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/access-authn-authz/authentication/#authenticating-proxy">身份认证代理</a>这个方式，怎么理解呢：</p>
+<p>K8s APIServer可以获取HTTP请求中的某些头部字段，根据头部字段的值来判断当前操作的用户。也就是说，如果实现一个反向代理服务器，由这个反向代理服务器实现Token的认证工作，确认用户请求的有效性，若用户请求有效，直接把用户的信息添加到HTTP请求头中，并代理到K8s Server，最终再由K8s中的RBAC规则，判断用户能否调用对应API。</p>
+<p>这么做刚好能满足目前的需求，首先，Token的发放和验证完全和K8s没有关系，所以Token可以保持和原有系统保持不变；同样的，代理只是根据HTTP头进行验证并转发，也不会修改任何K8s API的调用方式和格式，所以也能保持很好的兼容性；又因为所有的用户请求都会经过代理服务器，所以代理服务器可以记录所有请求的详细信息，从而方便实现各种审计工作。</p>
+<p>那么问题来了，K8s通过哪个HTTP Header获取用户信息呢？</p>
+<p>APIServer提供了几个命令行参数：<code>--requestheader-username-headers</code>、<code>--requestheader-group-headers</code>、<code>--requestheader-extra-headers-prefix</code>，通过这几个参数来配置HTTP头的字段名称。<br>其中，只有<code>--requestheader-username-headers</code>这个参数是必须的，由于目前场景下只需要配置这一个参数就可以了。比如：添加<code>--requestheader-username-headers=X-Remote-User</code>到APIServer启动参数，APIServer就会从请求中获取X-Remote-User这个头，并用对应的值作为当前操作的用户。</p>
+<p>事情还没有结束，既然APIServer会从请求头中获取用户名，那么问题来了，如何确保这个请求是可信的？如何防止恶意用户，伪造请求，绕过身份认证代理服务器，直接用假冒的请求访问APIServer怎么办？这样是不是就可以模拟任何用户访问了？那一定不行，得需要有个办法来验证代理服务器的身份。不过K8s的开发者们显然考虑到了这个问题，所以APIServer提供了<code>--requestheader-client-ca-file</code>和<code>--requestheader-allowed-names</code>两个额外的参数，其中<code>--requestheader-client-ca-file</code>是必须的，用来指定认证代理服务器证书的CA位置，如果同时指定<code>--requestheader-allowed-names</code>，则在验证客户端证书发行者的同时，还会验证客户端证书的CN字段，确保不会有人用其他证书模仿代理服务器。</p>
+<p>说到这里，整个解决方案的思路就已经比较清楚了：1.让用户带上token访问身份代理服务器；2.身份代理服务器解析token，确认用户身份后将用户名带入到请求X-Remote-User头，并转发给K8s，这里需要注意带上预先签好的客户端证书访问；3.K8s通过请求头部信息确认用户，并基于RBAC规则确认用户权限。</p>
+<p>针对上面的方案，这里简单的使用openresty搭建了一个测试方案，主要也是因为目前的Token是jwt格式的，解析和验证也比较方便，这里贴一个比较简单的配置例子：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">server <span class="token punctuation">&#123;</span>
+	listen       <span class="token number">80</span><span class="token punctuation">;</span>
+	server_name  test.k8sproxy.ichenfu.com<span class="token punctuation">;</span>
+	location / <span class="token punctuation">&#123;</span>
+		access_by_lua <span class="token string">'
+			-- 因为token格式是jwt，且用户名是在jwt payload里的，所以需要依赖resty.jwt这个库
+			-- 具体的安装方式这里不详细说明，可以查找其他资料
+			local cjson = require("cjson")
+			local jwt = require("resty.jwt")
+			-- 拿到用户请求的Authorization头
+			local auth_header = ngx.var.http_Authorization
+
+			if auth_header == nil then
+				-- 禁止没有认证信息的请求
+				ngx.exit(ngx.HTTP_UNAUTHORIZED)
+			end
+
+			local _, _, jwt_token = string.find(auth_header, "Bearer%s+(.+)")
+			if jwt_token == nil then
+				-- 禁止认证信息有误的请求
+				ngx.exit(ngx.HTTP_UNAUTHORIZED)
+			end
+
+			-- secret，需要保密！
+			local secret = "ichenfu-jwt-secret"
+			local jwt_obj = jwt:verify(secret, jwt_token)
+			if jwt_obj.verified == false then
+				-- 如果验证失败，说明Token有问题，禁止
+				ngx.exit(ngx.HTTP_UNAUTHORIZED)
+			else
+				-- 验证成功，设置X-Remote-User头为用户名（假设用户名存储在payload中的user字段）
+				ngx.req.set_header("X-Remote-User", jwt_obj.user)
+			end
+		'</span><span class="token punctuation">;</span>
+		proxy_ssl_certificate /usr/local/openresty/nginx/conf/ssl/auth-proxy.pem<span class="token punctuation">;</span>
+		proxy_ssl_certificate_key /usr/local/openresty/nginx/conf/ssl/auth-proxy-key.pem<span class="token punctuation">;</span>
+		proxy_pass https://test.k8scluster.ichenfu.com:6443<span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>说起来openresty确实很方便，十几行代码就搞定了一个K8s的认证代理服务器。不过在后续测试过程中，遇到了一个问题。基于上面的逻辑，用户可以拿着Token，使用kubectl访问集群，但是在实际测试过程中，发现即使在kubeconfig文件中添加了Token，甚至使用<code>kubectl --token=&quot;xxxxxxxxx&quot; get pods</code>这种在命令行里，指定Token的方式，都会提示请求失败，找不到认证信息。一开始，以为是自己lua程序写的有问题，最后通过<code>kubectl --token=&quot;xxxxxxxxx&quot; get pods --v=10 2&gt;&amp;1</code>把请求过程打印出来才发现，kubectl根本不会把Token带入到请求头中！</p>
+<p>经过一番查找，找到了<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubectl/issues/744">kubectl does not send Authorization header (or use specified auth plugin) over plain HTTP #744</a>这个Issue。才发现原来kubectl在默认情况下，如果访问一个HTTP协议的API地址，就认为这个服务是不需要认证的，如果需要认证，那API地址必须是HTTPS协议。</p>
+<p>所以，为了实现预期的结果，还需要修改一下nginx配置文件，把监听换成HTTPS：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">server <span class="token punctuation">&#123;</span>
+		listen       <span class="token number">443</span> ssl<span class="token punctuation">;</span>
+		server_name  test.k8sproxy.ichenfu.com<span class="token punctuation">;</span>
+		ssl_certificate      /usr/local/openresty/nginx/conf/ssl/kubernetes.pem<span class="token punctuation">;</span>
+		ssl_certificate_key  /usr/local/openresty/nginx/conf/ssl/kubernetes-key.pem<span class="token punctuation">;</span>
+
+		<span class="token comment">#localtion配置保持不变</span>
+		<span class="token comment">#...</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>最终，所有需求都完美实现！当然需求的实现方式肯定不止这一种，而且最终即使使用这种方式，可能也不太会选择openresty，但是整体实现和测试的过程还是非常有意思的，特别是“意外”地知道了kubectl对于服务器认证的相关处理，收获还是不少的。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/authenticating-proxy/" rel="tag"># authenticating-proxy</a>
+              <a href="/tags/kubectl-token/" rel="tag"># kubectl token</a>
+              <a href="/tags/RBAC/" rel="tag"># RBAC</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/03/05/build-a-ceph-rbd-http-api-with-go-ceph/" rel="prev" title="使用Go-Ceph库编写一个更简单的RBD HTTP API">
+                  <i class="fa fa-chevron-left"></i> 使用Go-Ceph库编写一个更简单的RBD HTTP API
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/04/05/spdk-reduce-block-compression-algorithm/" rel="next" title="SPDK的“Reduce”块压缩算法">
+                  SPDK的“Reduce”块压缩算法 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"dae63b4255fa2093d0b6533fcdc74d7e"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

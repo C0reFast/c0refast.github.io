@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="最近折腾了一小段时间的PCDN，家里刚好有一个闲置的JetsonNano和一块闲置的SSD，刚好可以跑跑PCDN，每天挣个宽带钱。具体跑的哪家，就不说了，说说在这过程中遇到的一个小问题：一般来说，PCDN或者类似的业务，对磁盘的写入压力还是比较大的，虽然可能平均的写入带宽并不高，但是也架不住每天读写的时间相当长，虽然我这块SSD是闲置的，但好歹是个传家宝，不管怎么说，还是有那么点点心疼的，肯定是不">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在移动硬盘盒上启用SSD的Trim功能">
+<meta property="og:url" content="https://www.ichenfu.com/2022/10/05/enable-trim-on-usb-attached-scsi-ssds/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="最近折腾了一小段时间的PCDN，家里刚好有一个闲置的JetsonNano和一块闲置的SSD，刚好可以跑跑PCDN，每天挣个宽带钱。具体跑的哪家，就不说了，说说在这过程中遇到的一个小问题：一般来说，PCDN或者类似的业务，对磁盘的写入压力还是比较大的，虽然可能平均的写入带宽并不高，但是也架不住每天读写的时间相当长，虽然我这块SSD是闲置的，但好歹是个传家宝，不管怎么说，还是有那么点点心疼的，肯定是不">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-10-05T11:57:02.000Z">
+<meta property="article:modified_time" content="2023-01-29T01:28:30.170Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="SSD">
+<meta property="article:tag" content="Trim">
+<meta property="article:tag" content="UAS">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2022/10/05/enable-trim-on-usb-attached-scsi-ssds/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2022/10/05/enable-trim-on-usb-attached-scsi-ssds/","path":"2022/10/05/enable-trim-on-usb-attached-scsi-ssds/","title":"在移动硬盘盒上启用SSD的Trim功能"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>在移动硬盘盒上启用SSD的Trim功能 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/10/05/enable-trim-on-usb-attached-scsi-ssds/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="在移动硬盘盒上启用SSD的Trim功能 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          在移动硬盘盒上启用SSD的Trim功能
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022年10月5日 19:57 19:57:02" itemprop="dateCreated datePublished" datetime="2022-10-05T19:57:02+08:00">2022年10月5日 19:57</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023年1月29日 9:28 9:28:30" itemprop="dateModified" datetime="2023-01-29T09:28:30+08:00">2023年1月29日 9:28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>最近折腾了一小段时间的PCDN，家里刚好有一个闲置的JetsonNano和一块闲置的SSD，刚好可以跑跑PCDN，每天挣个宽带钱。具体跑的哪家，就不说了，说说在这过程中遇到的一个小问题：一般来说，PCDN或者类似的业务，对磁盘的写入压力还是比较大的，虽然可能平均的写入带宽并不高，但是也架不住每天读写的时间相当长，虽然我这块SSD是闲置的，但好歹是个传家宝，不管怎么说，还是有那么点点心疼的，肯定是不太希望哪天这SSD被写坏了。</p>
+<p>在这种场景下，尽可能延长SSD的写入寿命就很重要了，而方法之一呢，就是想办法把SSD的<code>Trim</code>命令给用上。</p>
+<p>用上<code>Trim</code>命令之前，可以先简单了解一下背后的逻辑，具体的可以参考<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/Trim%E5%91%BD%E4%BB%A4">Wiki</a>，简单来说呢，因为SSD依赖垃圾回收机制来平衡NAND的磨损，但是呢具体到一整个LBA空间，只有文件系统知道哪些数据块是有效数据，所以就需要通过<code>Trim</code>命令，建立文件系统空闲空间和SSD底层数据块的关联，从而让SSD的主控更好的进行垃圾回收操作，一般来说，合理的使用Trim，可以有效的提高SSD的性能和寿命。当然了，<code>Trim</code>命令是ATA指令集里的，也就是SATA接口SSD才会有，对于SCSI以及SAS接口SSD，还有NVMe SSD来说，也有相应的<code>UNMAP</code>和<code>Deallocate</code>指令，作用都是一样的。</p>
+<p>一般来说，在Linux下，一个设备是否支持<code>Trim</code>操作，可以通过<code>lsblk --discard</code>进行查看，当输出中的<code>DISC-GRAN</code>和<code>DISC-MAX</code>列不为0时，说明这个设备是支持<code>Trim</code>操作的：</p>
+<span id="more"></span>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">jetson-nano:chenfu:<span class="token comment"># lsblk --discard</span>
+NAME        DISC-ALN DISC-GRAN DISC-MAX DISC-ZERO
+sda                <span class="token number">0</span>        0B       0B         <span class="token number">0</span>
+mmcblk1            <span class="token number">0</span>        4M      76M         <span class="token number">0</span>
+└─mmcblk1p1        <span class="token number">0</span>        4M      76M         <span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>比如在我这个JetsonNano上，可以看到我外接的这块SSD硬盘，对应<code>sda</code>设备是不支持Trim的，但是<code>mmcblk1</code>这个设备，也就是装系统用的一个小的MicroSD卡是支持的。</p>
+<p>那么问题来了，针对上面的输出，sda这块盘是不支持Trim的，那怎么样才能让他支持呢？</p>
+<p>首先需要明确的是，因为这块盘是我通过一块USB移动硬盘盒转接到板子上的，也就意味着这块硬盘并没有用原生的SATA接口（当然这块开发版本身也不支持SATA接口）。而对于移动硬盘盒而言，将SATA口转换成USB口，会需要一个桥接芯片进行协议的转换，那么桥接芯片是否支持Trim命令的转换，就显得非常重要了。对于一些老的移动硬盘盒，大多使用的是Mass Storage Class Bulk-Only Transport (BOT)这个协议，但是对于一些比较新的桥接芯片，基本都会支持一个新的叫做USB Attached SCSI Protocol (UASP) 的新协议。所以我也查了一些资料，同样也是结合产品页的一些宣传，买了一个支持UAS协议的移动硬盘盒，根据评论看，这个硬盘盒是支持Trim的，但是大部分用户似乎都是在Windows下进行测试的，在Linux下是否真的支持，是否需要新版本内核或者驱动的支持还不知道。</p>
+<p>等硬盘盒到手，插上之后系统lsusb看了一下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">jetson-nano:~:% lsusb
+Bus 002 Device 002: ID 174c:225c ASMedia Technology Inc. Ugreen Storage Device<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>VendorId是0x174c，也就是ASMedia公司的桥接芯片，但是225c这个ProductId并没有在USB ID数据库里查到，不过从数据库里看0x1153这个ProductId对应ASM1153这款芯片来说，那225c应该是对应着ASM225CM这个芯片？从目前的资料看，这个芯片理论上是支持Trim的，至少可以通过刷新固件来解决支持的问题。</p>
+<p>然而系统识别出sda之后，<code>lsblk --discard</code>依然提示不支持Trim。</p>
+<p>于是又搜索了一些资料，终于在<a target="_blank" rel="noopener" href="https://wiki.archlinux.org/title/Solid_state_drive#External_SSD_with_TRIM_support">Arch的SSD Wiki</a>里找到了一些信息：</p>
+<blockquote><p>其实现在一些USB转SATA芯片（如VL715、VL716等）以及在外接NVMe硬盘盒（如IB-1817M-C31）中使用的USB转PCIe芯片（如 智微（JMicron） JMS583 ）支持类似TRIM的命令。这些命令可通过 USB Attached SCSI 驱动程序（在Linux下称为”uas”）发送。然而内核可能不会自动检测到并启用这一功能。</p>
+</blockquote>
+
+<p>会不会是因为芯片是支持的，但是系统默认没有开启呢？于是按Wiki里的说法，使用<code>sg_readcap -l /dev/sda</code>命令读取设备的标志位：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">jetson-nano:chenfu:<span class="token comment"># sg_readcap -l /dev/sda</span>
+Read Capacity results:
+   Protection: <span class="token assign-left variable">prot_en</span><span class="token operator">=</span><span class="token number">0</span>, <span class="token assign-left variable">p_type</span><span class="token operator">=</span><span class="token number">0</span>, <span class="token assign-left variable">p_i_exponent</span><span class="token operator">=</span><span class="token number">0</span>
+   Logical block provisioning: <span class="token assign-left variable">lbpme</span><span class="token operator">=</span><span class="token number">0</span>, <span class="token assign-left variable">lbprz</span><span class="token operator">=</span><span class="token number">0</span>
+   Last <span class="token assign-left variable">LBA</span><span class="token operator">=</span><span class="token number">937703087</span> <span class="token punctuation">(</span>0x37e436af<span class="token punctuation">)</span>, Number of logical <span class="token assign-left variable">blocks</span><span class="token operator">=</span><span class="token number">937703088</span>
+   Logical block <span class="token assign-left variable">length</span><span class="token operator">=</span><span class="token number">512</span> bytes
+   Logical blocks per physical block <span class="token assign-left variable">exponent</span><span class="token operator">=</span><span class="token number">0</span>
+   Lowest aligned <span class="token assign-left variable">LBA</span><span class="token operator">=</span><span class="token number">0</span>
+Hence:
+   Device size: <span class="token number">480103981056</span> bytes, <span class="token number">457862.8</span> MiB, <span class="token number">480.10</span> GB<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>发现<code>Logical block provisioning: lbpme=0, lbprz=0</code>其中lbpme&#x3D;0，因为LBPME位为0，所以内核默认是不会开启DISCARD的支持。针对这种情况，还需要继续通过<code>sg_vpd -a /dev/sda</code>命令查询设备支持的命令情况：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">jetson-nano:chenfu:<span class="token comment"># sg_vpd -a /dev/sda</span>
+Supported VPD pages VPD page:
+  <span class="token punctuation">..</span>.
+Unit serial number VPD page:
+  Unit serial number: 704108E11D02
+
+Device Identification VPD page:
+  Addressed logical unit:
+    designator type: NAA,  code set: Binary
+      0x5000000000000001
+
+Block limits VPD page <span class="token punctuation">(</span>SBC<span class="token punctuation">)</span>:
+  Write same non-zero <span class="token punctuation">(</span>WSNZ<span class="token punctuation">)</span>: <span class="token number">0</span>
+  <span class="token punctuation">..</span>.
+
+Block device characteristics VPD page <span class="token punctuation">(</span>SBC<span class="token punctuation">)</span>:
+  Non-rotating medium <span class="token punctuation">(</span>e.g. solid state<span class="token punctuation">)</span>
+  <span class="token punctuation">..</span>.
+Logical block provisioning VPD page <span class="token punctuation">(</span>SBC<span class="token punctuation">)</span>:
+  Unmap <span class="token builtin class-name">command</span> supported <span class="token punctuation">(</span>LBPU<span class="token punctuation">)</span>: <span class="token number">1</span>
+  Write same <span class="token punctuation">(</span><span class="token number">16</span><span class="token punctuation">)</span> with unmap bit supported <span class="token punctuation">(</span>LBPWS<span class="token punctuation">)</span>: <span class="token number">0</span>
+  Write same <span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> with unmap bit supported <span class="token punctuation">(</span>LBPWS10<span class="token punctuation">)</span>: <span class="token number">0</span>
+  Logical block provisioning <span class="token builtin class-name">read</span> zeros <span class="token punctuation">(</span>LBPRZ<span class="token punctuation">)</span>: <span class="token number">0</span>
+  Anchored LBAs supported <span class="token punctuation">(</span>ANC_SUP<span class="token punctuation">)</span>: <span class="token number">0</span>
+  Threshold exponent: <span class="token number">0</span> <span class="token punctuation">[</span>threshold sets not supported<span class="token punctuation">]</span>
+  Descriptor present <span class="token punctuation">(</span>DP<span class="token punctuation">)</span>: <span class="token number">0</span>
+  Minimum percentage: <span class="token number">0</span> <span class="token punctuation">[</span>not reported<span class="token punctuation">]</span>
+  Provisioning type: <span class="token number">0</span> <span class="token punctuation">(</span>not known or fully provisioned<span class="token punctuation">)</span>
+  Threshold percentage: <span class="token number">0</span> <span class="token punctuation">[</span>percentages not supported<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>可以发现在<code>Logical block provisioning VPD page (SBC)</code>段下，有<code>Unmap command supported (LBPU): 1</code>，说明设备本身是支持Unmap指令的，因为前面说到，ATA中的Trim其实就是对应的SCSI中的UNMAP，所以支持UNMAP也就是支持了Trim，当然这中间的转换过程，应该是有硬盘盒的主控来完成。</p>
+<p>那既然在物理上是支持Trim的，那剩下的就是逻辑上怎么启用的问题了，先看下目前内核识别的设备的provisioning_mode：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">jetson-nano:chenfu:<span class="token comment"># cat /sys/block/sda/device/scsi_disk/0:0:0:0/provisioning_mode</span>
+full<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>可以发现输出是<code>full</code>，也就是说内核当前是没有检测到设备支持Trim特性，解决方法也比较简单，直接<code>echo unmap</code>到这个文件：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">jetson-nano:chenfu:<span class="token comment"># echo unmap > /sys/block/sda/device/scsi_disk/0:0:0:0/provisioning_mode</span>
+jetson-nano:chenfu:<span class="token comment"># lsblk --discard</span>
+NAME        DISC-ALN DISC-GRAN DISC-MAX DISC-ZERO
+sda                <span class="token number">0</span>      512B       4G         <span class="token number">0</span>
+mmcblk1            <span class="token number">0</span>        4M      76M         <span class="token number">0</span>
+└─mmcblk1p1        <span class="token number">0</span>        4M      76M         <span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，强制指定provisioning_mode为unmap之后，<code>lsblk --discard</code>的输出已经提示sda设备支持Trim了。</p>
+<p>最后，为了能让这个特性可以在插入硬盘盒的时候自动生效，可以手动编写一个Udev的规则文件：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">echo</span> <span class="token string">'ACTION=="add|change", ATTRS&#123;idVendor&#125;=="174c", ATTRS&#123;idProduct&#125;=="225c", SUBSYSTEM=="scsi_disk", ATTR&#123;provisioning_mode&#125;="unmap"'</span> <span class="token operator">>></span>/etc/udev/rules.d/10-uas-discard.rules<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>也就是说，当有idVendor为174c，idProduct为225c的设备（也就是我的这个硬盘盒）连接的时候，自动设置provisioning_mode为unmap。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/SSD/" rel="tag"># SSD</a>
+              <a href="/tags/Trim/" rel="tag"># Trim</a>
+              <a href="/tags/UAS/" rel="tag"># UAS</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/04/05/spdk-reduce-block-compression-algorithm/" rel="prev" title="SPDK的“Reduce”块压缩算法">
+                  <i class="fa fa-chevron-left"></i> SPDK的“Reduce”块压缩算法
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/11/05/lsi-raid-controller-and-hba-complete-listing-plus-oem-models/" rel="next" title="分享一个记录LSI RAID卡芯片和各个OEM对应卡型号列表的神贴">
+                  分享一个记录LSI RAID卡芯片和各个OEM对应卡型号列表的神贴 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"5502892e81cfbf8340bbca7221b36ce1"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

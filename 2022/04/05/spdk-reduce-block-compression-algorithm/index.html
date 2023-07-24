@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="本文是SPDK文档SPDK “Reduce” Block Compression Algorithm的翻译，在读SPDK的文档过程中，刚好看到了SPDK里bdev reduce模块实现背后的算法描述，于是就想着翻译一下，正好也借翻译的同时仔细理解一下背后算法的原理，当然本人的水平有限，如果译文有任何歧义，还请参考原文并以实际原文为准。 概述SPDK的“reduce”块压缩方案使用SSD存储压缩后的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SPDK的“Reduce”块压缩算法">
+<meta property="og:url" content="https://www.ichenfu.com/2022/04/05/spdk-reduce-block-compression-algorithm/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="本文是SPDK文档SPDK “Reduce” Block Compression Algorithm的翻译，在读SPDK的文档过程中，刚好看到了SPDK里bdev reduce模块实现背后的算法描述，于是就想着翻译一下，正好也借翻译的同时仔细理解一下背后算法的原理，当然本人的水平有限，如果译文有任何歧义，还请参考原文并以实际原文为准。 概述SPDK的“reduce”块压缩方案使用SSD存储压缩后的">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-04-05T13:03:28.000Z">
+<meta property="article:modified_time" content="2022-04-28T05:53:29.134Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="SPDK">
+<meta property="article:tag" content="Reduce">
+<meta property="article:tag" content="bdev reduce">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2022/04/05/spdk-reduce-block-compression-algorithm/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2022/04/05/spdk-reduce-block-compression-algorithm/","path":"2022/04/05/spdk-reduce-block-compression-algorithm/","title":"SPDK的“Reduce”块压缩算法"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>SPDK的“Reduce”块压缩算法 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%BA%9B%E4%BE%8B%E5%AD%90"><span class="nav-number">2.</span> <span class="nav-text">一些例子</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%88%9D%E5%A7%8B%E5%8C%96%EF%BC%88Initial-Creation%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">创建初始化（Initial Creation）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A832KB%E5%81%8F%E7%A7%BB%E9%87%8F%E5%A4%84%E5%86%99%E5%85%A516KB%EF%BC%88Write-16KB-at-Offset-32KB%EF%BC%89"><span class="nav-number">2.2.</span> <span class="nav-text">在32KB偏移量处写入16KB（Write 16KB at Offset 32KB）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A88KB%E5%81%8F%E7%A7%BB%E9%87%8F%E5%A4%84%E5%86%99%E5%85%A54KB%EF%BC%88Write-4KB-at-Offset-8KB%EF%BC%89"><span class="nav-number">2.3.</span> <span class="nav-text">在8KB偏移量处写入4KB（Write 4KB at Offset 8KB）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A816K%E5%81%8F%E7%A7%BB%E9%87%8F%E5%A4%84%E8%AF%BB%E5%8F%9616KB%E6%95%B0%E6%8D%AE%EF%BC%88Read-16KB-at-Offset-16KB%EF%BC%89"><span class="nav-number">2.4.</span> <span class="nav-text">在16K偏移量处读取16KB数据（Read 16KB at Offset 16KB）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A84KB%E5%81%8F%E7%A7%BB%E9%87%8F%E5%A4%84%E5%86%99%E5%85%A54KB%EF%BC%88Write-4KB-at-Offset-4KB%EF%BC%89"><span class="nav-number">2.5.</span> <span class="nav-text">在4KB偏移量处写入4KB（Write 4KB at Offset 4KB）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B7%A8%E8%B6%8A%E5%A4%9A%E4%B8%AAchunks%E7%9A%84%E8%AF%B7%E6%B1%82%EF%BC%88Operations-that-span-across-multiple-chunks%EF%BC%89"><span class="nav-number">2.6.</span> <span class="nav-text">跨越多个chunks的请求（Operations that span across multiple chunks）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Unmap%E6%93%8D%E4%BD%9C%EF%BC%88Unmap-Operations%EF%BC%89"><span class="nav-number">2.7.</span> <span class="nav-text">Unmap操作（Unmap Operations）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%990%E6%93%8D%E4%BD%9C%EF%BC%88Write-Zeroes-Operations%EF%BC%89"><span class="nav-number">2.8.</span> <span class="nav-text">写0操作（Write Zeroes Operations）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Restart"><span class="nav-number">2.9.</span> <span class="nav-text">Restart</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E5%90%8C%E4%B8%80%E4%B8%AAchunk%E7%9A%84%E5%B9%B6%E5%8F%91%E6%93%8D%E4%BD%9C%EF%BC%88Overlapping-operations-on-same-chunk%EF%BC%89"><span class="nav-number">2.10.</span> <span class="nav-text">对同一个chunk的并发操作（Overlapping operations on same chunk）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B2%BE%E7%AE%80%E7%BD%AE%E5%A4%87%E7%9A%84%E5%90%8E%E5%A4%87%E5%AD%98%E5%82%A8%EF%BC%88Thin-provisioned-backing-storage%EF%BC%89"><span class="nav-number">2.11.</span> <span class="nav-text">精简置备的后备存储（Thin provisioned backing storage）</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/04/05/spdk-reduce-block-compression-algorithm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="SPDK的“Reduce”块压缩算法 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          SPDK的“Reduce”块压缩算法
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022年4月5日 21:03 21:03:28" itemprop="dateCreated datePublished" datetime="2022-04-05T21:03:28+08:00">2022年4月5日 21:03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022年4月28日 13:53 13:53:29" itemprop="dateModified" datetime="2022-04-28T13:53:29+08:00">2022年4月28日 13:53</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/SPDK/" itemprop="url" rel="index"><span itemprop="name">SPDK</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>本文是SPDK文档<a target="_blank" rel="noopener" href="https://spdk.io/doc/reduce.html">SPDK “Reduce” Block Compression Algorithm</a>的翻译，在读SPDK的文档过程中，刚好看到了SPDK里<code>bdev reduce</code>模块实现背后的算法描述，于是就想着翻译一下，正好也借翻译的同时仔细理解一下背后算法的原理，当然本人的水平有限，如果译文有任何歧义，还请参考原文并以实际原文为准。</p>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>SPDK的“reduce”块压缩方案使用SSD存储压缩后的块数据，同时将元数据存放到持久内存中。此元数据包含用户数据的逻辑块到压缩后的物理块的对应关系。本文档中描述的方案是通用的，不依赖于包括<code>SPDK</code>在内任何特定的块设备框架。该算法会在一个叫做<code>libreduce</code>的库中实现。更高层次的软件可以基于该模块创建和呈现特定的块设备。对于SPDK来说，<code>bdev_reduce</code>模块封装了<code>libreduce</code>库，从而在SPDK中提供一个bdev以实现压缩功能。</p>
+<p>本方案仅仅解释压缩后的数据块和用于跟踪这些数据块的元数据的管理。它依赖于高层软件模块来执行压缩操作。对于SPDK，<code>bdev_reduce</code>模块利用<code>DPDK compressdev</code>框架执行压缩和解压缩。</p>
+<p>（需要注意的是，在某些情况下，数据块可能是不可压缩的，或者无法压缩到足以实现空间节省的程度。在这些情况下，数据可能不经过压缩，直接存储在磁盘上。“压缩的存储块”包括这些不经压缩的块。）</p>
+<span id="more"></span>
+<p>一个压缩块存储设备是一个建立在拥有相似大小的后备存储设备之上的一个逻辑实体。其中的后备存储设备必须是精简置备（thin-provisioned）的从而才能真正意义上从后文描述的实现中获得空间节省。同样该算法除了一直使用后备存储设备上可用的编号最低的块之外，对后备存储设备的实现没有直接的了解。这保证了在精简配置的后备存储设备上使用此算法时，在实际需要空间之前不会分配对应空间。</p>
+<p>后备存储的大小，必须考虑最坏情况，也就是所有数据都不可压缩的情况。在这种情况下，后备存储的大小和压缩块设备的大小是一致的。另外，本算法基于永远不会原地写这个前台来保证原子性，所以在更新元数据之前，可能还需要额外的一些后备存储空间来作为临时写缓存。</p>
+<p>为了最佳性能考虑，所有后备存储设备都将以4KB为最小单位进行分配、读取和写入。这些4KB的单元被称作“后备IO单元”（backing IO units）。他们被一个称作“后备IO单元索引”（backing IO unit indices）的索引列表中以0到N-1编号进行索引。在一开始，这个完整的索引代表了“空闲后备IO单元列表”（free backing IO unit list）。</p>
+<p>一个压缩块存储设备基于chunk进行压缩和解压操作，chunk大小至少是两个4K的后备IO单元，每个chunk所需要的后备IO单元数量，也同样表明了chunk的大小，这个数量或者大小需要在压缩块存储设备创建时指定。一个chunk，需要消耗至少1个，至多chunk大小个后备IO单元数量。举个例子，一个16KB的chunk，有可能消耗1，2，3，4个后备IO单元，最终消耗的数量取决于这个chunk的压缩率。磁盘blocks和chunk的对应关系，存储在持久内存中的一个<code>chunk map</code>里。每个<code>chunk map</code>包含了N个64-bit的值，其中N是每个chunk所包含的后备IO单元的数量。每个64-bit值表示一个后备IO单元的索引。一个特殊的值（举个例子，2^64-1）用来表示因为压缩节省而不需要使用实际的后备存储。<code>chunk map</code>的数量，等于压缩块设备的容量除以它的chunk大小，再加上少量用于保证原子写操作额外的一些<code>chunk map</code>。一开始所有的<code>chunk map</code>都表示“空闲chunk map列表”。</p>
+<p>最后，压缩块设备的逻辑映射表通过“logical map”进行表示。这里的“logical map”指的是压缩块存储设备对于对于chunk map的偏移的对于关系。logical map里每个条目是一个64-bit的值，表示所关联的chunk map。一个特殊值（UINT64_MAX）表示没有对应关联的chunk map。映射是通过将字节偏移量除以块大小得到一个索引来确定的，该索引用作块映射条目数组的数组索引。 开始时，逻辑映射表中的所有条目都没有关联的块映射。 请注意，虽然对后备存储设备的访问以 4KB 为单位，但逻辑映射表可能允许以4KB或512B为单位进行访问。</p>
+<h2 id="一些例子"><a href="#一些例子" class="headerlink" title="一些例子"></a>一些例子</h2><p>为了说明这个算法，我们将使用一个真实的非常小规模的例子。</p>
+<p>压缩块设备的大小为64KB，chunk大小为16KB。 这会实现以下几点：</p>
+<ul>
+<li>“后备存储” 需要是一个80KB大小的精简置备（thin-provisioned）逻辑设备。这包括了64KB的压缩设备原始大小，以及为了在最坏情况下保证写原子性而额外分配的16KB大小。</li>
+<li>“空闲后备IO单元列表”（free backing IO unit list）由一个0-19的索引组成，这些索引表示在后备存储里的20个4KB最小IO单元。</li>
+<li>一个”chunk map”的大小是32字节， 对应每个chunk需要4个后备存储单元（16KB&#x2F;4KB），以及每个存储单元需要8个字节（64bit）进行表示。</li>
+<li>需要从持久内存中分配5个chunk map，共160B的空间。这包含了压缩块设备的4个chunk（64KB &#x2F; 16KB）所对应的4个chunk map以及为了改写已有chunk时需要的额外1个chunk map</li>
+<li>“空闲后备IO单元列表”（Free chunk map list） 将由0 - 4（包含4）进行索引。 这些索引表示这5个被分配的chunk map</li>
+<li>“逻辑映射表”（logical map）需要在持久内存中分配32B空间，这包含了压缩块设备4个chunk的索引，每个索引需要8B（64bit）。</li>
+</ul>
+<p>在下面的例子中，”X”符号代表上面所说的那个特殊值特殊值（2^64-1）。</p>
+<h3 id="创建初始化（Initial-Creation）"><a href="#创建初始化（Initial-Creation）" class="headerlink" title="创建初始化（Initial Creation）"></a>创建初始化（Initial Creation）</h3><pre class="line-numbers language-text" data-language="text"><code class="language-text">                +--------------------+
+Backing Device  |                    |
+                +--------------------+
+
+Free Backing IO Unit List  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+
+           +------------+------------+------------+------------+------------+
+Chunk Maps |            |            |            |            |            |
+           +------------+------------+------------+------------+------------+
+
+Free Chunk Map List  0, 1, 2, 3, 4
+
+            +---+---+---+---+
+Logical Map | X | X | X | X |
+            +---+---+---+---+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="在32KB偏移量处写入16KB（Write-16KB-at-Offset-32KB）"><a href="#在32KB偏移量处写入16KB（Write-16KB-at-Offset-32KB）" class="headerlink" title="在32KB偏移量处写入16KB（Write 16KB at Offset 32KB）"></a>在32KB偏移量处写入16KB（Write 16KB at Offset 32KB）</h3><ul>
+<li>找到逻辑映射表（logical map）对应的index。32KB偏移量除以16KB的chunk size，得到index为2。</li>
+<li>Logical map里的第2个单元是一个“X”，也就是说当前这16KB还没有被写入过。</li>
+<li>在内存中分配16KB的buffer。</li>
+<li>将写入的这16KB数据压缩后，存入到刚刚分配的buffer中。</li>
+<li>假设数据被压缩到只剩6KB，那么就需要2个4KB的后备IO单元。</li>
+<li>从空闲后备IO单元列表中分配2个block（编号0和1）。需要注意的是，永远都从空闲后备IO单元列表中最小的单元还是分配，这样可以保证在thin-provision情况下，不会用到多余的后端存储，从而节省容量。</li>
+<li>将压缩后的6KB数据存储到后备存储的第0和第一个单元。</li>
+<li>从空闲chunk map列表中分配一个chunk map 0。</li>
+<li>将（0，1，X，X）存储到chunk map 0中。这表示只有2个后备IO单元被用来存储这16KB数据。</li>
+<li>把chunk map的编号0，写到逻辑映射表（logical map）的第二个单元中。</li>
+</ul>
+<pre class="line-numbers language-text" data-language="text"><code class="language-text">                +--------------------+
+Backing Device  |01                  |
+                +--------------------+
+
+Free Backing IO Unit List  2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+
+           +------------+------------+------------+------------+------------+
+Chunk Maps | 0 1 X X    |            |            |            |            |
+           +------------+------------+------------+------------+------------+
+
+Free Chunk Map List  1, 2, 3, 4
+
+            +---+---+---+---+
+Logical Map | X | X | 0 | X |
+            +---+---+---+---+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="在8KB偏移量处写入4KB（Write-4KB-at-Offset-8KB）"><a href="#在8KB偏移量处写入4KB（Write-4KB-at-Offset-8KB）" class="headerlink" title="在8KB偏移量处写入4KB（Write 4KB at Offset 8KB）"></a>在8KB偏移量处写入4KB（Write 4KB at Offset 8KB）</h3><ul>
+<li>在逻辑映射表中找到对应的index。 8KB偏移量，除以16KB的chunk size，得到index为0。</li>
+<li>逻辑映射表中的0号条目是“X”，这表示这16KB还没有被写入过数据。</li>
+<li>写入请求不是一个完整的16KB chunk大小，所以我们必须要先分配一个16KB的buffer用于暂存源数据。</li>
+<li>把需要写入的4KB数据写入到这16KB buffer的8KB偏移处，并把buffer其他的地方填0。</li>
+<li>再分配16KB的目标buffer。</li>
+<li>把16KB的源数据，压缩后存入到目标buffer中。</li>
+<li>假设数据被压缩到3KB，这将需要1个4KB的后备IO单元。</li>
+<li>从空闲后备单元列表中分配一个block（编号2）。</li>
+<li>把3KB数据写入到编号2的block中。</li>
+<li>从空闲chunk map列表中分配一个空闲chunk map(编号1)。</li>
+<li>把（2，X，X，X）写入到chunk map中。</li>
+<li>将chunk map的索引（编号1）写入到逻辑映射表的第0个条目里。</li>
+</ul>
+<pre class="line-numbers language-text" data-language="text"><code class="language-text">                +--------------------+
+Backing Device  |012                 |
+                +--------------------+
+
+Free Backing IO Unit List  3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+
+           +------------+------------+------------+------------+------------+
+Chunk Maps | 0 1 X X    | 2 X X X    |            |            |            |
+           +------------+------------+------------+------------+------------+
+
+Free Chunk Map List  2, 3, 4
+
+            +---+---+---+---+
+Logical Map | 1 | X | 0 | X |
+            +---+---+---+---+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="在16K偏移量处读取16KB数据（Read-16KB-at-Offset-16KB）"><a href="#在16K偏移量处读取16KB数据（Read-16KB-at-Offset-16KB）" class="headerlink" title="在16K偏移量处读取16KB数据（Read 16KB at Offset 16KB）"></a>在16K偏移量处读取16KB数据（Read 16KB at Offset 16KB）</h3><ul>
+<li>16KB偏移量，在逻辑映射表中对应第1个条目。</li>
+<li>逻辑映射表第1个条目是“X”，这说明这个16KB空间还没有被写入过任何数据。</li>
+<li>由于这16KB的chunk还没有被写入过任何数据，所以直接这个读请求直接返回全0。</li>
+</ul>
+<h3 id="在4KB偏移量处写入4KB（Write-4KB-at-Offset-4KB）"><a href="#在4KB偏移量处写入4KB（Write-4KB-at-Offset-4KB）" class="headerlink" title="在4KB偏移量处写入4KB（Write 4KB at Offset 4KB）"></a>在4KB偏移量处写入4KB（Write 4KB at Offset 4KB）</h3><ul>
+<li>4KB偏移量，在逻辑映射表中对应第0个条目。</li>
+<li>逻辑映射表的第0个条目是“1”，由于我们并不是覆盖写整个chunk，所以我们必须要进行一个读-改-写（read-modify-write）操作。</li>
+<li>chunk map 1仅仅指定了一个后备IO单元（编号2），分配一个16KB的buffer，并讲编号2的后备IO单元读入到这个buffer，这个buffer后面会被叫做压缩数据buffer。<br>需要注意的是，因为我们一下子分配了16KB的buffer而不是只分配4KB，我们可以继续使用这个buffer作为后面新压缩数据的存放地点。</li>
+<li>再分配一个16KB的buffer用于存放解压后的数据。解压压缩数据buffer里的数据，并将数据存入刚分配的buffer里。</li>
+<li>把需要写入的4KB数据写入到解压数据buffer的4KB偏移处。</li>
+<li>把解压数据buffer里的数据压缩，并放到压缩数据buffer中。</li>
+<li>假设新的数据压缩后大小5KB，这将需要2个4KB的后备IO单元。</li>
+<li>从空闲后备IO单元列表里，分配编号为3和4的两个block。</li>
+<li>将这个5KB数据写入到3和4这两个block中。</li>
+<li>从空闲chunk map列表中分配编号2的chunk map。</li>
+<li>将（3，4，X，X）写入到编号2的chunk map中。需要注意的是，到当前节点，这个chunk map还没有被逻辑映射表引用，如果此时出现了掉电，当前chunk的数据依然是保持完整的。</li>
+<li>将chunk map的编号2写入到逻辑映射表中。</li>
+<li>释放编号为1的chunk map，并放入到空闲chunk map列表中。</li>
+<li>释放编号为2的后备IO单元，并将编号放入到空闲后备IO单元列表中。</li>
+</ul>
+<pre class="line-numbers language-text" data-language="text"><code class="language-text">                +--------------------+
+Backing Device  |01 34               |
+                +--------------------+
+
+Free Backing IO Unit List  2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+
+           +------------+------------+------------+------------+------------+
+Chunk Maps | 0 1 X X    |            | 3 4 X X    |            |            |
+           +------------+------------+------------+------------+------------+
+
+Free Chunk Map List  1, 3, 4
+
+            +---+---+---+---+
+Logical Map | 2 | X | 0 | X |
+            +---+---+---+---+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="跨越多个chunks的请求（Operations-that-span-across-multiple-chunks）"><a href="#跨越多个chunks的请求（Operations-that-span-across-multiple-chunks）" class="headerlink" title="跨越多个chunks的请求（Operations that span across multiple chunks）"></a>跨越多个chunks的请求（Operations that span across multiple chunks）</h3><p>针对跨越多个chunks的请求，逻辑上这个请求会被分割成多个请求，每个请求关联一个chunk。</p>
+<p>举例：在4KB偏移处写入20KB数据</p>
+<p>在这个场景下，这个写请求会被分割成：一个在4KB偏移处写入12KB数据的请求（只影响逻辑映射表的第0个条目），以及一个在偏移量16KB处写入8KB的请求（只影响逻辑映射表的第1个条目）。<br>每个子请求都独立的基于上述的算法进行处理，直到这两个子请求全部完成时，原始的20KB写入操作才会返回。</p>
+<h3 id="Unmap操作（Unmap-Operations）"><a href="#Unmap操作（Unmap-Operations）" class="headerlink" title="Unmap操作（Unmap Operations）"></a>Unmap操作（Unmap Operations）</h3><p>Unmap操作通过从逻辑映射表中删除对应的（如果有）chunk map条目来实现，对应的chunk map会被放回到空闲chunk map列表中，并且任何相关的后备IO单元也会被释放并放回到空闲后备IO单元列表中。</p>
+<p>而对于针对chunk的某一部分进行Unmap的操作，相当于对chunk的这一部分写0，如果整个chunk在多次的操作中被整体Unmap掉了，那么未压缩的数据就变成全0了，这样就可以被检测出来，在这种情况下，整个chunk的映射条目也会从逻辑映射表里被移除。</p>
+<p>当整个chunk都被Umap掉之后，后续针对该chunk的读操作都会返回全0，这个表现就和上述在16K偏移量处读取16KB数据（Read 16KB at Offset 16KB）的例子一致。</p>
+<h3 id="写0操作（Write-Zeroes-Operations）"><a href="#写0操作（Write-Zeroes-Operations）" class="headerlink" title="写0操作（Write Zeroes Operations）"></a>写0操作（Write Zeroes Operations）</h3><p>写0操作的流程和Unmap操作类似，如果一个写0操作覆盖了整个chunk，我们也可以在逻辑映射表中完全移除整个chunk的对应条目，然后后续的读操作也会返回全0。</p>
+<h3 id="Restart"><a href="#Restart" class="headerlink" title="Restart"></a>Restart</h3><p>一个使用<code>libreduce</code>模块的应用程序，有可能需要定期退出并重新启动。当应用程序重新启动的时候，会重新加载压缩卷，从而恢复到应用程序退出之前的状态。</p>
+<p>当压缩卷被加载的时候，空闲chunk map列表和空闲后备IO单元列表会通过扫描逻辑映射表的形式进行重建。逻辑映射表只会保存有效的chunk map索引，同样的，chunk map只会保存有效后备单元索引。<br>任何没有被引用的chunk map以及后备IO单元，都会被认为是空的，并加入到对应的空闲列表中。</p>
+<p>这就保证了如果系统在一个写操作的中间状态下崩溃后（比如在chunk map被更新，但还没写入逻辑映射表的过程中崩溃）重启的过程中，所有未完成的写入操作都会被忽略。</p>
+<h3 id="对同一个chunk的并发操作（Overlapping-operations-on-same-chunk）"><a href="#对同一个chunk的并发操作（Overlapping-operations-on-same-chunk）" class="headerlink" title="对同一个chunk的并发操作（Overlapping operations on same chunk）"></a>对同一个chunk的并发操作（Overlapping operations on same chunk）</h3><p>具体实现时，必须要考虑针对同一个chunk并发操作的情况。比如第一个IO需要对chunk A写入某些数据，同时又有第二个IO也需要对chunk A进行写入。在这种情况下，第二个IO必须等第一个IO完成之后才能开始。<br>针对类似情况的进一步优化，超出了本文档的描述范围。</p>
+<h3 id="精简置备的后备存储（Thin-provisioned-backing-storage）"><a href="#精简置备的后备存储（Thin-provisioned-backing-storage）" class="headerlink" title="精简置备的后备存储（Thin provisioned backing storage）"></a>精简置备的后备存储（Thin provisioned backing storage）</h3><p>后备存储设备必须是精简置备的，从而才能在压缩场景下实现空间节约。本文的算法永远都会使用（重用）后备存储上最靠近偏移量0的后备IO单元。<br>这确保了即使后备存储的空间和压缩块设备的大小接近，但是直到确实需要后备IO单元的时候，才会真正从后备存储设备上分配存储空间。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/SPDK/" rel="tag"># SPDK</a>
+              <a href="/tags/Reduce/" rel="tag"># Reduce</a>
+              <a href="/tags/bdev-reduce/" rel="tag"># bdev reduce</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/03/20/implement-a-k8s-authenticating-proxy/" rel="prev" title="实现一个Kubernetes的身份认证代理服务">
+                  <i class="fa fa-chevron-left"></i> 实现一个Kubernetes的身份认证代理服务
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/10/05/enable-trim-on-usb-attached-scsi-ssds/" rel="next" title="在移动硬盘盒上启用SSD的Trim功能">
+                  在移动硬盘盒上启用SSD的Trim功能 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"53b1a6ff3499cfb20b2dbc602ef80960"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

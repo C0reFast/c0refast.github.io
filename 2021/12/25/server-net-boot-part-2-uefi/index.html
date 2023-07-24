@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="上一篇服务器网络启动方式探索Part1：Legacy启动篇里，总结了一些在Legacy启动模式下的一些网络启动方案，那么这一篇，很自然的就需要介绍一下在纯UEFI模式下的网络启动了。 相比Legacy启动直接读取MBR启动分区的第一个扇区作为引导的逻辑，UEFI启动变得强大了很多，在UEFI模式下，固件直接具有的读取FAT文件系统的能力，并且直接通过运行EFI可执行文件的方式进行引导。因为这个显而">
+<meta property="og:type" content="article">
+<meta property="og:title" content="服务器网络启动方式探索Part2：UEFI启动篇">
+<meta property="og:url" content="https://www.ichenfu.com/2021/12/25/server-net-boot-part-2-uefi/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="上一篇服务器网络启动方式探索Part1：Legacy启动篇里，总结了一些在Legacy启动模式下的一些网络启动方案，那么这一篇，很自然的就需要介绍一下在纯UEFI模式下的网络启动了。 相比Legacy启动直接读取MBR启动分区的第一个扇区作为引导的逻辑，UEFI启动变得强大了很多，在UEFI模式下，固件直接具有的读取FAT文件系统的能力，并且直接通过运行EFI可执行文件的方式进行引导。因为这个显而">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-12-25T09:31:14.000Z">
+<meta property="article:modified_time" content="2021-12-27T02:05:47.101Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="UEFI">
+<meta property="article:tag" content="PXE">
+<meta property="article:tag" content="HTTP Boot">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2021/12/25/server-net-boot-part-2-uefi/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2021/12/25/server-net-boot-part-2-uefi/","path":"2021/12/25/server-net-boot-part-2-uefi/","title":"服务器网络启动方式探索Part2：UEFI启动篇"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>服务器网络启动方式探索Part2：UEFI启动篇 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#UEFI-Boot-PXE"><span class="nav-number">1.</span> <span class="nav-text">UEFI Boot + PXE</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UEFI-Boot-iPXE"><span class="nav-number">2.</span> <span class="nav-text">UEFI Boot + iPXE</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UEFI-HTTP-Boot"><span class="nav-number">3.</span> <span class="nav-text">UEFI HTTP Boot</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Secure-boot"><span class="nav-number">4.</span> <span class="nav-text">Secure boot</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9C%9F%E6%AD%A3%E7%9A%84%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">真正的总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/12/25/server-net-boot-part-2-uefi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="服务器网络启动方式探索Part2：UEFI启动篇 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          服务器网络启动方式探索Part2：UEFI启动篇
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021年12月25日 17:31 17:31:14" itemprop="dateCreated datePublished" datetime="2021-12-25T17:31:14+08:00">2021年12月25日 17:31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年12月27日 10:05 10:05:47" itemprop="dateModified" datetime="2021-12-27T10:05:47+08:00">2021年12月27日 10:05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>上一篇<a href="/2021/11/28/server-net-boot-part-1-legacy/">服务器网络启动方式探索Part1：Legacy启动篇</a>里，总结了一些在Legacy启动模式下的一些网络启动方案，那么这一篇，很自然的就需要介绍一下在纯UEFI模式下的网络启动了。</p>
+<p>相比Legacy启动直接读取MBR启动分区的第一个扇区作为引导的逻辑，UEFI启动变得强大了很多，在UEFI模式下，固件直接具有的读取FAT文件系统的能力，并且直接通过运行EFI可执行文件的方式进行引导。<br>因为这个显而易见的变化，导致对应到PXE相关的实现上，也会有相应的区别。不过相比于Legacy启动的那些方案，区别不是那么大，依然是可以做到功能上一一对应的，同样的，我们从最简单的情况开始看起。</p>
+<span id="more"></span>
+<h2 id="UEFI-Boot-PXE"><a href="#UEFI-Boot-PXE" class="headerlink" title="UEFI Boot + PXE"></a>UEFI Boot + PXE</h2><p>这个方案依然是配置最简单的方案，和Legacy+PXE一样，也是需要ftp server和DHCP，只是DHCP服务器的配置有些不一样：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">option domain-name-servers <span class="token number">10.1</span>.1.1<span class="token punctuation">;</span>
+option routers <span class="token number">10.1</span>.1.1<span class="token punctuation">;</span>
+default-lease-time <span class="token number">14400</span><span class="token punctuation">;</span>
+ddns-update-style none<span class="token punctuation">;</span>
+subnet <span class="token number">10.1</span>.1.0 netmask <span class="token number">255.255</span>.255.0 <span class="token punctuation">&#123;</span>
+    range dynamic-bootp <span class="token number">10.1</span>.1.100 <span class="token number">10.1</span>.1.120<span class="token punctuation">;</span>
+    default-lease-time <span class="token number">14400</span><span class="token punctuation">;</span>
+    max-lease-time <span class="token number">172800</span><span class="token punctuation">;</span>
+    next-server <span class="token number">10.1</span>.1.10<span class="token punctuation">;</span>   <span class="token comment">#关键配置！用于指明tftp server的地址</span>
+    filename <span class="token string">"grubx64.efi"</span><span class="token punctuation">;</span>   <span class="token comment">#关键配置！用于指明bootloader的名字</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以发现其他的都没变化，只是把<code>filename</code>的配置换成了<code>grubx64.efi</code>，这意味着在UEFI启动里，放弃了使用<code>pxelinux</code>，转而使用了<code>grub</code>，当然其实SYSLINX也是有efi的，文件名<code>syslinux.efi</code>，但是因为确实用的比较少，所以在这个环境里就换成了<code>grub</code>作为Bootloader。</p>
+<p>接下来是<code>grubx64.efi</code>和配置文件的准备，以rhel举例，如果本身机器就是用的UEFI启动，那直接可以从<code>/boot/efi/EFI/redhat/grubx64.efi</code>拷贝，如果系统本身还是MBR安装，那可以可以参考<a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/chap-installation-server-setup">红帽的文档</a></p>
+<p>然后是配置文件，和<code>PXELINUX</code>一样，grub也是支持根据客户端的不同加载不同的配置文件的。具体的可以参考一下grub的文档:<a target="_blank" rel="noopener" href="https://www.gnu.org/software/grub/manual/grub/grub.html#Network">8 Booting GRUB from the network</a><br>不过我们也不需要多配置文件了，只需要配置一个<code>grub.cfg</code>就行，把这个配置文件放在和grubx64.efi同目录下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">set</span> <span class="token assign-left variable">timeout</span><span class="token operator">=</span><span class="token number">5</span>
+menuentry <span class="token string">'RHEL'</span> <span class="token punctuation">&#123;</span>
+  linuxefi images/vmlinuz
+  initrdefi images/initrd.img
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>至此一个最简单的UEFI的PXE启动方式就配置完成了。</p>
+<h2 id="UEFI-Boot-iPXE"><a href="#UEFI-Boot-iPXE" class="headerlink" title="UEFI Boot + iPXE"></a>UEFI Boot + iPXE</h2><p>接下来就是iPXE了，相比于PXE来说，iPXE的变化要小的多，因为自带了bootloader，所以只需要把<code>filename</code>换成<code>ipxe.efi</code>就行了:</p>
+<pre class="line-numbers language-none"><code class="language-none">option domain-name-servers 10.1.1.1;
+option routers 10.1.1.1;
+default-lease-time 14400;
+ddns-update-style none;
+subnet 10.1.1.0 netmask 255.255.255.0 &#123;
+    range dynamic-bootp 10.1.1.100 10.1.1.120;
+    default-lease-time 14400;
+    max-lease-time 172800;
+    next-server 10.1.1.10;   #关键配置！用于指明tftp server的地址
+    if exists user-class and option user-class &#x3D; &quot;iPXE&quot; &#123; #根据user-class字段来判断客户端类型
+      filename &quot;http:&#x2F;&#x2F;10.1.1.10&#x2F;boot.script&quot;;
+    &#125; else &#123;
+      filename &quot;ipxe.efi&quot;;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>同样的，<code>ipxe.efi</code>可以从<a target="_blank" rel="noopener" href="http://boot.ipxe.org/">http://boot.ipxe.org</a>直接下载。剩下的关于<code>boot.script</code>配置，和上一篇Legacy里的配置是一致的。这里就不用赘述了。</p>
+<h2 id="UEFI-HTTP-Boot"><a href="#UEFI-HTTP-Boot" class="headerlink" title="UEFI HTTP Boot"></a>UEFI HTTP Boot</h2><p>对于iPXE来说，支持通过HTTP&#x2F;FTP等等基于TCP传输的协议来获取kernel和initrd文件，速度相比于之前的PXE的tftp要快很多倍，但是如果稍微有那么一点点强迫症的话，依然会觉得整个iPXE方案里始终存在一个不太和谐的点。<br>是的，虽然kernel和initrd等文件可以通过HTTP获取，但是对于iPXE本身，无论是Legacy模式还是UEFI模式下，都依然需要用到tftp，虽然iPXE文件本身很小，只有KB级别，不会影响启动的速度了，但是tftp始终是一个依赖，这对于一个想Keep it Simple、Stupid的启动方式来说，实在是有那么些不舒服，如果能有什么办法（当然，直接把网卡刷成iPXE的方案不算）解决掉tftp的依赖，那显然是极好的。</p>
+<p>对于这个问题呢，设计固件的聪明人们自然也想到了，于是就在UEFI 2.5的SPEC里，加上了<code>HTTP Boot</code>的功能，直接让UEFI可以从HTTP URL获取启动文件，并通过这个启动文件启动系统，对于这个方案，目前已知的情况是，Intel提供的UEFI标准实现<a target="_blank" rel="noopener" href="https://github.com/tianocore/edk2">edk2</a>是支持的，文档可以参考<a target="_blank" rel="noopener" href="https://edk2-docs.gitbook.io/getting-started-with-uefi-https-boot-on-edk-ii/">Getting Started with UEFI HTTPS Boot on EDK II
+</a>，除此之外，<a target="_blank" rel="noopener" href="https://www.dell.com/support/kbdoc/zh-cn/000138011/http-boot-in-sles-15?lang=en">Dell</a>、<a target="_blank" rel="noopener" href="https://lenovopress.com/lp0736-using-http-boot-to-install-an-operating-system">联想</a>、<a target="_blank" rel="noopener" href="https://support.hpe.com/hpesc/public/docDisplay?docId=c05088241&docLocale=en_US">HPE</a>等等国际大厂以及<a target="_blank" rel="noopener" href="https://www.redhat.com/sysadmin/uefi-http-boot-libvirt">虚拟机</a>也是明确有相关文档支持的，，而对于国内的一些厂商，目前我知道的情况是大部分都支持，不过因为确实国内用的比较少，很多厂商并没有非常仔细的测试。</p>
+<p>我找了一台Dell的服务器，目前测试是没问题的，对于HTTP Boot来说，依然是通过DHCP获取启动配置，和iPXE类似，会带上一个特殊的标记，来区分普通PXE和HTTP Boot的区别，在iPXE文档<a target="_blank" rel="noopener" href="https://ipxe.org/appnote/uefihttp">UEFI HTTP chainloading</a>里，也明确表示了iPXE支持这种启动方式。下面是个可以参考的DHCP服务器的配置：</p>
+<pre class="line-numbers language-none"><code class="language-none">option domain-name-servers 10.1.1.1;
+option routers 10.1.1.1;
+default-lease-time 14400;
+ddns-update-style none;
+subnet 10.1.1.0 netmask 255.255.255.0 &#123;
+    range dynamic-bootp 10.1.1.100 10.1.1.120;
+    default-lease-time 14400;
+    max-lease-time 172800;
+    next-server 10.1.1.10;
+    if exists user-class and option user-class &#x3D; &quot;iPXE&quot; &#123; #根据user-class字段来判断客户端类型
+      filename &quot;http:&#x2F;&#x2F;10.1.1.10&#x2F;boot.script&quot;;
+    &#125; elsif substring (option vendor-class-identifier, 0, 10) &#x3D; &quot;HTTPClient&quot; &#123; # UEFI HTTP BOOT
+      filename &quot;http:&#x2F;&#x2F;10.1.1.10&#x2F;ipxe.efi&quot;;
+    &#125; else &#123;
+      filename &quot;ipxe.efi&quot;;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>通过判断<code>vendor-class-identifier</code>字段是否是<code>HTTPClient</code>，来确认是否是UEFI HTTP BOOT，如果是HTTP Boot，那就把iPXE启动文件的URL返回，这样UEFI固件就可以通过HTTP协议获取iPXE启动文件，接下来的过程就和iPXE没有区别了。如此一来，如果UFEI支持HTTP Boot并开启，那么就完全不需要tftp，只需要一个HTTP服务器就可以完成所有的启动过程了。真正意义上去除了对tftp的依赖。<br>当然，如果想基于grub或者其他bootloader启动的话，也是可以的，基本原理也差不多，感兴趣的话，可以试试。</p>
+<h2 id="Secure-boot"><a href="#Secure-boot" class="headerlink" title="Secure boot"></a>Secure boot</h2><p>对于UEFI来说，还有一个非常重要的特性：Secure boot（安全启动），开启Secure boot之后，UEFI会利用数字签名来确认EFI驱动程序或者应用程序是否是受信任的，这其中就包括了从网络下载的bootloader，一般来说，大多数常见的OS发行版都会对Secure boot进行支持，具体支持的原理，这里就不作过多的介绍了，具体的可以参考一下红帽的文档：<a target="_blank" rel="noopener" href="https://access.redhat.com/articles/5254641">What is UEFI Secure Boot and how it works?</a>。<br>需要说明的事，这篇Blog以及上一篇Blog所讨论的方法，都不涉及Secure boot，或者说这些配置都无法在Secure boot开启的情况下正常工作。但是也需要稍微进行一些修改，就可以顺利的在Secure boot环境下启动。大致的思路就是把bootloader换成一个受信任的shim，具体的实践，还需要大家自己去测试。</p>
+<h2 id="真正的总结"><a href="#真正的总结" class="headerlink" title="真正的总结"></a>真正的总结</h2><p>最近确实花了很多时间去研究服务器的网络启动方案，从PXE开始，到HTTP Boot结束，几乎把所有相关的可能性都测试了一遍，想找到一个依赖少、稳定、兼容性好的网络启动方案。然而实际情况是，面对的OEM厂商实在是太多了，每个厂商开发固件时的侧重点也不尽相同，导致在我个人内心中最完美的HTTP Boot方案，几乎没办法真正意义上在线上环境跑通。相对的，反而是最原始功能最少的方案，跨厂商的兼容性最好。</p>
+<p>其实一开始的目的不仅于此，如果要深究的话，其实在UEFI这种模式下，甚至有可能去除掉DHCP服务器这个依赖，理论上在UEFI模式下，固件是有自己的一套协议栈的，在PXE之前，是可以手动给网卡配置静态的IP地址，网关，DNS等等网络配置，同样的bootloader的位置也是可以静态指定的，除此之外，还有很多tricky的手段，不过这些方案总归兼容性堪忧，特别是国内的很多服务器厂商，大多对于这些高级功能缺乏测试。感兴趣的同学可以花点时间时间研究研究，还是挺有意思的😄。同样也是希望国内厂商能给力起来，像国际大厂们看齐，不断完善好固件等等各个方面。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/UEFI/" rel="tag"># UEFI</a>
+              <a href="/tags/PXE/" rel="tag"># PXE</a>
+              <a href="/tags/HTTP-Boot/" rel="tag"># HTTP Boot</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/11/28/server-net-boot-part-1-legacy/" rel="prev" title="服务器网络启动方式探索Part1：Legacy启动篇">
+                  <i class="fa fa-chevron-left"></i> 服务器网络启动方式探索Part1：Legacy启动篇
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/03/05/build-a-ceph-rbd-http-api-with-go-ceph/" rel="next" title="使用Go-Ceph库编写一个更简单的RBD HTTP API">
+                  使用Go-Ceph库编写一个更简单的RBD HTTP API <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"3f8a446b9d75c2a8907d70cb9172bdbe"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

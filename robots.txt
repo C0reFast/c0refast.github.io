@@ -1,0 +1,4 @@
+User-agent: *
+DisAllow: /love
+
+Sitemap: https://www.ichenfu.com/sitemap.xml

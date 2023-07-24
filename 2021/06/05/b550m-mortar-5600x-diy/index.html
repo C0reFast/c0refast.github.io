@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="自己5年前配的一台电脑比较老了，在那个Intel一家独大，疯狂挤牙膏的时代，i5-6500的CPU加上微星的B150M迫击炮，也算是当时比较主流的中端配置了。不过这么多年过去了，只有4核4线程的6500确实有点孱弱了，最近明显感受到CPu性能不够用了。正好趁着今年618，终于把平台换新了，我一直是AMD Yes党，喊了这么长时间，终于入手了微星的B550M Mortar迫击炮+AMD 5600X的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="微星B550M迫击炮+5600X折腾记">
+<meta property="og:url" content="https://www.ichenfu.com/2021/06/05/b550m-mortar-5600x-diy/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="自己5年前配的一台电脑比较老了，在那个Intel一家独大，疯狂挤牙膏的时代，i5-6500的CPU加上微星的B150M迫击炮，也算是当时比较主流的中端配置了。不过这么多年过去了，只有4核4线程的6500确实有点孱弱了，最近明显感受到CPu性能不够用了。正好趁着今年618，终于把平台换新了，我一直是AMD Yes党，喊了这么长时间，终于入手了微星的B550M Mortar迫击炮+AMD 5600X的">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-06-05T14:34:48.000Z">
+<meta property="article:modified_time" content="2021-06-09T07:06:19.660Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="B550M Mortar">
+<meta property="article:tag" content="5600X">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2021/06/05/b550m-mortar-5600x-diy/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2021/06/05/b550m-mortar-5600x-diy/","path":"2021/06/05/b550m-mortar-5600x-diy/","title":"微星B550M迫击炮+5600X折腾记"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>微星B550M迫击炮+5600X折腾记 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/06/05/b550m-mortar-5600x-diy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="微星B550M迫击炮+5600X折腾记 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          微星B550M迫击炮+5600X折腾记
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021年6月5日 22:34 22:34:48" itemprop="dateCreated datePublished" datetime="2021-06-05T22:34:48+08:00">2021年6月5日 22:34</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年6月9日 15:06 15:06:19" itemprop="dateModified" datetime="2021-06-09T15:06:19+08:00">2021年6月9日 15:06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>自己5年前配的一台电脑比较老了，在那个Intel一家独大，疯狂挤牙膏的时代，i5-6500的CPU加上微星的B150M迫击炮，也算是当时比较主流的中端配置了。不过这么多年过去了，只有4核4线程的6500确实有点孱弱了，最近明显感受到CPu性能不够用了。正好趁着今年618，终于把平台换新了，我一直是AMD Yes党，喊了这么长时间，终于入手了微星的B550M Mortar迫击炮+AMD 5600X的套装，一下子从4核4线程进化到了6核12线程，整体性能应该要强很多了。</p>
+<p>不过好事多磨啊，好不容易等到CPU和主板快递到货，到家兴致勃勃把CPU插上主板、装上散热器，又把老的主板从机箱里换出来，原来老机器有两条8G 2400MHz的内存，虽然相比现在动辄3600MHz、4000MHz的内存频率低了点，好在我也就日常使用对内存带宽和延迟也不太敏感，这个钱就省了。另外还有传家宝1060显卡、硬盘什么的统统不用换。</p>
+<p>本来想着一次点亮，可惜事与愿违、一度心态炸裂！一开电源，发现启动不了，主板上Debug灯卡在内存上，一动不动。这就有点小尴尬了，按理现在内存这东西兼容性都比较好，为啥会卡在内存上？一顿折腾、4个插槽、两根内存、各种插法全试了一遍、又尝试恢复CMOS到出厂设置、仍然不好使。难不成真得让AMD背锅？这AMD不Yes了啊。。赶紧去主板官方网站上找了下内存兼容性列表，另外也问了一下卖家客服，看看是啥情况。</p>
+<span id="more"></span>
+<p>最后客服给了个说法：升级BIOS试试。然后贴了个不需要CPU的更新BIOS的视频：</p>
+
+<div>
+    <iframe src="//player.bilibili.com/player.html?aid=59293093&bvid=BV1ot41137Wq&cid=103330978&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>
+</div>
+
+
+<p>这个主板拿到手需要更新BIOS我之前倒是在评论里看到过，不过他那个评论也比较老了，我心想现在买的主板，不会还是出厂BIOS版本吧。。但是不管怎么说，先升级看看吧。这个时候同事也发给我一个视频：<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV15a411F7fk?share_source=copy_web">微星b550迫击炮wifi版本出厂通病？内存兼容性不好，点不亮？超频超不上去？刷新bios即可解决！</a>，也是类似的情况，都在骂微星的这版出厂BIOS。</p>
+<p>好吧，赶紧找了个U盘，按视频里说的，把BIOS文件放U盘里，改名字为<code>MSI.ROM</code>，插上对应的USB口，按BIOS回写按钮，嘿嘿，一切还真是按预期在走，确实BIOS更新灯和U盘指示灯在闪，看起来真的需要更新。不过有一说一这个功能还是不错的，不需要先点亮就能刷BIOS，即使BIOS刷挂了还有个挽回的方法，不错。</p>
+<p>等了几分钟，BIOS应该是更新好了，直接重启，突然听到硬盘寻道的声音，之前这个声音是没有的！感觉有戏了！并且键盘灯也亮了，Debug灯也正常了，看起来内存识别的问题解决了。但是这个时候屏幕还不亮。好在第二个视频里提醒了一下，似乎这个主板在启动的时候如果显示器接的是DP口，会有可能不亮，但是换HDMI口就没问题。这个简单，又找了根HDMI线，一插上就亮了，能进BIOS了！</p>
+<p>进了BIOS就简单了，把一些配置改了改，主要是启动方式和顺序啥的，保存、重启，直接就进系统了，很顺利。</p>
+<p>这时候还剩下最后一个问题，这个DP口能用么？毕竟相比DP口而言HDMI带宽上没什么优势，而且我这个显示器因为分辨率和刷新率比较高，只能用DP口才能满血。于是就把HDMI线拔掉换上DP线，发现没问题，一切正常。到这里彻底舒了口气，可算没问题，一切正常了。</p>
+<p>最后又加上另外一根内存，重启了几次，都没问题，正常进系统。但是有个细节还是被我观察到了，就是在BIOS自检阶段，本来应该显示一些Logo之类的，现在都不会显示，等到进了系统，需要输密码的时候，显示器才亮起来。虽然不影响使用，但肯定还是存在一些问题。这个问题应该也是视频里提到的为啥DP口没显示、HDMI能显示的原因。</p>
+<p>既然HDMI口能用，那感觉问题不应该是主板了，会不会是显卡的问题？于是带着这个问题去搜了搜，似乎和一个UEFI的GOP特性有关，最终找到了NVIDIA的一个工具:<a target="_blank" rel="noopener" href="https://www.nvidia.com/en-us/drivers/nv-uefi-update-x64/">NVIDIA GRAPHICS FIRMWARE UPDATE TOOL FOR DISPLAYPORT 1.3 AND 1.4 DISPLAYS</a>，在这个页面里，NVIDIA提到：</p>
+<blockquote><p>Without the update, systems that are connected to a DisplayPort 1.3 &#x2F; 1.4 monitor could experience blank screens on boot until the OS loads, or could experience a hang on boot.</p>
+</blockquote>
+
+<p>和遇到的现象一样啊，显示器接到DP口上，在启动时进系统前会黑屏，直到进系统才能正常显示。于是赶紧下载了工具，运行、更新显卡的FIRMWARE。重启之后，嘿嘿，久违的主板Logo能显示了，进BIOS显示也正常。</p>
+<p>啊，问题总算解决了。这么说起来，搞不好因为AMD很多年不换平台，导致BIOS兼容多代CPU变得困难，才搞得这么多Bug。相比Intel一代一换主板，问题确实多了点，怪不得AMD给人的印象就是不如Intel稳定。</p>
+<p>总的来说，这次平台的切换，也折腾了不少，但是我依然要说出那六个字母！AMD Yes！</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/B550M-Mortar/" rel="tag"># B550M Mortar</a>
+              <a href="/tags/5600X/" rel="tag"># 5600X</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/05/23/the-ure-improvements-on-todays-hard-disks/" rel="prev" title="关于URE(Unrecoverable Read Error Rate)的一些知识更新">
+                  <i class="fa fa-chevron-left"></i> 关于URE(Unrecoverable Read Error Rate)的一些知识更新
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/06/14/systemd-privatenetwork-cause-annoying-logs/" rel="next" title="dmesg中持续打印的诡异日志追踪记">
+                  dmesg中持续打印的诡异日志追踪记 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"3994e09e4d6c18471a2d94eb58b5b4a1"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

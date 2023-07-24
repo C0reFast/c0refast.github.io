@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="Monitor部署结束后，需要部署Ceph的OSD，OSD是Ceph实际存储的核心，有了OSD，数据才能正常进行存储，这里还是在一台机器上部署3个OSD，实际生产环境中，会有更多的OSD以及更多的机器。这里默认机器上已经装好了所有Ceph对应的包。出于简单考虑，所有的OSD只分配一个对应的数据目录。实际生产环境中，一般一个OSD会对应一个设备。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="纯手动部署Ceph之OSD部署">
+<meta property="og:url" content="https://www.ichenfu.com/2017/02/09/ceph-osd-manual-deployment/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="Monitor部署结束后，需要部署Ceph的OSD，OSD是Ceph实际存储的核心，有了OSD，数据才能正常进行存储，这里还是在一台机器上部署3个OSD，实际生产环境中，会有更多的OSD以及更多的机器。这里默认机器上已经装好了所有Ceph对应的包。出于简单考虑，所有的OSD只分配一个对应的数据目录。实际生产环境中，一般一个OSD会对应一个设备。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-02-09T02:07:39.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.290Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="Ceph">
+<meta property="article:tag" content="部署">
+<meta property="article:tag" content="OSD">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2017/02/09/ceph-osd-manual-deployment/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2017/02/09/ceph-osd-manual-deployment/","path":"2017/02/09/ceph-osd-manual-deployment/","title":"纯手动部署Ceph之OSD部署"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>纯手动部署Ceph之OSD部署 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/02/09/ceph-osd-manual-deployment/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="纯手动部署Ceph之OSD部署 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          纯手动部署Ceph之OSD部署
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017年2月9日 10:07 10:07:39" itemprop="dateCreated datePublished" datetime="2017-02-09T10:07:39+08:00">2017年2月9日 10:07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>Monitor部署结束后，需要部署Ceph的OSD，OSD是Ceph实际存储的核心，有了OSD，数据才能正常进行存储，这里还是在一台机器上部署3个OSD，实际生产环境中，会有更多的OSD以及更多的机器。<br>这里默认机器上已经装好了所有Ceph对应的包。出于简单考虑，所有的OSD只分配一个对应的数据目录。实际生产环境中，一般一个OSD会对应一个设备。</p>
+<span id="more"></span>
+
+<p>首先还是修改配置文件，把OSD相关配置加入到配置文件 <code>/etc/ceph/ceph.conf</code> 中：</p>
+<blockquote><p>[osd]<br>run_dir &#x3D; &#x2F;data0&#x2F;$name<br>osd data &#x3D; &#x2F;data0&#x2F;$name<br>osd journal &#x3D; &#x2F;data0&#x2F;$name&#x2F;journal<br>osd max object name len &#x3D; 256<br>osd max object namespace len &#x3D; 64</p>
+</blockquote>
+<p>这里给每个OSD分配的存储路径在 <code>/data0/$name</code> 下。</p>
+<p>每个OSD也需要一个uuid，所以生成三个uuid：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># uuidgen </span>
+63970d8a-597a-4123-9767-097f88bbcd00
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># uuidgen </span>
+ba380679-0a81-4bbc-a5f0-27fd93137c78
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># uuidgen </span>
+7545c284-1cda-4cad-b23a-2e7c81cb8a47<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>调用 <code>ceph osd create</code> 分配OSD编号：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd create 63970d8a-597a-4123-9767-097f88bbcd00</span>
+<span class="token number">0</span>
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd create ba380679-0a81-4bbc-a5f0-27fd93137c78</span>
+<span class="token number">1</span>
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd create 7545c284-1cda-4cad-b23a-2e7c81cb8a47</span>
+<span class="token number">2</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>调用 <code>ceph-osd -i &#123;num&#125; --mkfs --mkkey --osd-uuid &#123;uid&#125;</code> 初始化OSD目录：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-osd -i 0 --mkfs --mkkey --osd-uuid 63970d8a-597a-4123-9767-097f88bbcd00</span>
+<span class="token number">2017</span>-02-09 09:34:29.961006 7ff9e6ef3800 <span class="token parameter variable">-1</span> journal FileJournal::_open: disabling aio <span class="token keyword">for</span> non-block journal.  Use journal_force_aio to force use of aio anyway
+<span class="token number">2017</span>-02-09 09:34:30.268810 7ff9e6ef3800 <span class="token parameter variable">-1</span> journal FileJournal::_open: disabling aio <span class="token keyword">for</span> non-block journal.  Use journal_force_aio to force use of aio anyway
+<span class="token number">2017</span>-02-09 09:34:30.277939 7ff9e6ef3800 <span class="token parameter variable">-1</span> filestore<span class="token punctuation">(</span>/data0/osd.0<span class="token punctuation">)</span> could not <span class="token function">find</span> <span class="token comment">#-1:7b3f43c4:::osd_superblock:0# in index: (2) No such file or directory</span>
+<span class="token number">2017</span>-02-09 09:34:30.607425 7ff9e6ef3800 <span class="token parameter variable">-1</span> created object store /data0/osd.0 <span class="token keyword">for</span> osd.0 fsid def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+<span class="token number">2017</span>-02-09 09:34:30.607495 7ff9e6ef3800 <span class="token parameter variable">-1</span> auth: error reading file: /data0/osd.0/keyring: can<span class="token string">'t open /data0/osd.0/keyring: (2) No such file or directory
+2017-02-09 09:34:30.607747 7ff9e6ef3800 -1 created new key in keyring /data0/osd.0/keyring
+
+[root@test ~]# ceph-osd -i 1 --mkfs --mkkey --osd-uuid ba380679-0a81-4bbc-a5f0-27fd93137c78
+2017-02-09 09:34:40.141883 7fcac9aef800 -1 journal FileJournal::_open: disabling aio for non-block journal.  Use journal_force_aio to force use of aio anyway
+2017-02-09 09:34:40.470945 7fcac9aef800 -1 journal FileJournal::_open: disabling aio for non-block journal.  Use journal_force_aio to force use of aio anyway
+2017-02-09 09:34:40.481165 7fcac9aef800 -1 filestore(/data0/osd.1) could not find #-1:7b3f43c4:::osd_superblock:0# in index: (2) No such file or directory
+2017-02-09 09:34:40.810678 7fcac9aef800 -1 created object store /data0/osd.1 for osd.1 fsid def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+2017-02-09 09:34:40.810743 7fcac9aef800 -1 auth: error reading file: /data0/osd.1/keyring: can'</span>t <span class="token function">open</span> /data0/osd.1/keyring: <span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span> No such <span class="token function">file</span> or directory
+<span class="token number">2017</span>-02-09 09:34:40.810982 7fcac9aef800 <span class="token parameter variable">-1</span> created new key <span class="token keyword">in</span> keyring /data0/osd.1/keyring
+
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-osd -i 2 --mkfs --mkkey --osd-uuid 7545c284-1cda-4cad-b23a-2e7c81cb8a47</span>
+<span class="token number">2017</span>-02-09 09:34:51.793012 7fa0fc68b800 <span class="token parameter variable">-1</span> journal FileJournal::_open: disabling aio <span class="token keyword">for</span> non-block journal.  Use journal_force_aio to force use of aio anyway
+<span class="token number">2017</span>-02-09 09:34:52.116001 7fa0fc68b800 <span class="token parameter variable">-1</span> journal FileJournal::_open: disabling aio <span class="token keyword">for</span> non-block journal.  Use journal_force_aio to force use of aio anyway
+<span class="token number">2017</span>-02-09 09:34:52.124229 7fa0fc68b800 <span class="token parameter variable">-1</span> filestore<span class="token punctuation">(</span>/data0/osd.2<span class="token punctuation">)</span> could not <span class="token function">find</span> <span class="token comment">#-1:7b3f43c4:::osd_superblock:0# in index: (2) No such file or directory</span>
+<span class="token number">2017</span>-02-09 09:34:52.447702 7fa0fc68b800 <span class="token parameter variable">-1</span> created object store /data0/osd.2 <span class="token keyword">for</span> osd.2 fsid def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+<span class="token number">2017</span>-02-09 09:34:52.447761 7fa0fc68b800 <span class="token parameter variable">-1</span> auth: error reading file: /data0/osd.2/keyring: can't <span class="token function">open</span> /data0/osd.2/keyring: <span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span> No such <span class="token function">file</span> or directory
+<span class="token number">2017</span>-02-09 09:34:52.447980 7fa0fc68b800 <span class="token parameter variable">-1</span> created new key <span class="token keyword">in</span> keyring /data0/osd.2/keyring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>添加OSD授权：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph auth add osd.0 osd 'allow *' mon 'allow profile osd' -i /data0/osd.0/keyring</span>
+added key <span class="token keyword">for</span> osd.0
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph auth add osd.1 osd 'allow *' mon 'allow profile osd' -i /data0/osd.1/keyring</span>
+added key <span class="token keyword">for</span> osd.1
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph auth add osd.2 osd 'allow *' mon 'allow profile osd' -i /data0/osd.2/keyring</span>
+added key <span class="token keyword">for</span> osd.2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>到这里，OSD的准备工作就已经做好了，可以启动OSD了，在启动之前，也可以先初始化一下crush map。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd crush add-bucket node1 host     # 添加一个host节点node1</span>
+added bucket node1 <span class="token builtin class-name">type</span> <span class="token function">host</span> to crush map
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd crush add-bucket node2 host     # 添加一个host节点node2</span>
+added bucket node2 <span class="token builtin class-name">type</span> <span class="token function">host</span> to crush map
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd crush move node1 root=default   # 将node1移到default下</span>
+moved item <span class="token function">id</span> <span class="token parameter variable">-2</span> name <span class="token string">'node1'</span> to location <span class="token punctuation">&#123;</span>root<span class="token operator">=</span>default<span class="token punctuation">&#125;</span> <span class="token keyword">in</span> crush map
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd crush move node2 root=default   # 将node2移到default下</span>
+moved item <span class="token function">id</span> <span class="token parameter variable">-3</span> name <span class="token string">'node2'</span> to location <span class="token punctuation">&#123;</span>root<span class="token operator">=</span>default<span class="token punctuation">&#125;</span> <span class="token keyword">in</span> crush map
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd crush add osd.0 1.0 host=node1  # 将osd.0以1.0的权重加到node1中</span>
+<span class="token function">add</span> item <span class="token function">id</span> <span class="token number">0</span> name <span class="token string">'osd.0'</span> weight <span class="token number">1</span> at location <span class="token punctuation">&#123;</span>host<span class="token operator">=</span>node1<span class="token punctuation">&#125;</span> to crush map
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd crush add osd.1 1.0 host=node1  # 将osd.1以1.0的权重加到node1中</span>
+<span class="token function">add</span> item <span class="token function">id</span> <span class="token number">1</span> name <span class="token string">'osd.1'</span> weight <span class="token number">1</span> at location <span class="token punctuation">&#123;</span>host<span class="token operator">=</span>node1<span class="token punctuation">&#125;</span> to crush map
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd crush add osd.2 1.0 host=node2  # 将osd.2以1.0的权重加到node2中</span>
+<span class="token function">add</span> item <span class="token function">id</span> <span class="token number">2</span> name <span class="token string">'osd.2'</span> weight <span class="token number">1</span> at location <span class="token punctuation">&#123;</span>host<span class="token operator">=</span>node2<span class="token punctuation">&#125;</span> to crush map
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd tree    # 查看当前OSD Tree</span>
+ID WEIGHT  TYPE NAME      UP/DOWN REWEIGHT PRIMARY-AFFINITY
+<span class="token parameter variable">-1</span> <span class="token number">3.00000</span> root default
+<span class="token parameter variable">-2</span> <span class="token number">2.00000</span>     <span class="token function">host</span> node1
+ <span class="token number">0</span> <span class="token number">1.00000</span>         osd.0     down        <span class="token number">0</span>          <span class="token number">1.00000</span>
+ <span class="token number">1</span> <span class="token number">1.00000</span>         osd.1     down        <span class="token number">0</span>          <span class="token number">1.00000</span>
+<span class="token parameter variable">-3</span> <span class="token number">1.00000</span>     <span class="token function">host</span> node2
+ <span class="token number">2</span> <span class="token number">1.00000</span>         osd.2     down        <span class="token number">0</span>          <span class="token number">1.00000</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这里添加了2个虚拟节点node1和node2，并把osd.0和osd.1添加到node1，osd.2添加到node2。这么做目的是因为Ceph默认分配的策略是至少有一份数据在其他机器上，所以需要一个node2，实际生产中多台机器的情况就不会有这个问题。</p>
+<p>最后启动所有的OSD。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-osd -i 0</span>
+starting osd.0 at :/0 osd_data /data0/osd.0 /data0/osd.0/journal
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-osd -i 1</span>
+starting osd.1 at :/0 osd_data /data0/osd.1 /data0/osd.1/journal
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-osd -i 2</span>
+starting osd.2 at :/0 osd_data /data0/osd.2 /data0/osd.2/journal
+
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph -s	# 查看集群状态</span>
+cluster def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+ health HEALTH_OK
+ monmap e1: <span class="token number">3</span> mons at <span class="token punctuation">&#123;</span>mon0<span class="token operator">=</span><span class="token number">10.67</span>.15.100:6789/0,mon1<span class="token operator">=</span><span class="token number">10.67</span>.15.100:6790/0,mon2<span class="token operator">=</span><span class="token number">10.67</span>.15.100:6791/0<span class="token punctuation">&#125;</span>
+        election epoch <span class="token number">4</span>, quorum <span class="token number">0,1</span>,2 mon0,mon1,mon2
+ osdmap e18: <span class="token number">3</span> osds: <span class="token number">3</span> up, <span class="token number">3</span> <span class="token keyword">in</span>
+        flags sortbitwise,require_jewel_osds
+  pgmap v29: <span class="token number">64</span> pgs, <span class="token number">1</span> pools, <span class="token number">0</span> bytes data, <span class="token number">0</span> objects
+        <span class="token number">11089</span> MB used, <span class="token number">647</span> GB / <span class="token number">693</span> GB avail
+              <span class="token number">64</span> active+clean<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><code>ceph -s</code> 输出显示 <code>health HEALTH_OK</code> 说明集群已经正常。<br>至此一个简单的拥有3 monitor和3 osd的Ceph集群就搭建好了。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Ceph/" rel="tag"># Ceph</a>
+              <a href="/tags/%E9%83%A8%E7%BD%B2/" rel="tag"># 部署</a>
+              <a href="/tags/OSD/" rel="tag"># OSD</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/02/07/ceph-monitor-manual-deployment/" rel="prev" title="纯手动部署Ceph之Monitor部署">
+                  <i class="fa fa-chevron-left"></i> 纯手动部署Ceph之Monitor部署
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/02/15/apache-no-space-left-on-device-couldnt-create-accept-lock/" rel="next" title="Apache: No space left on device: Couldn't create accept lock">
+                  Apache: No space left on device: Couldn't create accept lock <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"93b1eedc40e0338d3b675406509a8dc2"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

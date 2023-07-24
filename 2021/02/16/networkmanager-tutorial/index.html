@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="最近在尝试切换到CentOS 8，虽然不久前CentOS宣布从RHEL下游转向CentOS Stream了，但是相信以后会有类似的替代品出现，本质上也是在适应RHEL 8。这一试不要紧，一开始就被NetworkManager给吓住了，这都什么玩意，怎么这么难用？ 一开始呢，想着先用被废弃但是还没被删除的老network-scripts顶一顶，想回滚也很简单：执行dnf install -y net">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NetworkManager简单教程">
+<meta property="og:url" content="https://www.ichenfu.com/2021/02/16/networkmanager-tutorial/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="最近在尝试切换到CentOS 8，虽然不久前CentOS宣布从RHEL下游转向CentOS Stream了，但是相信以后会有类似的替代品出现，本质上也是在适应RHEL 8。这一试不要紧，一开始就被NetworkManager给吓住了，这都什么玩意，怎么这么难用？ 一开始呢，想着先用被废弃但是还没被删除的老network-scripts顶一顶，想回滚也很简单：执行dnf install -y net">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-02-16T13:18:27.000Z">
+<meta property="article:modified_time" content="2021-03-10T01:18:50.850Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="NetworkManager">
+<meta property="article:tag" content="CentOS 8">
+<meta property="article:tag" content="nmcli">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2021/02/16/networkmanager-tutorial/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2021/02/16/networkmanager-tutorial/","path":"2021/02/16/networkmanager-tutorial/","title":"NetworkManager简单教程"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>NetworkManager简单教程 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#NetworkManger%E7%9A%84%E8%AE%BE%E8%AE%A1%E5%93%B2%E5%AD%A6"><span class="nav-number">1.</span> <span class="nav-text">NetworkManger的设计哲学</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%A4%E4%B8%AA%E9%87%8D%E8%A6%81%E7%9A%84%E6%A6%82%E5%BF%B5"><span class="nav-number">2.</span> <span class="nav-text">两个重要的概念</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%99%E7%BD%91%E5%8D%A1%E9%85%8D%E7%BD%AE%E9%9D%99%E6%80%81IP%E5%9C%B0%E5%9D%80"><span class="nav-number">3.</span> <span class="nav-text">给网卡配置静态IP地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%99%E7%BD%91%E5%8D%A1%E6%B7%BB%E5%8A%A0vlan-tag%E5%B9%B6%E9%85%8D%E7%BD%AEIP%E5%9C%B0%E5%9D%80"><span class="nav-number">4.</span> <span class="nav-text">给网卡添加vlan tag并配置IP地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E7%BD%91%E5%8D%A1%E7%9A%84Bonding"><span class="nav-number">5.</span> <span class="nav-text">配置网卡的Bonding</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0dummy%E7%BD%91%E5%8D%A1%E5%B9%B6%E9%85%8D%E7%BD%AE%E5%A4%9A%E4%B8%AAIP%E5%9C%B0%E5%9D%80"><span class="nav-number">6.</span> <span class="nav-text">添加dummy网卡并配置多个IP地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEBond-Bridge"><span class="nav-number">7.</span> <span class="nav-text">配置Bond+Bridge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEBond-OVS-Bridge"><span class="nav-number">8.</span> <span class="nav-text">配置Bond+OVS Bridge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E6%8C%81%E4%B9%85%E5%8C%96"><span class="nav-number">9.</span> <span class="nav-text">配置持久化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Leave-Me-Alone%EF%BC%81"><span class="nav-number">10.</span> <span class="nav-text">Leave Me Alone！</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">11.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/02/16/networkmanager-tutorial/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="NetworkManager简单教程 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NetworkManager简单教程
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021年2月16日 21:18 21:18:27" itemprop="dateCreated datePublished" datetime="2021-02-16T21:18:27+08:00">2021年2月16日 21:18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年3月10日 9:18 9:18:50" itemprop="dateModified" datetime="2021-03-10T09:18:50+08:00">2021年3月10日 9:18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>最近在尝试切换到CentOS 8，虽然不久前CentOS宣布从RHEL下游转向CentOS Stream了，但是相信以后会有类似的替代品出现，本质上也是在适应RHEL 8。这一试不要紧，一开始就被NetworkManager给吓住了，这都什么玩意，怎么这么难用？</p>
+<p>一开始呢，想着先用被废弃但是还没被删除的老network-scripts顶一顶，想回滚也很简单：执行<code>dnf install -y network-scripts &amp;&amp; systemctl disable NetworkManager &amp;&amp; systemctl enable network</code>就好了，剩下的操作和CentOS 7里的ifup、ifdown脚本没什么区别，只是在执行的时候会出现一些警告信息提示这种方式已经废弃。</p>
+<p>但是又想了想，面对新事物，第一个反应就是想着禁用或者删除它，特别是一个这和当初从CentOS 6切换到CentOS 7时候抵制systemd一样的么？特别是从大方向上看，NetworkManger会和systemd一样被越来越多的发行版接受，那学习一下并且适应新的网络管理方式，不是个坏事。</p>
+<p>其实NetworkManager不是个新事物了，之前笔记本装的ArchLinux系统，很早就切换到NetworkManager了，只不过因为有GUI管理工具，而且场景比较单一，所以没有过多的关注。等到了服务器端，场景比较复杂，以前积累的东西就不管用了。最主要的，是和之前管理网络的思路出现了一些冲突，产生了一些排斥心理，觉得不好用。等静下心来仔细看了看相关的文档，也做了一些实验，适应了这种新的管理方式之后，发现NetworkManager还是值得一试的。所以还是面对几个场景分享一下几个例子，希望能帮助到更多的人完成切换吧。<span id="more"></span></p>
+<h3 id="NetworkManger的设计哲学"><a href="#NetworkManger的设计哲学" class="headerlink" title="NetworkManger的设计哲学"></a>NetworkManger的设计哲学</h3><p>要想了解一个东西，得退回到最开始，看看它的设计思路是什么。确实，NetworkManager从设计之初的想法就不太一样，<code>man NetworkManager</code>里可以看到它的设计初衷：</p>
+<blockquote><p>The NetworkManager daemon attempts to make networking configuration and operation as painless and automatic as possible by<br>managing the primary network connection and other network interfaces, like Ethernet, Wi-Fi, and Mobile Broadband devices.</p>
+</blockquote>
+
+<p>从某些角度来说，更像是Windows那样尽量让用户以最简单和最无痛的方式获得网络连接，很多操作都是自动的，而之前发行版的脚本配置模式，如果没有明确的配置文件，则不会有任何网络连接。个人觉得这个特点，在桌面端其实挺OK的，但是对于服务器来说，反而有点好心干坏事，因为这种自动的行为会影响系统管理员的预期，这也是一开始最不适应的地方，网络不按预期工作，明明没有配置，为啥网卡被启动了。不过不用担心，这些问题，都有解决办法，我们一点点去看！</p>
+<h3 id="两个重要的概念"><a href="#两个重要的概念" class="headerlink" title="两个重要的概念"></a>两个重要的概念</h3><p>在NetworkManager里，有两个非常重要的概念。基本上，理清楚这两个概念对应的含义和区别，剩下的通过文档就可以非常容易的掌握NetworkManager的使用了。</p>
+<p>第一个概念是<em>device</em>，也就是设备，怎么理解呢，一个设备对应一个网口，基本上<code>ip link</code>里看到的那些都有对应的设备，基本上可以认为就是物理的网卡，每个物理网卡都会是一个<em>device</em>，当然，有些虚拟的网卡，也会是一个<em>device</em>，比如网桥bridge等。当然也有些区别，物理网卡是现实存在的设备，本质上最终是NetworkManager来管理它，而虚拟机网卡就是NetworkManager因为连接需要而生成的网卡。使用<code>nmcli device</code>命令，可以看到当前NetworkManager所识别的设备，以及：</p>
+<pre><code>- 这个设备是否在NetworkManager的管理之下
+- 设备所对应的连接配置信息
+- 设备当前的连接配置
+</code></pre>
+<p>举个例子：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli device</span>
+DEVICE  TYPE      STATE      CONNECTION
+eth0    ethernet  connected  eth0
+lo      loopback  unmanaged  --<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以很明确的看到我这台机器有两个设备，分别是<code>eth0</code>和<code>lo</code>，其中<code>eth0</code>是以太网类型，被NetworkManager管理且对应的连接配置为<code>eth0</code>，而<code>lo</code>是loopback，目前不被NetworkManager所管理。在终端里执行，正常的设备会显示绿色，不正常的设备显示成红色，不被管理的显示为灰色，还是很清晰的。</p>
+<p>另外一个概念是<em>connection</em>，也就是连接。怎么理解呢，连接就是一系列配置，比如IP地址获取方式是DHCP或者手动配置，如果是手动配置，则配置哪些IP地址，网关，DNS等等信息，这些配置非常的多，就不一一细说了，具体的看文档就好。</p>
+<p>需要注意的是，连接是需要最终被apply到某个<em>device</em>上的，而且针对同一个<em>device</em>，可以有多个<em>connection</em>。但是，在任意时刻，有且只能有一个活动的<em>connection</em>被apply到一个<em>device</em>。有点绕，但是思考一下这个场景就很容易理解了：针对笔记本的无线网卡，在公司，连接的自然是公司的WIFI，这就需要一个<em>connection</em>，到了家里，又需要连接家里的WIFI，这就是另外一个<em>connection</em>，这俩都是针对同一个<em>device</em>的配置，也不会同时起作用。其实这个场景在服务器上不太常见，所以一般情况下，服务器上基本就可以配置成一个<em>connection</em>对应一个<em>device</em>就解决了。</p>
+<p>弄明白这俩者之间的关系，很多东西就很顺畅了。下面就是一些常见的例子：</p>
+<h3 id="给网卡配置静态IP地址"><a href="#给网卡配置静态IP地址" class="headerlink" title="给网卡配置静态IP地址"></a>给网卡配置静态IP地址</h3><p>弄明白<em>connection</em>和<em>device</em>的关系之后，给网卡配置IP地址就很方便了：创建一个新的<em>connection</em>并把它apply到我们的<em>device</em>上。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type ethernet con-name eth0-static ifname eth0 ipv4.method manual ipv4.addresses "192.168.145.60/20" ipv4.gateway 192.168.144.1 ipv4.dns 114.114.114.114 ipv6.method auto</span>
+Connection <span class="token string">'eth0-static'</span> <span class="token punctuation">(</span>3ae60979-d6f1-4dbb-8a25-ff1178e7305c<span class="token punctuation">)</span> successfully added.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>从命令上看应该还是很容易读懂的，创建一个新的<code>ethernet</code>类型的连接，名字叫做<code>eth0-static</code>，网卡名字是<code>eth0</code>，IPv4手动配置，地址网关DNS等等都填上，IPv6使用自动配置。</p>
+<p>一般情况下，连接创建后如果对应设备没有活跃的其他连接，创建的连接会直接生效，如果没生效也比较简单，直接执行：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection up eth0-static</span>
+Connection successfully activated <span class="token punctuation">(</span>D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/4<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>执行完成后连接生效，可以通过<code>nmcli connection</code>和<code>ip addr</code>命令查看结果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection</span>
+NAME         UUID                                  TYPE      DEVICE
+eth0-static  3ae60979-d6f1-4dbb-8a25-ff1178e7305c  ethernet  eth0
+eth0         <span class="token number">72534820</span>-fb8e-4c5a-8d49-8c013441d390  ethernet  --
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli device</span>
+DEVICE  TYPE      STATE      CONNECTION
+eth0    ethernet  connected  eth0-static
+lo      loopback  unmanaged  --
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># ip addr</span>
+<span class="token number">1</span>: lo: <span class="token operator">&lt;</span>LOOPBACK,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">65536</span> qdisc noqueue state UNKNOWN group default qlen <span class="token number">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet <span class="token number">127.0</span>.0.1/8 scope <span class="token function">host</span> lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope <span class="token function">host</span>
+       valid_lft forever preferred_lft forever
+<span class="token number">2</span>: eth0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq state UP group default qlen <span class="token number">1000</span>
+    link/ether 00:15:5d:b3:80:01 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">192.168</span>.145.59/20 brd <span class="token number">192.168</span>.159.255 scope global noprefixroute eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a7cf:fd2:7970:4bd4/64 scope <span class="token function">link</span> noprefixroute
+       valid_lft forever preferred_lft forever<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>如果要修改一个连接，也很简单，执行<code>nmcli connection modify XXXX ...</code>就行了，语法和add差不多，不过修改一个连接需要注意的是，有些修改不会直接生效，需要执行<code>nmcli connection down XXXX; nmcli connection up XXXX</code>之后修改的属性才能生效。</p>
+<h3 id="给网卡添加vlan-tag并配置IP地址"><a href="#给网卡添加vlan-tag并配置IP地址" class="headerlink" title="给网卡添加vlan tag并配置IP地址"></a>给网卡添加vlan tag并配置IP地址</h3><p>接下来一个例子是给网卡打vlan tag，这个场景也比较常见，特别是在交换机端是trunk口的情况下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type vlan con-name eth1-vlan-100 ifname eth1.100 dev eth1 vlan.id 100 ipv4.method manual ipv4.addresses 192.168.100.10/24 ipv4.gateway 192.168.100.1</span>
+Connection <span class="token string">'eth1-vlan-100'</span> <span class="token punctuation">(</span>c0036d90-1edf-4085-8b9c-691433fc5afd<span class="token punctuation">)</span> successfully added.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>可以发现和上个例子有一点点的不同，因为实际的流量必须通过某个设备出去，所以和之前相比需要多加上dev eth1参数，声明流量的出口。</p>
+<p>Connection创建成功后自动激活了:</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection</span>
+NAME           UUID                                  TYPE      DEVICE
+eth0-static    3ae60979-d6f1-4dbb-8a25-ff1178e7305c  ethernet  eth0
+eth1-vlan-100  c0036d90-1edf-4085-8b9c-691433fc5afd  vlan      eth1.100
+eth0           <span class="token number">72534820</span>-fb8e-4c5a-8d49-8c013441d390  ethernet  --
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># ip addr</span>
+<span class="token number">1</span>: lo: <span class="token operator">&lt;</span>LOOPBACK,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">65536</span> qdisc noqueue state UNKNOWN group default qlen <span class="token number">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet <span class="token number">127.0</span>.0.1/8 scope <span class="token function">host</span> lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope <span class="token function">host</span>
+       valid_lft forever preferred_lft forever
+<span class="token number">2</span>: eth0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq state UP group default qlen <span class="token number">1000</span>
+    link/ether 00:15:5d:b3:80:01 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">192.168</span>.145.59/20 brd <span class="token number">192.168</span>.159.255 scope global noprefixroute eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a7cf:fd2:7970:4bd4/64 scope <span class="token function">link</span> noprefixroute
+       valid_lft forever preferred_lft forever
+<span class="token number">3</span>: eth1: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq state UP group default qlen <span class="token number">1000</span>
+    link/ether 00:15:5d:b3:80:02 brd ff:ff:ff:ff:ff:ff
+<span class="token number">7</span>: eth1.100@eth1: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noqueue state UP group default qlen <span class="token number">1000</span>
+    link/ether 00:15:5d:b3:80:02 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">192.168</span>.100.10/24 brd <span class="token number">192.168</span>.100.255 scope global noprefixroute eth1.100
+       valid_lft forever preferred_lft forever
+    inet6 fe80::6c74:c8d8:7448:370a/64 scope <span class="token function">link</span> noprefixroute
+       valid_lft forever preferred_lft forever<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，因为有<code>eth1-vlan-100</code>这个<em>connection</em>并且是Active状态，所以NetworkManager创建了一个虚拟的<em>device</em>：<code>eth1.100</code>，如果我把这个<em>connection</em>给down掉之后:</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection down eth1-vlan-100</span>
+Connection <span class="token string">'eth1-vlan-100'</span> successfully deactivated <span class="token punctuation">(</span>D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/15<span class="token punctuation">)</span>
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># ip a</span>
+<span class="token number">1</span>: lo: <span class="token operator">&lt;</span>LOOPBACK,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">65536</span> qdisc noqueue state UNKNOWN group default qlen <span class="token number">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet <span class="token number">127.0</span>.0.1/8 scope <span class="token function">host</span> lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope <span class="token function">host</span>
+       valid_lft forever preferred_lft forever
+<span class="token number">2</span>: eth0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq state UP group default qlen <span class="token number">1000</span>
+    link/ether 00:15:5d:b3:80:01 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">192.168</span>.145.59/20 brd <span class="token number">192.168</span>.159.255 scope global noprefixroute eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a7cf:fd2:7970:4bd4/64 scope <span class="token function">link</span> noprefixroute
+       valid_lft forever preferred_lft forever
+<span class="token number">3</span>: eth1: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq state UP group default qlen <span class="token number">1000</span>
+    link/ether 00:15:5d:b3:80:02 brd ff:ff:ff:ff:ff:ff<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以发现<code>eth1.100</code>直接就没了。所以针对这些虚拟的<em>device</em>，它的生命周期和<em>connection</em>是一致的。</p>
+<h3 id="配置网卡的Bonding"><a href="#配置网卡的Bonding" class="headerlink" title="配置网卡的Bonding"></a>配置网卡的Bonding</h3><p>接下来该轮到bonding了，bonding也是经常遇到的配置了，配置方法也比较简单：</p>
+<p>首先先把bonding master给加上，并且配置好bonding的模式和其他参数，另外，由于bonding之后IP地址一般会配置到bond设备上，在添加的时候顺便也把IP这些信息也填上：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type bond con-name bonding-bond0 ifname bond0 bond.options "mode=balance-xor,miimon=100,xmit_hash_policy=layer3+4,updelay=5000" ipv4.method manual ipv4.addresses 192.168.100.10 ipv4.gateway 192.168.100.1</span>
+<span class="token number">8.100</span>.10/24 ipv4.gateway <span class="token number">192.168</span>.100.1
+Connection <span class="token string">'bonding-bond0'</span> <span class="token punctuation">(</span>a81a11b0-547e-4c6b-9518-62ce51d17ab4<span class="token punctuation">)</span> successfully added.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>添加完bonding master，再把两个slave添加到master口上：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type bond-slave con-name bond0-slave-ens1f0 ifname ens1f0 master bond0</span>
+Connection <span class="token string">'bond0-slave-ens1f0'</span> <span class="token punctuation">(</span>be6285ae-e07a-468d-a302-342c233d1346<span class="token punctuation">)</span> successfully added.
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type bond-slave con-name bond0-slave-ens1f1 ifname ens1f1 master bond0</span>
+Connection <span class="token string">'bond0-slave-ens1f1'</span> <span class="token punctuation">(</span>321aa982-5ca0-4379-b822-4200f366cc27<span class="token punctuation">)</span> successfully added.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>再Down&#x2F;Up一下bond口：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection down bonding-bond0;nmcli connection up bonding-bond0</span>
+Connection <span class="token string">'bonding-bond0'</span> successfully deactivated <span class="token punctuation">(</span>D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/251123<span class="token punctuation">)</span>
+Connection successfully activated <span class="token punctuation">(</span>master waiting <span class="token keyword">for</span> slaves<span class="token punctuation">)</span> <span class="token punctuation">(</span>D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/251126<span class="token punctuation">)</span>
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection</span>
+NAME                UUID                                  TYPE      DEVICE
+bonding-bond0       a81a11b0-547e-4c6b-9518-62ce51d17ab4  bond      bond0
+bond0-slave-ens1f0  be6285ae-e07a-468d-a302-342c233d1346  ethernet  ens1f0
+bond0-slave-ens1f1  321aa982-5ca0-4379-b822-4200f366cc27  ethernet  ens1f1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="添加dummy网卡并配置多个IP地址"><a href="#添加dummy网卡并配置多个IP地址" class="headerlink" title="添加dummy网卡并配置多个IP地址"></a>添加dummy网卡并配置多个IP地址</h3><p>再举个dummy网卡的例子，因为有其他部门目前在用DR模式的LVS负载均衡，所以需要配置dummy网卡和IP地址，之前也稍微看了看，也比较简单：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type dummy con-name dummy-dummy0 ifname dummy0 ipv4.method manual ipv4.addresses "1.1.1.1/32,2.2.2.2/32,3.3.3.3/32,4.4.4.4/32"</span>
+Connection <span class="token string">'dummy-dummy0'</span> <span class="token punctuation">(</span>e02daf93-d1bc-4ec7-a985-7435426129be<span class="token punctuation">)</span> successfully added.
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection</span>
+NAME          UUID                                  TYPE      DEVICE
+System eth0   5fb06bd0-0bb0-7ffb-45f1-d6edd65f3e03  ethernet  eth0
+dummy-dummy0  e02daf93-d1bc-4ec7-a985-7435426129be  dummy     dummy0
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># ip addr</span>
+<span class="token number">1</span>: lo: <span class="token operator">&lt;</span>LOOPBACK,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">65536</span> qdisc noqueue state UNKNOWN group default qlen <span class="token number">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet <span class="token number">127.0</span>.0.1/8 scope <span class="token function">host</span> lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope <span class="token function">host</span>
+       valid_lft forever preferred_lft forever
+<span class="token number">2</span>: eth0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq state UP group default qlen <span class="token number">1000</span>
+    link/ether fa:16:3e:a6:14:86 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">10.185</span>.14.232/24 brd <span class="token number">10.185</span>.14.255 scope global dynamic noprefixroute eth0
+       valid_lft 314568640sec preferred_lft 314568640sec
+    inet6 fe80::f816:3eff:fea6:1486/64 scope <span class="token function">link</span>
+       valid_lft forever preferred_lft forever
+<span class="token number">5</span>: dummy0: <span class="token operator">&lt;</span>BROADCAST,NOARP,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noqueue state UNKNOWN group default qlen <span class="token number">1000</span>
+    link/ether e6:ff:39:ca:c7:91 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">1.1</span>.1.1/32 scope global noprefixroute dummy0
+       valid_lft forever preferred_lft forever
+    inet <span class="token number">2.2</span>.2.2/32 scope global noprefixroute dummy0
+       valid_lft forever preferred_lft forever
+    inet <span class="token number">3.3</span>.3.3/32 scope global noprefixroute dummy0
+       valid_lft forever preferred_lft forever
+    inet <span class="token number">4.4</span>.4.4/32 scope global noprefixroute dummy0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::ad93:23f1:7913:b741/64 scope <span class="token function">link</span> noprefixroute
+       valid_lft forever preferred_lft forever<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>需要注意的是，一个连接是可以配置多个IP地址的，多个IP地址之间用<code>,</code>分割就可以了。</p>
+<h3 id="配置Bond-Bridge"><a href="#配置Bond-Bridge" class="headerlink" title="配置Bond+Bridge"></a>配置Bond+Bridge</h3><p>Bond+Bridge的配置在虚拟化场景比较常见，需要注意的是，有了Bridge之后，IP地址需要配置到Bridige上。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type bridge con-name bridge-br0 ifname br0 ipv4.method manual ipv4.addresses 192.168.100.10 ipv4.gateway 192.168.100.1</span>
+Connection <span class="token string">'bridge-br0'</span> <span class="token punctuation">(</span>6052d8ca-ed8f-474b-88dd-9414bf028a2c<span class="token punctuation">)</span> successfully added.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>此时创建了一个网桥br0，但是还没有任何接口连接到这个网桥上，下面需要创建个bond0口，并把bond0加到br0上。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type bond con-name bonding-bond0 ifname bond0 bond.options "mode=balance-xor,miimon=100,xmit_hash_policy=layer3+4,updelay=5000" connection.master br0 connection.slave-type bridge</span>
+Connection <span class="token string">'bonding-bond0'</span> <span class="token punctuation">(</span>755f0c93-6638-41c1-a7de-5e932eba6d1f<span class="token punctuation">)</span> successfully added.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>这里配置比较特殊，创建bond口和上面差不多，但是多了点配置<code>connection.master br0 connection.slave-type bridge</code>，这个和普通的bridge-slave口直接指定<code>master br0</code>的方式不太一样，因为bond0也是个虚拟的接口，所以需要将接口的属性<code>connection.master</code>配置成br0，才能实现把bond0这个虚拟接口添加到br0的功能。</p>
+<p>后面bond0添加两个slave口还是和之前没有区别：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type bond-slave con-name bond0-slave-ens1f0 ifname ens1f0 master bond0</span>
+Connection <span class="token string">'bond0-slave-ens1f0'</span> <span class="token punctuation">(</span>7ec188d0-d2db-4f80-a6f9-b7f93ab873f5<span class="token punctuation">)</span> successfully added.
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type bond-slave con-name bond0-slave-ens1f1 ifname ens1f1 master bond0</span>
+Connection <span class="token string">'bond0-slave-ens1f1'</span> <span class="token punctuation">(</span>655c2960-0532-482a-8227-8b98eb7f829b<span class="token punctuation">)</span> successfully added.
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection</span>
+NAME                UUID                                  TYPE      DEVICE
+bridge-br0          6052d8ca-ed8f-474b-88dd-9414bf028a2c  bridge    br0
+bond0-slave-ens1f0  7ec188d0-d2db-4f80-a6f9-b7f93ab873f5  ethernet  ens1f0
+bond0-slave-ens1f1  655c2960-0532-482a-8227-8b98eb7f829b  ethernet  ens1f1
+bonding-bond0       755f0c93-6638-41c1-a7de-5e932eba6d1f  bond      bond0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="配置Bond-OVS-Bridge"><a href="#配置Bond-OVS-Bridge" class="headerlink" title="配置Bond+OVS Bridge"></a>配置Bond+OVS Bridge</h3><p>好了，地狱级难度的例子来了，想要利用NetworkManager来管理OVS Bridge，这该怎么做？这个场景是我们线上在用的，实验了很多次，总算找到办法解决了。</p>
+<p>首先，需要安装<code>NetworkManager-ovs</code>这个包，这个包是NetworkManager支持OVS的插件，所以得安装并重启NetworkManager服务后生效：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># yum install -y NetworkManager-ovs &amp;&amp; systemctl restart NetworkManager</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>第二步，需要创建一个<code>ovs-bridge</code>，但是呢，这里有个坑，在<code>man nm-openvswitch</code>里也有一些说明：</p>
+<blockquote><ul>
+<li><p>NetworkManager only ever talks to a single OVSDB instance via an UNIX domain socket.</p>
+</li>
+<li><p>The configuration is made up of Bridges, Ports and Interfaces. Interfaces are always enslaved to Ports, and Ports are<br>  always enslaved to Bridges.</p>
+</li>
+<li><p>NetworkManager only creates Bridges, Ports and Interfaces you ask it to. Unlike ovs-vsctl, it doesn’t create the local<br>  interface nor its port automatically.</p>
+</li>
+<li><p>You can’t enslave Interface directly to a Bridge. You always need a Port, even if it has just one interface.</p>
+</li>
+<li><p>There are no VLANs. The VLAN tagging is enabled by setting a ovs-port.tag property on a Port.</p>
+</li>
+<li><p>There are no bonds either. The bonding is enabled by enslaving multiple Interfaces to a Port and configured by setting<br>  properties on a port.</p>
+</li>
+</ul>
+</blockquote>
+
+<blockquote><p>Bridges<br>    Bridges are represented by connections of ovs-bridge type. Due to the limitations of OVSDB, “empty” Bridges (with no<br>    Ports) can’t exist. NetworkManager inserts the records for Bridges into OVSDB when a Port is enslaved.</p>
+<p>Ports<br>    Ports are represented by connections of ovs-port type. Due to the limitations of OVSDB, “empty” Ports (with no Interfaces)<br>    can’t exist. Ports can also be configured to do VLAN tagging or Bonding. NetworkManager inserts the records for Ports into<br>    OVSDB when an Interface is enslaved. Ports must be enslaved to a Bridge.</p>
+<p>Interfaces<br>    Interfaces are represented by a connections enslaved to a Port. The system interfaces (that have a corresponding Linux<br>    link) have a respective connection.type of the link (e.g. “wired”, “bond”, “dummy”, etc.). Other interfaces (“internal” or<br>    “patch” interfaces) are of ovs-interface type. The OVSDB entries are inserted upon enslavement to a Port.</p>
+</blockquote>
+
+<p>怎么理解呢，首先NetworkManager之和OVSDB通信，而OVSDB是有些限制的：1. 不允许空Bridge（没有任何Port）存在；2. 不允许空Port（没有任何Interface）存在；3. 不能直接将一个Interface接到Bridge上，必须有对应的Port才行。</p>
+<p>不明白也没事，看下面的例子就好，首先我们要创建一个OVS Bridge ovsbr0：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type ovs-bridge con-name ovs-br0 conn.interface-name ovsbr0</span>
+Connection <span class="token string">'ovs-br0'</span> <span class="token punctuation">(</span>c409c13a-3bc3-42fc-a6f2-79cb315fd26b<span class="token punctuation">)</span> successfully added.
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add  type ovs-port con-name ovs-br0-port0 conn.interface-name br0-port0 master ovsbr0</span>
+Connection <span class="token string">'ovs-br0-port0'</span> <span class="token punctuation">(</span>32982ce8-41ec-44e9-8010-da80bbefa5d4<span class="token punctuation">)</span> successfully added.
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli conn add type ovs-interface slave-type ovs-port conn.interface-name ovsbr0-iface0 master br0-port0 ipv4.method manual ipv4.address 192.168.2.100/24</span>
+Connection <span class="token string">'ovs-slave-ovsbr0-iface0'</span> <span class="token punctuation">(</span>f8ba0e5e-c136-4287-aede-e4d59031d878<span class="token punctuation">)</span> successfully added.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>请注意，这三个connection必须完整创建好，才能真正的创建ovsbr0，这个和我们平常意识的逻辑很不一样。如果直接用<code>ovs-vsctl</code>命令创建，那只需要执行<code>ovs-vsctl add-br ovsbr0</code>就行了，然而在NetworkManager里，你必须把详细的内部逻辑拆分开：1. 创建个OVS Bridge ovsbr0；2. 在ovsbr0上创建个Port br0-port0；3. 创建个interface ovsbr0-iface0并连接到br0-port0上。</p>
+<p>如此看来，ovs-vsctl命令行的操作把很多细节给隐藏掉了。</p>
+<p>按照步骤创建上面三个connection之后，可以看到ovsbr0被创建好了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection</span>
+NAME                     UUID                                  TYPE           DEVICE
+ovs-slave-ovsbr0-iface0  f8ba0e5e-c136-4287-aede-e4d59031d878  ovs-interface  ovsbr0-iface0
+ovs-br0                  c409c13a-3bc3-42fc-a6f2-79cb315fd26b  ovs-bridge     ovsbr0
+ovs-br0-port0            32982ce8-41ec-44e9-8010-da80bbefa5d4  ovs-port       br0-port0
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># ovs-vsctl show</span>
+a2ab0cdf-9cf1-41a5-99f4-ae81c58e3fa8
+    Bridge ovsbr0
+        Port br0-port0
+            Interface ovsbr0-iface0
+                type: internal
+    ovs_version: <span class="token string">"2.13.1"</span>
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># ip addr</span>
+<span class="token number">1</span>: lo: <span class="token operator">&lt;</span>LOOPBACK,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">65536</span> qdisc noqueue state UNKNOWN group default qlen <span class="token number">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet <span class="token number">127.0</span>.0.1/8 scope <span class="token function">host</span> lo
+       valid_lft forever preferred_lft forever
+<span class="token number">10</span>: ovs-system: <span class="token operator">&lt;</span>BROADCAST,MULTICAST<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noop state DOWN group default qlen <span class="token number">1000</span>
+    link/ether ca:cb:22:a1:a7:fb brd ff:ff:ff:ff:ff:ff
+<span class="token number">11</span>: ovsbr0-iface0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noqueue state UNKNOWN group default qlen <span class="token number">1000</span>
+    link/ether c2:51:c2:2b:6d:b5 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">192.168</span>.2.100/24 brd <span class="token number">192.168</span>.2.255 scope global noprefixroute ovsbr0-iface0
+       valid_lft forever preferred_lft forever<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>创建好ovsbr0之后，需要把bond0也加进去，如果是ovs-vsctl命令操作的话，直接<code>ovs-vsctl add-port ovsbr0 bond0</code>就行了，ovs-vsctl帮我们隐藏了细节。同样的操作如果用NetworkManager，就需要先创建一个Port，然后再把bond0加到这个Port上了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type ovs-port con-name ovs-br0-port-bond0 conn.interface-name br0-bond0 master ovsbr0</span>
+Connection <span class="token string">'ovs-br0-port-bond0'</span> <span class="token punctuation">(</span>de863ea6-4e1b-4343-93a3-91790895256f<span class="token punctuation">)</span> successfully added.
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type bond con-name bonding-bond0 ifname bond0 bond.options "mode=balance-xor,miimon=100,xmit_hash_policy=layer3+4,updelay=5000" connection.master br0-bond0 connection.slave-type ovs-port</span>
+Connection <span class="token string">'bonding-bond0'</span> <span class="token punctuation">(</span>8b233d53-65b1-4237-b835-62135bb66ada<span class="token punctuation">)</span> successfully added.
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type bond-slave con-name bond0-slave-ens1f0 ifname ens1f0 master bond0</span>
+Connection <span class="token string">'bond0-slave-ens1f0'</span> <span class="token punctuation">(</span>6d5febe2-fc65-428a-94f1-9a782cd6b397<span class="token punctuation">)</span> successfully added.
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection add type bond-slave con-name bond0-slave-ens1f1 ifname ens1f1 master bond0</span>
+Connection <span class="token string">'bond0-slave-ens1f1'</span> <span class="token punctuation">(</span>55ce8e7f-233d-430f-901d-f0e5f326c8c7<span class="token punctuation">)</span> successfully added.
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection</span>
+NAME                     UUID                                  TYPE           DEVICE
+ovs-slave-ovsbr0-iface0  f8ba0e5e-c136-4287-aede-e4d59031d878  ovs-interface  ovsbr0-iface0
+bond0-slave-ens1f0       6d5febe2-fc65-428a-94f1-9a782cd6b397  ethernet       ens1f0
+bond0-slave-ens1f1       55ce8e7f-233d-430f-901d-f0e5f326c8c7  ethernet       ens1f1
+bonding-bond0            8b233d53-65b1-4237-b835-62135bb66ada  bond           bond0
+ovs-br0                  c409c13a-3bc3-42fc-a6f2-79cb315fd26b  ovs-bridge     ovsbr0
+ovs-br0-port0            32982ce8-41ec-44e9-8010-da80bbefa5d4  ovs-port       br0-port0
+ovs-br0-port-bond0       de863ea6-4e1b-4343-93a3-91790895256f  ovs-port       br0-bond0
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># ovs-vsctl show</span>
+a2ab0cdf-9cf1-41a5-99f4-ae81c58e3fa8
+    Bridge ovsbr0
+        Port br0-port0
+            Interface ovsbr0-iface0
+                type: internal
+        Port br0-bond0
+            Interface bond0
+                type: system
+    ovs_version: <span class="token string">"2.13.1"</span>
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># ip addr</span>
+<span class="token number">1</span>: lo: <span class="token operator">&lt;</span>LOOPBACK,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">65536</span> qdisc noqueue state UNKNOWN group default qlen <span class="token number">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet <span class="token number">127.0</span>.0.1/8 scope <span class="token function">host</span> lo
+       valid_lft forever preferred_lft forever
+<span class="token number">2</span>: ens1f0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq master bond0 state UP group default qlen <span class="token number">1000</span>
+    link/ether 0c:42:a1:70:c7:2a brd ff:ff:ff:ff:ff:ff
+<span class="token number">3</span>: ens1f1: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq master bond0 state UP group default qlen <span class="token number">1000</span>
+    link/ether 0c:42:a1:70:c7:2a brd ff:ff:ff:ff:ff:ff
+<span class="token number">4</span>: ovs-system: <span class="token operator">&lt;</span>BROADCAST,MULTICAST<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noop state DOWN group default qlen <span class="token number">1000</span>
+    link/ether ca:cb:22:a1:a7:fb brd ff:ff:ff:ff:ff:ff
+<span class="token number">5</span>: ovsbr0-iface0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noqueue state UNKNOWN group default qlen <span class="token number">1000</span>
+    link/ether c2:51:c2:2b:6d:b5 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">192.168</span>.2.100/24 brd <span class="token number">192.168</span>.2.255 scope global noprefixroute ovsbr0-iface0
+       valid_lft forever preferred_lft forever
+<span class="token number">6</span>: bond0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,MASTER,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noqueue master ovs-system state UP group default qlen <span class="token number">1000</span>
+    link/ether 0c:42:a1:70:c7:2a brd ff:ff:ff:ff:ff:ff<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，NetworkManager和直接用ovs-ctl最大的不同，就是把一些细节暴露了出来，本质上把一个接口加到Bridge上不是直接加的，而是加到了Bridge的某个Port上。但是仔细一想也没毛病，对应到现实世界的交换机，你接接线也是接到交换机的某个端口上，如果没有端口，那线往哪插呢？</p>
+<h3 id="配置持久化"><a href="#配置持久化" class="headerlink" title="配置持久化"></a>配置持久化</h3><p>好了，上面举了很多例子实现了一些我们可能会用到的场景，但是一大堆问题又来了，这些配置能持久化么？重启了机器之后还会有么？如果有，那这些配置是保存在哪里的？我能不能不用nmcli这个命令行工具了，使用配置文件，能完成网络的配置么？</p>
+<p>这些问题的答案都是肯定的！</p>
+<p>首先呢，针对老版本network-scripts，也就是存放在<code>/etc/sysconfig/network-scripts/</code>目录下的那些ifcfg-*开头的配置文件，NetworkManager通过一个ifcfg-rh plugin去识别，这个插件在RHEL里是默认开启的，而且，针对一些配置类型，比如ethernet，bond，vlan，bridge等配置，通过nmcli创建或者修改connections，都会同步到这个目录下对应的配置文件里：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection</span>
+NAME           UUID                                  TYPE      DEVICE
+eth0-static    3ae60979-d6f1-4dbb-8a25-ff1178e7305c  ethernet  eth0
+eth1-vlan-100  7bc246cb-140a-4515-8dc1-8efa03b789cb  vlan      eth1.100
+bridge-br0     3230425c-505d-4a97-adbe-6f26e27fe53c  bridge    br0
+eth0           <span class="token number">72534820</span>-fb8e-4c5a-8d49-8c013441d390  ethernet  --
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># ls -l /etc/sysconfig/network-scripts/</span>
+total <span class="token number">16</span>
+-rw-r--r--. <span class="token number">1</span> root root <span class="token number">372</span> Feb <span class="token number">20</span> <span class="token number">15</span>:13 ifcfg-bridge-br0
+-rw-r--r--. <span class="token number">1</span> root root <span class="token number">278</span> Feb <span class="token number">11</span> <span class="token number">22</span>:02 ifcfg-eth0
+-rw-r--r--. <span class="token number">1</span> root root <span class="token number">360</span> Feb <span class="token number">17</span> <span class="token number">18</span>:34 ifcfg-eth0-static
+-rw-r--r--. <span class="token number">1</span> root root <span class="token number">415</span> Feb <span class="token number">20</span> <span class="token number">16</span>:11 ifcfg-eth1-vlan-100
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/sysconfig/network-scripts/ifcfg-eth0</span>
+<span class="token assign-left variable">TYPE</span><span class="token operator">=</span>Ethernet
+<span class="token assign-left variable">PROXY_METHOD</span><span class="token operator">=</span>none
+<span class="token assign-left variable">BROWSER_ONLY</span><span class="token operator">=</span>no
+<span class="token assign-left variable">BOOTPROTO</span><span class="token operator">=</span>dhcp
+<span class="token assign-left variable">DEFROUTE</span><span class="token operator">=</span>yes
+<span class="token assign-left variable">IPV4_FAILURE_FATAL</span><span class="token operator">=</span>no
+<span class="token assign-left variable">IPV6INIT</span><span class="token operator">=</span>yes
+<span class="token assign-left variable">IPV6_AUTOCONF</span><span class="token operator">=</span>yes
+<span class="token assign-left variable">IPV6_DEFROUTE</span><span class="token operator">=</span>yes
+<span class="token assign-left variable">IPV6_FAILURE_FATAL</span><span class="token operator">=</span>no
+<span class="token assign-left variable">IPV6_ADDR_GEN_MODE</span><span class="token operator">=</span>stable-privacy
+<span class="token assign-left variable">NAME</span><span class="token operator">=</span>eth0
+<span class="token assign-left variable">UUID</span><span class="token operator">=</span><span class="token number">72534820</span>-fb8e-4c5a-8d49-8c013441d390
+<span class="token assign-left variable">DEVICE</span><span class="token operator">=</span>eth0
+<span class="token assign-left variable">ONBOOT</span><span class="token operator">=</span>yes<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到每个<em>connection</em>都对应了一个配置文件。</p>
+<p>然后NetworkManager还会读取<code>/etc/NetworkManager/system-connections/</code>目录下的配置文件，同时，通过nmcli创建和修改一些其他类型的connections，比如ovs-bridge， dummy这些，也会同步写入到这个目录下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection</span>
+NAME           UUID                                  TYPE      DEVICE
+eth0-static    3ae60979-d6f1-4dbb-8a25-ff1178e7305c  ethernet  eth0
+dummy-dummy0   190f363b-190b-4b98-b85c-046ec8995453  dummy     dummy0
+eth1-vlan-100  7bc246cb-140a-4515-8dc1-8efa03b789cb  vlan      eth1.100
+bridge-br0     3230425c-505d-4a97-adbe-6f26e27fe53c  bridge    br0
+eth0           <span class="token number">72534820</span>-fb8e-4c5a-8d49-8c013441d390  ethernet  --
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># ls -l /etc/NetworkManager/system-connections/</span>
+total <span class="token number">4</span>
+-rw-------. <span class="token number">1</span> root root <span class="token number">310</span> Feb <span class="token number">20</span> <span class="token number">16</span>:16 dummy-dummy0.nmconnection
+<span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/NetworkManager/system-connections/dummy-dummy0.nmconnection</span>
+<span class="token punctuation">[</span>connection<span class="token punctuation">]</span>
+<span class="token assign-left variable">id</span><span class="token operator">=</span>dummy-dummy0
+<span class="token assign-left variable">uuid</span><span class="token operator">=</span>190f363b-190b-4b98-b85c-046ec8995453
+<span class="token assign-left variable">type</span><span class="token operator">=</span>dummy
+interface-name<span class="token operator">=</span>dummy0
+<span class="token assign-left variable">permissions</span><span class="token operator">=</span>
+
+<span class="token punctuation">[</span>dummy<span class="token punctuation">]</span>
+
+<span class="token punctuation">[</span>ipv4<span class="token punctuation">]</span>
+<span class="token assign-left variable">address1</span><span class="token operator">=</span><span class="token number">1.1</span>.1.1/32
+<span class="token assign-left variable">address2</span><span class="token operator">=</span><span class="token number">2.2</span>.2.2/32
+<span class="token assign-left variable">address3</span><span class="token operator">=</span><span class="token number">3.3</span>.3.3/32
+<span class="token assign-left variable">address4</span><span class="token operator">=</span><span class="token number">4.4</span>.4.4/32
+dns-search<span class="token operator">=</span>
+<span class="token assign-left variable">method</span><span class="token operator">=</span>manual
+
+<span class="token punctuation">[</span>ipv6<span class="token punctuation">]</span>
+addr-gen-mode<span class="token operator">=</span>stable-privacy
+dns-search<span class="token operator">=</span>
+<span class="token assign-left variable">method</span><span class="token operator">=</span>auto
+
+<span class="token punctuation">[</span>proxy<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到dummy-dummy0的配置被持久化在<code>/etc/NetworkManager/system-connections/</code>。</p>
+<p>所以如果要修改配置，也是可以到这两个对应目录下直接修改对应的配置文件的。但是这里有个小问题，就是修改配置文件后，NetworkManager不会自动重新加载这些配置，需要手动执行<code>nmcli connection load XXXX</code>手动重载单个配置或者执行<code>nmcli connection reload</code>重新加载所有的配置文件。加载完成后，要想配置真正生效，还需要执行<code>nmcli connection down XXXX; nmcli connection up XXXX</code>或者<code>nmcli device reapply XXX</code>来真正让配置生效。</p>
+<h3 id="Leave-Me-Alone！"><a href="#Leave-Me-Alone！" class="headerlink" title="Leave Me Alone！"></a>Leave Me Alone！</h3><p>说了这么多，还有一件很重要的事还没说：假如我真的不希望NetworkManager帮我管理某些网卡，怎么办？因为默认情况下，NetworkManager会自动得把很多设备的纳入管理，然后自动创建一堆<code>Wired connection</code>，就像这样：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli connection</span>
+NAME                UUID                                  TYPE      DEVICE
+eth0                <span class="token number">72534820</span>-fb8e-4c5a-8d49-8c013441d390  ethernet  eth0
+Wired connection <span class="token number">1</span>  3a8d6eb9-9d38-3c38-9519-4918f58ee42c  ethernet  ens1f0_0
+Wired connection <span class="token number">2</span>  d0efb693-45d0-4245-8018-6738f7509094  ethernet  ens1f0_1
+Wired connection <span class="token number">3</span>  b3ecf462-a0ed-4f08-a203-c4f10b4dde0b  ethernet  ens1f0_2
+Wired connection <span class="token number">4</span>  5f0ca36b-2add-4815-a859-ff651238f893  ethernet  ens1f0_3
+Wired connection <span class="token number">5</span>  3f010d3e-74ba-405c-a575-eba53641fe4f  ethernet  ens1f0_4
+Wired connection <span class="token number">6</span>  88e4d303-fd6b-4f66-9e4e-6743ec47c8b7  ethernet  ens1f0_5
+Wired connection <span class="token number">7</span>  2800a439-44e1-4304-9c2c-dedbbba74c40  ethernet  ens1f0_6
+Wired connection <span class="token number">8</span>  21ae8892-8a51-4c77-854c-08e9857e32d9  ethernet  ens1f0_7<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在我们的SR-IOV场景下更是这样，因为开启SR-IOV之后，会创建很多的网卡，然后NetworkManager不分青红皂白，全部给管理上，让人头大。所以需要一个配置能通知NetworkManager哪些网卡不需要纳入管理。</p>
+<p>还好NetworkManager提供了这个配置项，可以声明哪些网卡不被管理：在<code>/etc/NetworkManager/conf.d/</code>目录下创建<code>unmanaged.conf</code></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/NetworkManager/conf.d/unmanaged.conf</span>
+<span class="token punctuation">[</span>keyfile<span class="token punctuation">]</span>
+unmanaged-devices<span class="token operator">=</span>mac:00:1E:65:30:D1:C4<span class="token punctuation">;</span>interface-name:eth1<span class="token punctuation">;</span>interface-name:ens1f0_*<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>具体的匹配规则有很多，可以参考<code>man NetworkManager.conf</code>的<code>Device List Format</code>部分，这里就不在赘述了。</p>
+<p>重启生效后，瞬间清净了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@localhost ~<span class="token punctuation">]</span><span class="token comment"># nmcli device</span>
+DEVICE    TYPE      STATE      CONNECTION
+eth0      ethernet  connected  eth0
+ens1f0_0  ethernet  unmanaged  --
+ens1f0_1  ethernet  unmanaged  --
+ens1f0_2  ethernet  unmanaged  --
+ens1f0_3  ethernet  unmanaged  --
+lo        loopback  unmanaged  --<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>好了，基本上NetworkManager基本的用法说的差不多了，总体来说，如果掌握了它的设计思路和一些细节逻辑，NetworkManager使用起来也没有那么不堪，甚至还会觉得很好用，毕竟nmcli命令行可以Tab进行自动提示，而且命令行风格整体也比较符合自然语言。</p>
+<p>最后希望这些例子能给遇到同样问题的人一些帮助吧，起码希望NetworkManager不要成为最终迁移RHEL 8的拦路虎。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/NetworkManager/" rel="tag"># NetworkManager</a>
+              <a href="/tags/CentOS-8/" rel="tag"># CentOS 8</a>
+              <a href="/tags/nmcli/" rel="tag"># nmcli</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/12/28/qemu-kvm-fake-cpuid/" rel="prev" title="Qemu-KVM的CPUID初始化和自定义CPU Model显示">
+                  <i class="fa fa-chevron-left"></i> Qemu-KVM的CPUID初始化和自定义CPU Model显示
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/03/16/ceph-osd-heartbeat/" rel="next" title="Ceph OSD的心跳机制分析">
+                  Ceph OSD的心跳机制分析 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"ba7823de8fa702f8c55c9e6acbf41ac2"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

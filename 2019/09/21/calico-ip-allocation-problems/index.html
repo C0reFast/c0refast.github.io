@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="之前线上运行的K8S集群出现了一个Pod IP无法访问问题，调查了一下，发现和CalicoIP地址的分配策略相关，具体表现为一个&#x2F;26的IP Block192.168.100.0&#x2F;26分配给了A机器之后，在另外一台B机器上又出现了该IP Block内的一个IP 192.168.100.10，同时因为A机器上有该IP Block的blackhole路由blackhole 192.168.1">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Calico的IP分配策略以及存在的一些问题">
+<meta property="og:url" content="https://www.ichenfu.com/2019/09/21/calico-ip-allocation-problems/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="之前线上运行的K8S集群出现了一个Pod IP无法访问问题，调查了一下，发现和CalicoIP地址的分配策略相关，具体表现为一个&#x2F;26的IP Block192.168.100.0&#x2F;26分配给了A机器之后，在另外一台B机器上又出现了该IP Block内的一个IP 192.168.100.10，同时因为A机器上有该IP Block的blackhole路由blackhole 192.168.1">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-21T08:28:51.000Z">
+<meta property="article:modified_time" content="2021-12-21T08:40:10.117Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="Calico">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2019/09/21/calico-ip-allocation-problems/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2019/09/21/calico-ip-allocation-problems/","path":"2019/09/21/calico-ip-allocation-problems/","title":"Calico的IP分配策略以及存在的一些问题"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Calico的IP分配策略以及存在的一些问题 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Calico-IP%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5"><span class="nav-number">1.</span> <span class="nav-text">Calico IP分配策略</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%BA%9B%E9%97%AE%E9%A2%98"><span class="nav-number">2.</span> <span class="nav-text">一些问题</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2019/09/21/calico-ip-allocation-problems/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Calico的IP分配策略以及存在的一些问题 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Calico的IP分配策略以及存在的一些问题
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019年9月21日 16:28 16:28:51" itemprop="dateCreated datePublished" datetime="2019-09-21T16:28:51+08:00">2019年9月21日 16:28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年12月21日 16:40 16:40:10" itemprop="dateModified" datetime="2021-12-21T16:40:10+08:00">2021年12月21日 16:40</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>之前线上运行的K8S集群出现了一个Pod IP无法访问问题，调查了一下，发现和CalicoIP地址的分配策略相关，具体表现为一个&#x2F;26的IP Block<code>192.168.100.0/26</code>分配给了A机器之后，在另外一台B机器上又出现了该IP Block内的一个IP <code>192.168.100.10</code>，同时因为A机器上有该IP Block的blackhole路由<code>blackhole 192.168.100.0/26  proto bird</code>，所以导致A机器上所有的Pod访问<code>192.168.100.10</code>时因为黑洞路由原因直接失败。</p>
+<p>遇到这个问题之前，只是通过文档大致了解Calico的IP分配策略，没有深入源码看看实际的情况，现在出现了相关问题，还是需要阅读一下相关代码，当然在这过程中也发现了一些问题，有些问题Calico官方也没有很好的解决。</p>
+<span id="more"></span>
+
+<h2 id="Calico-IP分配策略"><a href="#Calico-IP分配策略" class="headerlink" title="Calico IP分配策略"></a>Calico IP分配策略</h2><p>这里参考Calico 3.9版本代码，其中，CNI插件的流程就省去了，实际在CNI的ipam插件中会调用<code>libcalico-go</code>的相关代码，主要代码在<a target="_blank" rel="noopener" href="https://github.com/projectcalico/libcalico-go/blob/release-v3.9/lib/ipam/ipam.go">lib&#x2F;ipam&#x2F;ipam.go</a>，由于我们线上是默认的配置，也就是不会定义特殊的IP分配策略，因此主要逻辑集中在<code>AutoAssign(ctx context.Context, args AutoAssignArgs)</code>这个接口，而具体实现在<code>autoAssign</code>函数中：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>c ipamClient<span class="token punctuation">)</span> <span class="token function">autoAssign</span><span class="token punctuation">(</span>ctx context<span class="token punctuation">.</span>Context<span class="token punctuation">,</span> num <span class="token builtin">int</span><span class="token punctuation">,</span> handleID <span class="token operator">*</span><span class="token builtin">string</span><span class="token punctuation">,</span> attrs <span class="token keyword">map</span><span class="token punctuation">[</span><span class="token builtin">string</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">,</span> requestedPools <span class="token punctuation">[</span><span class="token punctuation">]</span>net<span class="token punctuation">.</span>IPNet<span class="token punctuation">,</span> version <span class="token builtin">int</span><span class="token punctuation">,</span> host <span class="token builtin">string</span><span class="token punctuation">,</span> maxNumBlocks <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span>net<span class="token punctuation">.</span>IPNet<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token operator">...</span>
+	<span class="token comment">// 根据当前的节点获取可用的所有IP池</span>
+	pools<span class="token punctuation">,</span> allPools<span class="token punctuation">,</span> err <span class="token operator">:=</span> c<span class="token punctuation">.</span><span class="token function">determinePools</span><span class="token punctuation">(</span>requestedPools<span class="token punctuation">,</span> version<span class="token punctuation">,</span> <span class="token operator">*</span>v3n<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token comment">// 没有可用的池子就直接返回了</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>pools<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"no configured Calico pools for node %v"</span><span class="token punctuation">,</span> host<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token operator">...</span>
+	ips <span class="token operator">:=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>net<span class="token punctuation">.</span>IPNet<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+	newIPs <span class="token operator">:=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>net<span class="token punctuation">.</span>IPNet<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+
+	<span class="token comment">// Record how many blocks we own so we can check against the limit later.</span>
+	numBlocksOwned <span class="token operator">:=</span> <span class="token function">len</span><span class="token punctuation">(</span>affBlocks<span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> <span class="token function">len</span><span class="token punctuation">(</span>ips<span class="token punctuation">)</span> <span class="token operator">&lt;</span> num <span class="token punctuation">&#123;</span>
+		<span class="token comment">// 所有的可用Block已经尝试完了</span>
+		<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>affBlocks<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+			logCtx<span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Ran out of existing affine blocks for host"</span><span class="token punctuation">)</span>
+			<span class="token keyword">break</span>
+        <span class="token punctuation">&#125;</span>
+		<span class="token comment">// 选取当前Block列表第一个Block作为当前Block</span>
+        cidr <span class="token operator">:=</span> affBlocks<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+		<span class="token comment">// 把第一个Block去除</span>
+		affBlocks <span class="token operator">=</span> affBlocks<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">:</span><span class="token punctuation">]</span>
+
+		<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> datastoreRetries<span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">&#123;</span>
+            <span class="token operator">...</span>
+			<span class="token comment">// 尝试从当前的Block里分配一个可用的IP</span>
+			newIPs<span class="token punctuation">,</span> err <span class="token operator">=</span> c<span class="token punctuation">.</span><span class="token function">assignFromExistingBlock</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> b<span class="token punctuation">,</span> num<span class="token punctuation">,</span> handleID<span class="token punctuation">,</span> attrs<span class="token punctuation">,</span> host<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span>
+			<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">if</span> <span class="token boolean">_</span><span class="token punctuation">,</span> ok <span class="token operator">:=</span> err<span class="token punctuation">.</span><span class="token punctuation">(</span>cerrors<span class="token punctuation">.</span>ErrorResourceUpdateConflict<span class="token punctuation">)</span><span class="token punctuation">;</span> ok <span class="token punctuation">&#123;</span>
+					logCtx<span class="token punctuation">.</span><span class="token function">WithError</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Debug</span><span class="token punctuation">(</span><span class="token string">"CAS error assigning from affine block - retry"</span><span class="token punctuation">)</span>
+					<span class="token keyword">continue</span>
+				<span class="token punctuation">&#125;</span>
+				logCtx<span class="token punctuation">.</span><span class="token function">WithError</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Warn</span><span class="token punctuation">(</span><span class="token string">"Couldn't assign from affine block, try next one"</span><span class="token punctuation">)</span>
+				<span class="token keyword">break</span>
+            <span class="token punctuation">&#125;</span>
+			<span class="token comment">// 成功则添加到IP列表</span>
+			ips <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>ips<span class="token punctuation">,</span> newIPs<span class="token operator">...</span><span class="token punctuation">)</span>
+			<span class="token keyword">break</span>
+		<span class="token punctuation">&#125;</span>
+		logCtx<span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Block '%s' provided addresses: %v"</span><span class="token punctuation">,</span> cidr<span class="token punctuation">.</span><span class="token function">String</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> newIPs<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token comment">// 获取 Calico IPAM 的配置</span>
+	<span class="token comment">// Calico IPAM 有两个全局配置项目（二者之中只能有一个为 true）：</span>
+	<span class="token comment">// StrictAffinity: 严格的一个 host 对应一个地址块，如果地址块耗尽不再分配新的地址</span>
+	<span class="token comment">// AutoAllocateBlocks: 自动分配地址块，如果基于 host affine 的地址块耗尽，将分配新的地址块</span>
+	<span class="token comment">// 这部分配置没有对外暴露，只能通过人工配置对应 etcd key 值或者编程调用相关接口来进行配置</span>
+	<span class="token comment">// 相关讨论可参考 issue： https://github.com/projectcalico/calico/issues/1577</span>
+	<span class="token comment">// 直接设置 etcd key：/calico/ipam/v2/config/ => "&#123;\"strict_affinity\":true&#125;"</span>
+	config<span class="token punctuation">,</span> err <span class="token operator">:=</span> c<span class="token punctuation">.</span><span class="token function">GetIPAMConfig</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> ips<span class="token punctuation">,</span> err
+    <span class="token punctuation">&#125;</span>
+	<span class="token comment">// 如果自动分配Block选项打开并且当前IP还不够</span>
+	<span class="token keyword">if</span> config<span class="token punctuation">.</span>AutoAllocateBlocks <span class="token operator">==</span> <span class="token boolean">true</span> <span class="token punctuation">&#123;</span>
+		rem <span class="token operator">:=</span> num <span class="token operator">-</span> <span class="token function">len</span><span class="token punctuation">(</span>ips<span class="token punctuation">)</span>
+		retries <span class="token operator">:=</span> datastoreRetries
+		<span class="token keyword">for</span> rem <span class="token operator">></span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> retries <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+			<span class="token operator">...</span>
+			<span class="token comment">// 先看看还有没有没有被绑定到节点的Block</span>
+			subnet<span class="token punctuation">,</span> err <span class="token operator">:=</span> c<span class="token punctuation">.</span>blockReaderWriter<span class="token punctuation">.</span><span class="token function">findUnclaimedBlock</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> host<span class="token punctuation">,</span> version<span class="token punctuation">,</span> pools<span class="token punctuation">,</span> <span class="token operator">*</span>config<span class="token punctuation">)</span>
+			<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">if</span> <span class="token boolean">_</span><span class="token punctuation">,</span> ok <span class="token operator">:=</span> err<span class="token punctuation">.</span><span class="token punctuation">(</span>noFreeBlocksError<span class="token punctuation">)</span><span class="token punctuation">;</span> ok <span class="token punctuation">&#123;</span>
+					<span class="token comment">// 没有就中断了</span>
+					logCtx<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"No free blocks available for allocation"</span><span class="token punctuation">)</span>
+					<span class="token keyword">break</span>
+				<span class="token punctuation">&#125;</span>
+				log<span class="token punctuation">.</span><span class="token function">WithError</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Error</span><span class="token punctuation">(</span><span class="token string">"Failed to find an unclaimed block"</span><span class="token punctuation">)</span>
+				<span class="token keyword">return</span> ips<span class="token punctuation">,</span> err
+			<span class="token punctuation">&#125;</span>
+			logCtx <span class="token operator">:=</span> log<span class="token punctuation">.</span><span class="token function">WithFields</span><span class="token punctuation">(</span>log<span class="token punctuation">.</span>Fields<span class="token punctuation">&#123;</span><span class="token string">"host"</span><span class="token punctuation">:</span> host<span class="token punctuation">,</span> <span class="token string">"subnet"</span><span class="token punctuation">:</span> subnet<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+			logCtx<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Found unclaimed block"</span><span class="token punctuation">)</span>
+
+			<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> datastoreRetries<span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">&#123;</span>
+				<span class="token comment">// 有的话，就绑定到当前节点</span>
+				pa<span class="token punctuation">,</span> err <span class="token operator">:=</span> c<span class="token punctuation">.</span>blockReaderWriter<span class="token punctuation">.</span><span class="token function">getPendingAffinity</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> host<span class="token punctuation">,</span> <span class="token operator">*</span>subnet<span class="token punctuation">)</span>
+				<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					<span class="token keyword">if</span> <span class="token boolean">_</span><span class="token punctuation">,</span> ok <span class="token operator">:=</span> err<span class="token punctuation">.</span><span class="token punctuation">(</span>cerrors<span class="token punctuation">.</span>ErrorResourceUpdateConflict<span class="token punctuation">)</span><span class="token punctuation">;</span> ok <span class="token punctuation">&#123;</span>
+						logCtx<span class="token punctuation">.</span><span class="token function">WithError</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Debug</span><span class="token punctuation">(</span><span class="token string">"CAS error claiming pending affinity, retry"</span><span class="token punctuation">)</span>
+						<span class="token keyword">continue</span>
+					<span class="token punctuation">&#125;</span>
+					logCtx<span class="token punctuation">.</span><span class="token function">WithError</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"Error claiming pending affinity"</span><span class="token punctuation">)</span>
+					<span class="token keyword">return</span> ips<span class="token punctuation">,</span> err
+				<span class="token punctuation">&#125;</span>
+
+				<span class="token comment">// 新绑定了Block，尝试在新Block里分配IP</span>
+				b<span class="token punctuation">,</span> err <span class="token operator">:=</span> c<span class="token punctuation">.</span><span class="token function">getBlockFromAffinity</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> pa<span class="token punctuation">)</span>
+				<span class="token operator">...</span>
+				newIPs<span class="token punctuation">,</span> err <span class="token operator">:=</span> c<span class="token punctuation">.</span><span class="token function">assignFromExistingBlock</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> b<span class="token punctuation">,</span> rem<span class="token punctuation">,</span> handleID<span class="token punctuation">,</span> attrs<span class="token punctuation">,</span> host<span class="token punctuation">,</span> config<span class="token punctuation">.</span>StrictAffinity<span class="token punctuation">)</span>
+				<span class="token operator">...</span>
+				<span class="token comment">// 分配成功</span>
+				ips <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>ips<span class="token punctuation">,</span> newIPs<span class="token operator">...</span><span class="token punctuation">)</span>
+				rem <span class="token operator">=</span> num <span class="token operator">-</span> <span class="token function">len</span><span class="token punctuation">(</span>ips<span class="token punctuation">)</span>
+				<span class="token keyword">break</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+
+		<span class="token keyword">if</span> retries <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> ips<span class="token punctuation">,</span> errors<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token string">"Max retries hit - excessive concurrent IPAM requests"</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token comment">// 如果IP分配还不够（也就是说已绑定的Block里的IP都分完了，并且也没有没有可绑定的新IPBlock了）并且IP还没分完，</span>
+	<span class="token comment">// 并且StrictAffinity为false</span>
+	rem <span class="token operator">:=</span> num <span class="token operator">-</span> <span class="token function">len</span><span class="token punctuation">(</span>ips<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> config<span class="token punctuation">.</span>StrictAffinity <span class="token operator">!=</span> <span class="token boolean">true</span> <span class="token operator">&amp;&amp;</span> rem <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		logCtx<span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Attempting to assign %d more addresses from non-affine blocks"</span><span class="token punctuation">,</span> rem<span class="token punctuation">)</span>
+
+		<span class="token comment">// Iterate over pools and assign addresses until we either run out of pools,</span>
+		<span class="token comment">// or the request has been satisfied.</span>
+		logCtx<span class="token punctuation">.</span><span class="token function">Info</span><span class="token punctuation">(</span><span class="token string">"Looking for blocks with free IP addresses"</span><span class="token punctuation">)</span>
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> p <span class="token operator">:=</span> <span class="token keyword">range</span> pools <span class="token punctuation">&#123;</span>
+			<span class="token comment">// 在所有的Pool里，随机选一个Block，在这个Block里找可用的IP地址</span>
+			newBlock <span class="token operator">:=</span> <span class="token function">randomBlockGenerator</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> host<span class="token punctuation">)</span>
+			<span class="token keyword">for</span> rem <span class="token operator">></span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+				<span class="token comment">// Grab a new random block.</span>
+				blockCIDR <span class="token operator">:=</span> <span class="token function">newBlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+				<span class="token keyword">if</span> blockCIDR <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					logCtx<span class="token punctuation">.</span><span class="token function">Warningf</span><span class="token punctuation">(</span><span class="token string">"All addresses exhausted in pool %s"</span><span class="token punctuation">,</span> p<span class="token punctuation">.</span>Spec<span class="token punctuation">.</span>CIDR<span class="token punctuation">)</span>
+					<span class="token keyword">break</span>
+				<span class="token punctuation">&#125;</span>
+
+				<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> datastoreRetries<span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">&#123;</span>
+                    b<span class="token punctuation">,</span> err <span class="token operator">:=</span> c<span class="token punctuation">.</span>blockReaderWriter<span class="token punctuation">.</span><span class="token function">queryBlock</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> <span class="token operator">*</span>blockCIDR<span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">)</span>
+					<span class="token operator">...</span>
+                    newIPs<span class="token punctuation">,</span> err <span class="token operator">:=</span> c<span class="token punctuation">.</span><span class="token function">assignFromExistingBlock</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> b<span class="token punctuation">,</span> rem<span class="token punctuation">,</span> handleID<span class="token punctuation">,</span> attrs<span class="token punctuation">,</span> host<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span>
+					<span class="token operator">...</span>
+					<span class="token comment">// 分配成功</span>
+					ips <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>ips<span class="token punctuation">,</span> newIPs<span class="token operator">...</span><span class="token punctuation">)</span>
+					rem <span class="token operator">=</span> num <span class="token operator">-</span> <span class="token function">len</span><span class="token punctuation">(</span>ips<span class="token punctuation">)</span>
+					<span class="token keyword">break</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 最后，如果执行到这里，意味着根据配置，无法再分配IP或者干脆全局都没有IP可用了</span>
+	logCtx<span class="token punctuation">.</span><span class="token function">Infof</span><span class="token punctuation">(</span><span class="token string">"Auto-assigned %d out of %d IPv%ds: %v"</span><span class="token punctuation">,</span> <span class="token function">len</span><span class="token punctuation">(</span>ips<span class="token punctuation">)</span><span class="token punctuation">,</span> num<span class="token punctuation">,</span> version<span class="token punctuation">,</span> ips<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> ips<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>从上面的代码可以看到，Calico分配IP的逻辑为：</p>
+<ol>
+<li>如果节点有已绑定的IP Block，则从这些IP Block中分配IP</li>
+<li>如果第1步失败（没有已绑定的IP Block，或者这些绑定的Block里IP耗尽），判断AutoAllocateBlocks为true，则寻找一个没有被绑定的IP Block，并绑定到当前节点，再执行分配逻辑</li>
+<li>如果第2步失败（AutoAllocateBlocks为false或者没有空闲的IP Block），判断StrictAffinity为false，则从所有IP Blocks中寻找未使用的IP</li>
+<li>经历前1-3步依然没有分配好IP，则失败</li>
+</ol>
+<p>阅读了上面的代码，则可以知道在默认配置(<code>StrictAffinity: true, AutoAllocateBlocks: false</code>)下，当节点已有IP Block中没有空闲IP并且也没有空闲IP Block时，就会发生之前所说的情况，而恰好Calico在利用<code>BIRD</code>进行BGP路由广播时，针对每个已绑定的IP Block会设置blackhole路由，从而会导致Pod IP无法访问的问题。</p>
+<h2 id="一些问题"><a href="#一些问题" class="headerlink" title="一些问题"></a>一些问题</h2><p>根据上面的情况，目前看我们当前使用Calico还是有些问题的，特别是对当前IPPool的处理上。</p>
+<p>一方面也是Calico的实现并不是特别好，比如<a target="_blank" rel="noopener" href="https://github.com/projectcalico/calico/issues/2713">这个Issue</a>里提到的，当前针对节点的IP Block绑定，只有自动绑定的功能，但是没有自动解绑定的功能，解绑只有在删除Calico Node对象的时候才会发生，这会引发一个问题，就是说如果集群中节点有变化了，比如某台机器下线，并有新的节点上线做替换。那如果不手动操作Calico删除对应Node，就会导致之前的IP Block不被释放，也就一直无法没绑定到其他节点。</p>
+<p>另一方面也是我们的使用问题，没有及时跟进Calico的更新，线上版本相对版本旧一点，导致在分配Block的时候，只能固定以&#x2F;26的BlockSize，也就是说一个IPBlock包含64个IP，而目前每台节点的Pod数量限制是默认的110，那么在使用2个Block也就是128个IP的时候就会出现比较大的浪费现象。这个问题在<a target="_blank" rel="noopener" href="https://github.com/projectcalico/libcalico-go/pull/931">Allow the blockSize to be configured for Calico IPAM</a>中已经得到改进，目标版本v3.3.0。</p>
+<p>因此，在高于v3.3.0版本的Calico中可以自定义BlockSize，比如定义为30，也就是一个Block 4个IP，这样可以比较好的提升IP的利用率，当然这样带来的问题是对外广播的路由数量的增加，所以需要权衡，找到一个合适的BlockSize。</p>
+<p>参考：</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://zhengyinyong.com/post/calico-ip-allocation/">https://zhengyinyong.com/post/calico-ip-allocation/</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Calico/" rel="tag"># Calico</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/09/14/raspberrypi-boot-without-HDMI-connected/" rel="prev" title="树莓派启动时需要连接HDMI问题">
+                  <i class="fa fa-chevron-left"></i> 树莓派启动时需要连接HDMI问题
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/11/03/interpreting-the-output-of-lspci/" rel="next" title="lspci命令输出的一些解释">
+                  lspci命令输出的一些解释 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"2b70a8bfde78122677cba01026563ee5"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

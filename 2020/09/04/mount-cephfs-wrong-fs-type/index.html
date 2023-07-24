@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="最近在我们的集群中遇到一个问题，在一台机器上，尝试挂载CephFS失败了，报错如下： ~]# mount -t ceph mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789:&#x2F; &#x2F;tmp&#x2F;data mount: wrong fs type, bad option, bad superblock on mon1.iche">
+<meta property="og:type" content="article">
+<meta property="og:title" content="挂载CephFS出现wrong fs type的问题">
+<meta property="og:url" content="https://www.ichenfu.com/2020/09/04/mount-cephfs-wrong-fs-type/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="最近在我们的集群中遇到一个问题，在一台机器上，尝试挂载CephFS失败了，报错如下： ~]# mount -t ceph mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789:&#x2F; &#x2F;tmp&#x2F;data mount: wrong fs type, bad option, bad superblock on mon1.iche">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-09-04T11:56:50.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.300Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="mount CephFS">
+<meta property="article:tag" content="wrong fs type">
+<meta property="article:tag" content="CentOS altarch">
+<meta property="article:tag" content="elrepo">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2020/09/04/mount-cephfs-wrong-fs-type/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2020/09/04/mount-cephfs-wrong-fs-type/","path":"2020/09/04/mount-cephfs-wrong-fs-type/","title":"挂载CephFS出现wrong fs type的问题"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>挂载CephFS出现wrong fs type的问题 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/09/04/mount-cephfs-wrong-fs-type/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="挂载CephFS出现wrong fs type的问题 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          挂载CephFS出现wrong fs type的问题
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020年9月4日 19:56 19:56:50" itemprop="dateCreated datePublished" datetime="2020-09-04T19:56:50+08:00">2020年9月4日 19:56</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>最近在我们的集群中遇到一个问题，在一台机器上，尝试挂载CephFS失败了，报错如下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">~<span class="token punctuation">]</span><span class="token comment"># mount -t ceph mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789:/ /tmp/data</span>
+mount: wrong fs type, bad option, bad superblock on mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789:/,
+       missing codepage or helper program, or other error
+
+       In some cases useful info is found <span class="token keyword">in</span> syslog - try
+       <span class="token function">dmesg</span> <span class="token operator">|</span> <span class="token function">tail</span> or so.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>因为之前遇到<a href="/2019/09/07/mount-cephfs-no-such-process/">挂载CephFS时出现failed: No such process的问题</a>，这两个问题看起来有点相似，但是确实有些不一样。因为有前车之鉴，所以顺着之前的思路，首先根据报错的提示，看看dmesg里有没有什么有用的信息：</p>
+<span id="more"></span>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>  <span class="token number">11457.592011</span><span class="token punctuation">]</span> FS-Cache: Loaded
+<span class="token punctuation">[</span>  <span class="token number">11457.617265</span><span class="token punctuation">]</span> Key <span class="token builtin class-name">type</span> ceph registered
+<span class="token punctuation">[</span>  <span class="token number">11457.617686</span><span class="token punctuation">]</span> libceph: loaded <span class="token punctuation">(</span>mon/osd proto <span class="token number">15</span>/24<span class="token punctuation">)</span>
+<span class="token punctuation">[</span>  <span class="token number">11457.640554</span><span class="token punctuation">]</span> FS-Cache: Netfs <span class="token string">'ceph'</span> registered <span class="token keyword">for</span> caching
+<span class="token punctuation">[</span>  <span class="token number">11457.640558</span><span class="token punctuation">]</span> ceph: loaded <span class="token punctuation">(</span>mds proto <span class="token number">32</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span>  <span class="token number">11457.640978</span><span class="token punctuation">]</span> libceph: parse_ips bad <span class="token function">ip</span> <span class="token string">'mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789'</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>看起来和之前的错误很相似，都是出在域名解析上，同样的手法，把域名换成IP地址试试，发现可以正常挂载，那么问题肯定还是出在域名解析上了，只是这次和上次不是同一个错误罢了。</p>
+<p>从strace的结果，确实也能看出一些不同，上次mount调用返回值是<code>ESRCH</code>，而这次的返回值是<code>EINVAL</code>：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">stat<span class="token punctuation">(</span><span class="token string">"/sbin/fs/mount.ceph"</span>, 0x7ffd47a8b8d0<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token parameter variable">-1</span> ENOENT <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>
+mount<span class="token punctuation">(</span><span class="token string">"mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789:/"</span>, <span class="token string">"/tmp/ceph"</span>, <span class="token string">"ceph"</span>, MS_MGC_VAL, NULL<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token parameter variable">-1</span> EINVAL <span class="token punctuation">(</span>Invalid argument<span class="token punctuation">)</span>
+open<span class="token punctuation">(</span><span class="token string">"/usr/share/locale/locale.alias"</span>, O_RDONLY<span class="token operator">|</span>O_CLOEXEC<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">3</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>于是尝试把相关内核模块的debug模块打开，看看能不能输出一些有用的日志信息，但是这次发现有些不太一样了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">~<span class="token punctuation">]</span><span class="token comment"># lsmod |grep ceph</span>
+ceph                  <span class="token number">327680</span>  <span class="token number">0</span>
+libceph               <span class="token number">245760</span>  <span class="token number">1</span> ceph
+libcrc32c              <span class="token number">16384</span>  <span class="token number">1</span> libceph
+fscache                <span class="token number">65536</span>  <span class="token number">1</span> ceph<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>通过lsmod看到libceph模块不再依赖dns_resolver模块了？这是什么意思？需要说明的是，这台机器和之前还有一个区别，就是安装了<code>centos-altarch</code>提供的更新的内核。当前的内核版本是<code>4.19.113-300.el7.x86_64</code>，难道是新内耗的代码做了修改，不再依赖dns_resolver了？于是赶紧又找到了当前内核的代码，看看和之前是不是有什么不同：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token comment">/*
+ * Parse an ip[:port] list into an addr array.  Use the default
+ * monitor port if a port isn't specified.
+ */</span>
+<span class="token keyword">int</span> <span class="token function">ceph_parse_ips</span><span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>c<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>end<span class="token punctuation">,</span>
+                   <span class="token keyword">struct</span> <span class="token class-name">ceph_entity_addr</span> <span class="token operator">*</span>addr<span class="token punctuation">,</span>
+                   <span class="token keyword">int</span> max_count<span class="token punctuation">,</span> <span class="token keyword">int</span> <span class="token operator">*</span>count<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+        <span class="token keyword">int</span> i<span class="token punctuation">,</span> ret <span class="token operator">=</span> <span class="token operator">-</span>EINVAL<span class="token punctuation">;</span>
+        <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>p <span class="token operator">=</span> c<span class="token punctuation">;</span>
+
+        <span class="token function">dout</span><span class="token punctuation">(</span><span class="token string">"parse_ips on '%.*s'\n"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">(</span>end<span class="token operator">-</span>c<span class="token punctuation">)</span><span class="token punctuation">,</span> c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span>i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> max_count<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>ipend<span class="token punctuation">;</span>
+                <span class="token keyword">struct</span> <span class="token class-name">sockaddr_storage</span> <span class="token operator">*</span>ss <span class="token operator">=</span> <span class="token operator">&amp;</span>addr<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>in_addr<span class="token punctuation">;</span>
+                <span class="token keyword">int</span> port<span class="token punctuation">;</span>
+                <span class="token keyword">char</span> delim <span class="token operator">=</span> <span class="token char">','</span><span class="token punctuation">;</span>
+
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">*</span>p <span class="token operator">==</span> <span class="token char">'['</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                        delim <span class="token operator">=</span> <span class="token char">']'</span><span class="token punctuation">;</span>
+                        p<span class="token operator">++</span><span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span>
+                <span class="token comment">// ceph_parse_ips调用ceph_parse_server_name函数</span>
+                ret <span class="token operator">=</span> <span class="token function">ceph_parse_server_name</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> end <span class="token operator">-</span> p<span class="token punctuation">,</span> ss<span class="token punctuation">,</span> delim<span class="token punctuation">,</span> <span class="token operator">&amp;</span>ipend<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>ret<span class="token punctuation">)</span>
+                        <span class="token keyword">goto</span> bad<span class="token punctuation">;</span>
+                ret <span class="token operator">=</span> <span class="token operator">-</span>EINVAL<span class="token punctuation">;</span>
+        <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        <span class="token punctuation">&#125;</span>
+
+bad<span class="token operator">:</span>
+        <span class="token comment">// 失败了会在dmesg输出错误信息，正是我们看到的格式</span>
+        <span class="token function">pr_err</span><span class="token punctuation">(</span><span class="token string">"parse_ips bad ip '%.*s'\n"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">(</span>end <span class="token operator">-</span> c<span class="token punctuation">)</span><span class="token punctuation">,</span> c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> ret<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">EXPORT_SYMBOL</span><span class="token punctuation">(</span>ceph_parse_ips<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>再看<code>ceph_parse_server_name</code>这个函数，发现会继续调用<code>ceph_dns_resolve_name</code></p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token comment">/*
+ * Parse a server name (IP or hostname). If a valid IP address is not found
+ * then try to extract a hostname to resolve using userspace DNS upcall.
+ */</span>
+<span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">ceph_parse_server_name</span><span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>name<span class="token punctuation">,</span> <span class="token class-name">size_t</span> namelen<span class="token punctuation">,</span>
+                        <span class="token keyword">struct</span> <span class="token class-name">sockaddr_storage</span> <span class="token operator">*</span>ss<span class="token punctuation">,</span> <span class="token keyword">char</span> delim<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span><span class="token operator">*</span>ipend<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+        <span class="token keyword">int</span> ret<span class="token punctuation">;</span>
+
+        ret <span class="token operator">=</span> <span class="token function">ceph_pton</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> namelen<span class="token punctuation">,</span> ss<span class="token punctuation">,</span> delim<span class="token punctuation">,</span> ipend<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>ret<span class="token punctuation">)</span>
+                ret <span class="token operator">=</span> <span class="token function">ceph_dns_resolve_name</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> namelen<span class="token punctuation">,</span> ss<span class="token punctuation">,</span> delim<span class="token punctuation">,</span> ipend<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">return</span> ret<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>最后看到<code>ceph_dns_resolve_name</code>这个函数，发现在内核里有两个实现：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token comment">/*
+ * Extract hostname string and resolve using kernel DNS facility.
+ */</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">ifdef</span> <span class="token expression">CONFIG_CEPH_LIB_USE_DNS_RESOLVER</span></span>
+<span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">ceph_dns_resolve_name</span><span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>name<span class="token punctuation">,</span> <span class="token class-name">size_t</span> namelen<span class="token punctuation">,</span>
+                <span class="token keyword">struct</span> <span class="token class-name">sockaddr_storage</span> <span class="token operator">*</span>ss<span class="token punctuation">,</span> <span class="token keyword">char</span> delim<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span><span class="token operator">*</span>ipend<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+        <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>end<span class="token punctuation">,</span> <span class="token operator">*</span>delim_p<span class="token punctuation">;</span>
+        <span class="token keyword">char</span> <span class="token operator">*</span>colon_p<span class="token punctuation">,</span> <span class="token operator">*</span>ip_addr <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> ip_len<span class="token punctuation">,</span> ret<span class="token punctuation">;</span>
+
+        <span class="token comment">/*
+         * The end of the hostname occurs immediately preceding the delimiter or
+         * the port marker (':') where the delimiter takes precedence.
+         */</span>
+        delim_p <span class="token operator">=</span> <span class="token function">memchr</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> delim<span class="token punctuation">,</span> namelen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        colon_p <span class="token operator">=</span> <span class="token function">memchr</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> <span class="token char">':'</span><span class="token punctuation">,</span> namelen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>delim_p <span class="token operator">&amp;&amp;</span> colon_p<span class="token punctuation">)</span>
+                end <span class="token operator">=</span> delim_p <span class="token operator">&lt;</span> colon_p <span class="token operator">?</span> delim_p <span class="token operator">:</span> colon_p<span class="token punctuation">;</span>
+        <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>delim_p <span class="token operator">&amp;&amp;</span> colon_p<span class="token punctuation">)</span>
+                end <span class="token operator">=</span> colon_p<span class="token punctuation">;</span>
+        <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                end <span class="token operator">=</span> delim_p<span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>end<span class="token punctuation">)</span> <span class="token comment">/* case: hostname:/ */</span>
+                        end <span class="token operator">=</span> name <span class="token operator">+</span> namelen<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>end <span class="token operator">&lt;=</span> name<span class="token punctuation">)</span>
+                <span class="token keyword">return</span> <span class="token operator">-</span>EINVAL<span class="token punctuation">;</span>
+
+        <span class="token comment">/* do dns_resolve upcall */</span>
+        ip_len <span class="token operator">=</span> <span class="token function">dns_query</span><span class="token punctuation">(</span><span class="token constant">NULL</span><span class="token punctuation">,</span> name<span class="token punctuation">,</span> end <span class="token operator">-</span> name<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>ip_addr<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>ip_len <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span>
+                ret <span class="token operator">=</span> <span class="token function">ceph_pton</span><span class="token punctuation">(</span>ip_addr<span class="token punctuation">,</span> ip_len<span class="token punctuation">,</span> ss<span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">else</span>
+                ret <span class="token operator">=</span> <span class="token operator">-</span>ESRCH<span class="token punctuation">;</span>
+
+        <span class="token function">kfree</span><span class="token punctuation">(</span>ip_addr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token operator">*</span>ipend <span class="token operator">=</span> end<span class="token punctuation">;</span>
+
+        <span class="token function">pr_info</span><span class="token punctuation">(</span><span class="token string">"resolve '%.*s' (ret=%d): %s\n"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">(</span>end <span class="token operator">-</span> name<span class="token punctuation">)</span><span class="token punctuation">,</span> name<span class="token punctuation">,</span>
+                        ret<span class="token punctuation">,</span> ret <span class="token operator">?</span> <span class="token string">"failed"</span> <span class="token operator">:</span> <span class="token function">ceph_pr_addr</span><span class="token punctuation">(</span>ss<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">return</span> ret<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">else</span></span>
+<span class="token keyword">static</span> <span class="token keyword">inline</span> <span class="token keyword">int</span> <span class="token function">ceph_dns_resolve_name</span><span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>name<span class="token punctuation">,</span> <span class="token class-name">size_t</span> namelen<span class="token punctuation">,</span>
+                <span class="token keyword">struct</span> <span class="token class-name">sockaddr_storage</span> <span class="token operator">*</span>ss<span class="token punctuation">,</span> <span class="token keyword">char</span> delim<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span><span class="token operator">*</span>ipend<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token operator">-</span>EINVAL<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>如果存在<code>CONFIG_CEPH_LIB_USE_DNS_RESOLVER</code>这个宏，则会调用dns_resolver提供的相关接口查询域名DNS，如果不存在这个宏，则直接就是另一个实现，这个实现直接返回<code>EINVAL</code>。从代码来看<code>ceph_dns_resolve_name</code>的实现没有什么变化，那难道是没有打开<code>CONFIG_CEPH_LIB_USE_DNS_RESOLVER</code>这个选项？于是转到内核的config文件，看看编译内核时的选项是什么：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">~<span class="token punctuation">]</span><span class="token comment"># grep CONFIG_CEPH_LIB_USE_DNS_RESOLVER /boot/config-4.19.113-300.el7.x86_64</span>
+<span class="token comment"># CONFIG_CEPH_LIB_USE_DNS_RESOLVER is not set</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>发现确实当前用的<code>4.19.113-300.el7.x86_64</code>这个内核没有开这个选项。再看看其他的内核呢？</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">~<span class="token punctuation">]</span><span class="token comment"># grep CONFIG_CEPH_LIB_USE_DNS_RESOLVER /boot/config-*</span>
+/boot/config-3.10.0-1062.el7.x86_64:CONFIG_CEPH_LIB_USE_DNS_RESOLVER<span class="token operator">=</span>y
+/boot/config-4.19.113-300.el7.x86_64:<span class="token comment"># CONFIG_CEPH_LIB_USE_DNS_RESOLVER is not set</span>
+/boot/config-4.4.235-1.el7.elrepo.x86_64:<span class="token comment"># CONFIG_CEPH_LIB_USE_DNS_RESOLVER is not set</span>
+/boot/config-5.8.6-2.el7.elrepo.x86_64:<span class="token comment"># CONFIG_CEPH_LIB_USE_DNS_RESOLVER is not set</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>最后发现除了CentOS 7默认的<code>3.10.0-1062.el7.x86_64</code>内核之外，<code>CentOS altarch</code>、<code>elrepo</code>里提供的内核，都没有开启这个选项，也就是说如果使用这些内核，那挂载CephFS的时候，就不能使用域名，只能使用IP地址指定Monitor的地址了。</p>
+<p>有点不明白这些内核为什么不打开这个选项。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/mount-CephFS/" rel="tag"># mount CephFS</a>
+              <a href="/tags/wrong-fs-type/" rel="tag"># wrong fs type</a>
+              <a href="/tags/CentOS-altarch/" rel="tag"># CentOS altarch</a>
+              <a href="/tags/elrepo/" rel="tag"># elrepo</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/08/23/simple-example-for-enabling-sriov-using-udev/" rel="prev" title="编写Udev规则文件开机设置网卡SR-IOV">
+                  <i class="fa fa-chevron-left"></i> 编写Udev规则文件开机设置网卡SR-IOV
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/10/11/measuring-avaliable-memory/" rel="next" title="当我们在讨论可用内存，我们在讨论什么？">
+                  当我们在讨论可用内存，我们在讨论什么？ <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"84ac1fb51db527684b222cf3880aca71"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="在我们内部的一个系统是跑在K8S之上的，而这批机器上的dmesg日志里，老是会不停的刷下面的这个日志： 03:52:42 localhost kernel: nf_conntrack: falling back to vmalloc. 03:52:42 localhost kernel: IPVS: Creating netns size&#x3D;2048 id&#x3D;97719 03:54">
+<meta property="og:type" content="article">
+<meta property="og:title" content="dmesg中持续打印的诡异日志追踪记">
+<meta property="og:url" content="https://www.ichenfu.com/2021/06/14/systemd-privatenetwork-cause-annoying-logs/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="在我们内部的一个系统是跑在K8S之上的，而这批机器上的dmesg日志里，老是会不停的刷下面的这个日志： 03:52:42 localhost kernel: nf_conntrack: falling back to vmalloc. 03:52:42 localhost kernel: IPVS: Creating netns size&#x3D;2048 id&#x3D;97719 03:54">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-06-14T09:03:37.000Z">
+<meta property="article:modified_time" content="2021-06-15T02:02:01.050Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="nf_conntrack">
+<meta property="article:tag" content="netns">
+<meta property="article:tag" content="systemd-hostnamed">
+<meta property="article:tag" content="PrivateNetwork">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2021/06/14/systemd-privatenetwork-cause-annoying-logs/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2021/06/14/systemd-privatenetwork-cause-annoying-logs/","path":"2021/06/14/systemd-privatenetwork-cause-annoying-logs/","title":"dmesg中持续打印的诡异日志追踪记"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>dmesg中持续打印的诡异日志追踪记 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/06/14/systemd-privatenetwork-cause-annoying-logs/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="dmesg中持续打印的诡异日志追踪记 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          dmesg中持续打印的诡异日志追踪记
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021年6月14日 17:03 17:03:37" itemprop="dateCreated datePublished" datetime="2021-06-14T17:03:37+08:00">2021年6月14日 17:03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年6月15日 10:02 10:02:01" itemprop="dateModified" datetime="2021-06-15T10:02:01+08:00">2021年6月15日 10:02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>在我们内部的一个系统是跑在K8S之上的，而这批机器上的<code>dmesg</code>日志里，老是会不停的刷下面的这个日志：</p>
+<pre class="line-numbers language-none"><code class="language-none">03:52:42 localhost kernel: nf_conntrack: falling back to vmalloc.
+03:52:42 localhost kernel: IPVS: Creating netns size&#x3D;2048 id&#x3D;97719
+03:54:37 localhost kernel: nf_conntrack: falling back to vmalloc.
+03:54:37 localhost kernel: nf_conntrack: falling back to vmalloc.
+03:54:37 localhost kernel: IPVS: Creating netns size&#x3D;2048 id&#x3D;97720
+03:56:48 localhost kernel: nf_conntrack: falling back to vmalloc.
+03:56:48 localhost kernel: nf_conntrack: falling back to vmalloc.
+03:56:48 localhost kernel: IPVS: Creating netns size&#x3D;2048 id&#x3D;97721
+03:58:20 localhost kernel: IPVS: Creating netns size&#x3D;2048 id&#x3D;97722<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>本来这些日志刷就刷了，也没什么大问题，但是呢，时间一长，因为logrotate机制，会把之前产生的日志给顶掉，导致有些时候想看之前的<code>dmesg</code>日志看不了了，这就比较难受了，终于，在当鸵鸟很长时间之后，想想还是找找原因，把这个问题解决一下。</p>
+<span id="more"></span>
+
+<p>如果直接用Google搜索<code>IPVS: Creating netns size=XXX id=XXX</code>或者<code>nf_conntrack: falling back to vmalloc</code>这些关键词，得到的解决方案不痛不痒，针对nf_conntrack，大部分的答案都是提示<code>vm.min_free_kbytes</code>比较小，需要调大这个参数，或者，<code>net.netfilter.nf_conntrack_*</code>相关的几个参数太大了，需要调小。而IPVS基本都没有什么相关的结果。所以我们还是得自己尝试解决一下。</p>
+<p>一开始呢，就觉得大概率是K8S的问题，一方面因为这些日志，只有在跑了K8S的机器上才会出现；另外一方面因为这个<code>nf_conntrack</code>和<code>IPVS</code>和网络强相关，在K8S的Node节点上两个组件之一的<code>kube-proxy</code>，也会定期去同步一些网络配置，那很明显的<code>kube-proxy</code>嫌疑最大。于是我就配置了一下，把<code>kube-proxy</code>的日志等级开到最大，让运行中所有的tracing日志也都打印出来：</p>
+<pre class="line-numbers language-none"><code class="language-none">22:10:23 localhost kube-proxy[20761]: I0611 22:10:23.021677   20761 proxier.go:708] Syncing iptables rules
+22:10:23 localhost kube-proxy[20761]: I0611 22:10:23.021703   20761 iptables.go:437] running iptables -N [KUBE-EXTERNAL-SERVICES -t filter]
+...
+22:10:23 localhost kube-proxy[20761]: I0611 22:10:23.038491   20761 iptables.go:397] running iptables-restore [-w --noflush --counters]
+22:10:23 localhost kube-proxy[20761]: I0611 22:10:23.040739   20761 proxier.go:687] syncProxyRules took 19.090909ms
+22:10:23 localhost kube-proxy[20761]: I0611 22:10:23.040756   20761 bounded_frequency_runner.go:221] sync-runner: ran, next possible in 0s, periodic in 30s
+22:10:23 localhost kube-proxy[20761]: I0611 22:10:23.109303   20761 config.go:167] Calling handler.OnEndpointsUpdate
+22:10:23 localhost kube-proxy[20761]: I0611 22:10:23.842263   20761 config.go:167] Calling handler.OnEndpointsUpdate
+22:10:25 localhost kube-proxy[20761]: I0611 22:10:25.120048   20761 config.go:167] Calling handler.OnEndpointsUpdate
+...
+22:10:51 localhost kube-proxy[20761]: I0611 22:10:51.268046   20761 config.go:167] Calling handler.OnEndpointsUpdate
+22:10:52 localhost kube-proxy[20761]: I0611 22:10:52.018512   20761 config.go:167] Calling handler.OnEndpointsUpdate
+22:10:53 localhost kube-proxy[20761]: I0611 22:10:53.040907   20761 proxier.go:708] Syncing iptables rules
+22:10:53 localhost kube-proxy[20761]: I0611 22:10:53.040933   20761 iptables.go:437] running iptables -N [KUBE-EXTERNAL-SERVICES -t filter]
+...
+22:10:53 localhost kube-proxy[20761]: I0611 22:10:53.056819   20761 iptables.go:397] running iptables-restore [-w --noflush --counters]
+22:10:53 localhost kube-proxy[20761]: I0611 22:10:53.058812   20761 proxier.go:687] syncProxyRules took 17.935822ms
+22:10:53 localhost kube-proxy[20761]: I0611 22:10:53.058827   20761 bounded_frequency_runner.go:221] sync-runner: ran, next possible in 0s, periodic in 30s
+22:10:53 localhost kube-proxy[20761]: I0611 22:10:53.278609   20761 config.go:167] Calling handler.OnEndpointsUpdate
+22:10:54 localhost kube-proxy[20761]: I0611 22:10:54.026900   20761 config.go:167] Calling handler.OnEndpointsUpdate
+22:10:55 localhost kube-proxy[20761]: I0611 22:10:55.287980   20761 config.go:167] Calling handler.OnEndpointsUpdate<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>从日志可以看到，确实<code>kube-proxy</code>会定时同步<code>iptables</code>的规则，但是周期不一样，<code>dmesg</code>里日志的周期大概两分钟一次，而这里每30s就会同步一次了，而且同步的时间和日志也对应不上，那其实基本就可以排除是<code>kube-proxy</code>导致的了。不过除此之外，日志里发现了比较反常的<code>Calling handler.OnEndpointsUpdate</code>的输出，频率还挺高，这个和之前的预想不太相符，这里暂时忽略了，等着下篇继续分析原因吧。</p>
+<p>既然直接原因不是<code>kube-proxy</code>，那就得继续看看是为啥了。</p>
+<p>于是就又仔细分析了一下<code>journalctl</code>的输出，因为掺杂了各种K8S组件的凌乱输出，日志非常乱，不过功夫不负有心人，最终还是发现了和<code>dmesg</code>输出时间高度对应的日志：</p>
+<pre class="line-numbers language-none"><code class="language-none">03:52:42 localhost dbus[11450]: [system] Activating via systemd: service name&#x3D;&#39;org.freedesktop.hostname1&#39; unit&#x3D;&#39;dbus-org.freedesktop.hostname1.service&#39;
+03:52:42 localhost dbus[11450]: [system] Successfully activated service &#39;org.freedesktop.hostname1&#39;
+03:54:37 localhost dbus[11450]: [system] Activating via systemd: service name&#x3D;&#39;org.freedesktop.hostname1&#39; unit&#x3D;&#39;dbus-org.freedesktop.hostname1.service&#39;
+03:54:37 localhost dbus[11450]: [system] Successfully activated service &#39;org.freedesktop.hostname1&#39;
+03:56:48 localhost dbus[11450]: [system] Activating via systemd: service name&#x3D;&#39;org.freedesktop.hostname1&#39; unit&#x3D;&#39;dbus-org.freedesktop.hostname1.service&#39;
+03:56:48 localhost dbus[11450]: [system] Successfully activated service &#39;org.freedesktop.hostname1&#39;
+03:58:20 localhost dbus[11450]: [system] Activating via systemd: service name&#x3D;&#39;org.freedesktop.hostname1&#39; unit&#x3D;&#39;dbus-org.freedesktop.hostname1.service&#39;
+03:58:20 localhost dbus[11450]: [system] Successfully activated service &#39;org.freedesktop.hostname1&#39;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>似乎是<code>systemd-hostnamed</code>？再通过<code>journalctl -u systemd-hostnamed.service</code>看看<code>hostnamed</code>的日志：</p>
+<pre class="line-numbers language-none"><code class="language-none">03:52:42 localhost systemd[1]: Starting Hostname Service...
+03:52:42 localhost systemd[1]: Started Hostname Service.
+03:54:37 localhost systemd[1]: Starting Hostname Service...
+03:54:37 localhost systemd[1]: Started Hostname Service.
+03:56:48 localhost systemd[1]: Starting Hostname Service...
+03:56:48 localhost systemd[1]: Started Hostname Service.
+03:58:20 localhost systemd[1]: Starting Hostname Service...
+03:58:20 localhost systemd[1]: Started Hostname Service.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>还真是，那么问题来了：为什么<code>hostnamed</code>启动会刷两条<code>dmesg</code>日志？以及为什么<code>hostnamed</code>会这样定时启动？</p>
+<p>先说明第二个问题吧，因为这个是已知的，我们系统的配置，都是用<code>puppet</code>这个自动化运维工具下发的，然后下发之后呢，为了防止人为的原因配置被修改了，所以又加了个Cron，定时2分钟+一小段随机时间执行，确保任何时候我们机器上的配置都是和我们预期是一样的。</p>
+<p>而这些配置里，就包含了机器的主机名。具体的定义类似这样：</p>
+<pre class="line-numbers language-ruby" data-language="ruby"><code class="language-ruby">exec <span class="token punctuation">&#123;</span> <span class="token string-literal"><span class="token string">'set hostname'</span></span><span class="token operator">:</span>
+    command <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"hostnamectl set-hostname $&#123;local_hostname&#125;"</span></span><span class="token punctuation">,</span>
+    <span class="token keyword">unless</span>  <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"test `hostnamectl --static` == '$&#123;local_hostname&#125;'"</span></span><span class="token punctuation">,</span>
+    path    <span class="token operator">=></span> <span class="token punctuation">[</span><span class="token string-literal"><span class="token string">'/usr/bin'</span></span><span class="token punctuation">,</span> <span class="token string-literal"><span class="token string">'/bin'</span></span><span class="token punctuation">]</span>
+  <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>简单解释下，就是每次都会执行<code>hostnamectl --static</code>命令，获得当前hostname，如果和预期不一致，就调用<code>hostnamectl set-hostname $&#123;local_hostname&#125;</code>命令把本地的hostname修改成我们期望的。</p>
+<p>然后再来看看第一个问题，为什么<code>hostnamed</code>启动的时候会输出日志？看了下服务的service配置文件，一下就明白了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@<span class="token punctuation">]</span><span class="token comment"># cat /usr/lib/systemd/system/systemd-hostnamed.service</span>
+<span class="token comment">#  This file is part of systemd.</span>
+<span class="token comment">#</span>
+<span class="token comment">#  systemd is free software; you can redistribute it and/or modify it</span>
+<span class="token comment">#  under the terms of the GNU Lesser General Public License as published by</span>
+<span class="token comment">#  the Free Software Foundation; either version 2.1 of the License, or</span>
+<span class="token comment">#  (at your option) any later version.</span>
+
+<span class="token punctuation">[</span>Unit<span class="token punctuation">]</span>
+<span class="token assign-left variable">Description</span><span class="token operator">=</span>Hostname Service
+<span class="token assign-left variable">Documentation</span><span class="token operator">=</span>man:systemd-hostnamed.service<span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">)</span> man:hostname<span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span> man:machine-info<span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span>
+<span class="token assign-left variable">Documentation</span><span class="token operator">=</span>http://www.freedesktop.org/wiki/Software/systemd/hostnamed
+
+<span class="token punctuation">[</span>Service<span class="token punctuation">]</span>
+<span class="token assign-left variable">ExecStart</span><span class="token operator">=</span>/usr/lib/systemd/systemd-hostnamed
+<span class="token assign-left variable">BusName</span><span class="token operator">=</span>org.freedesktop.hostname1
+<span class="token assign-left variable">CapabilityBoundingSet</span><span class="token operator">=</span>CAP_SYS_ADMIN
+<span class="token assign-left variable">WatchdogSec</span><span class="token operator">=</span>3min
+<span class="token assign-left variable">PrivateTmp</span><span class="token operator">=</span>yes
+<span class="token assign-left variable">PrivateDevices</span><span class="token operator">=</span>yes
+<span class="token assign-left variable">PrivateNetwork</span><span class="token operator">=</span>yes
+<span class="token assign-left variable">ProtectSystem</span><span class="token operator">=</span>yes
+<span class="token assign-left variable">ProtectHome</span><span class="token operator">=</span>yes<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>可以看到在Service的配置里添加了<code>PrivateNetwork=yes</code>选项，那这个选项是什么作用呢？在<code>man systemd.exec</code>里找到了对应的说明：</p>
+<blockquote><p>PrivateNetwork&#x3D;<br>           Takes a boolean argument. If true, sets up a new network namespace for the executed processes and configures only the loopback network device “lo” inside it. No other network devices will be available to the executed process. This is<br>           useful to securely turn off network access by the executed process. Defaults to false. It is possible to run two or more units within the same private network namespace by using the JoinsNamespaceOf&#x3D; directive, see systemd.unit(5) for<br>           details. Note that this option will disconnect all socket families from the host, this includes AF_NETLINK and AF_UNIX. The latter has the effect that AF_UNIX sockets in the abstract socket namespace will become unavailable to the<br>           processes (however, those located in the file system will continue to be accessible).</p>
+</blockquote>
+
+<p>也就是说，如果打开<code>PrivateNetwork</code>，那么systemd在启动这个服务时会创建一个新的<code>network namespace</code>，来隔离这个进程和主机的network，而刚好我们的<code>hostnamed</code>不需要访问网络，所以默认情况下就加上了这个限制。这个也就能解释为啥<code>LVS模块</code>的日志提示是<code>Creating netns</code>了，因为真的是在创建一个新的ns。同理<code>nf_conntrack模块</code>的输出也是因为新ns需要一些初始化操作。</p>
+<p>另外呢，<code>hostnamed</code>这个服务也比较特殊，因为获取或者设置hostname不是一个很常见的操作，而且因为有dbus可以在需要的时候触发启动，所以这个进程运行一段时间后没有新的请求会自动退出，具体可以看下它的<a target="_blank" rel="noopener" href="https://github.com/systemd/systemd/blob/v219/src/hostname/hostnamed.c">代码</a>:</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span> <span class="token operator">*</span>argv<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        Context context <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+        <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        r <span class="token operator">=</span> <span class="token function">bus_event_loop_with_idle</span><span class="token punctuation">(</span>event<span class="token punctuation">,</span> bus<span class="token punctuation">,</span> <span class="token string">"org.freedesktop.hostname1"</span><span class="token punctuation">,</span> DEFAULT_EXIT_USEC<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>r <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token function">log_error_errno</span><span class="token punctuation">(</span>r<span class="token punctuation">,</span> <span class="token string">"Failed to run event loop: %m"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">goto</span> finish<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+finish<span class="token operator">:</span>
+        <span class="token function">context_free</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>context<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">return</span> r <span class="token operator">&lt;</span> <span class="token number">0</span> <span class="token operator">?</span> EXIT_FAILURE <span class="token operator">:</span> EXIT_SUCCESS<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个<code>DEFAULT_EXIT_USEC</code>定义在其他文件中，原型是<code>#define DEFAULT_EXIT_USEC (30*USEC_PER_SEC)</code>，也就是30s。</p>
+<p>到这里呢，问题算是理清楚了：</p>
+<pre><code>1. 自动化运维脚本会定时check hostname，这会导致hostnamed被拉起来
+2. 因为hostnamed service描述里有PrivateNetwork=yes，所以systemd会创建network namespace
+3. 因为主机上加载了conntrack和ipvs相关模块（这个是kube-proxy需要的），模块会在netns里初始化，又因为一些参数的原因，会打印相关的日志
+4. hostnamed 30s后自定退出，导致下次执行会重新创建新的network namespace，如此反复
+</code></pre>
+<p>那最终的解决方案也比较明白了，根据上面的情况：</p>
+<pre><code>1. 调整自动化运维脚本，不使用hostnamectl命令获取当前主机名
+2. 合理调整conntrack相关参数，尽可能避免内核内存被耗尽的情况
+3. 因为我们的业务比较特殊，不需要kube-proxy，所以决定把kube-proxy服务停了，同时就不会依赖ipvs模块，顺便把ipvs模块也移除
+</code></pre>
+<p>其实被这个PrivateXXXX选项坑了不止一次了，之前还发生过<code>PrivateTmp=yes</code>导致服务启动卡住的情况，唉一言难尽啊。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/nf-conntrack/" rel="tag"># nf_conntrack</a>
+              <a href="/tags/netns/" rel="tag"># netns</a>
+              <a href="/tags/systemd-hostnamed/" rel="tag"># systemd-hostnamed</a>
+              <a href="/tags/PrivateNetwork/" rel="tag"># PrivateNetwork</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/06/05/b550m-mortar-5600x-diy/" rel="prev" title="微星B550M迫击炮+5600X折腾记">
+                  <i class="fa fa-chevron-left"></i> 微星B550M迫击炮+5600X折腾记
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/06/16/k8s-leader-elect-resource-lock/" rel="next" title="Kubernetes的Leader选举机制">
+                  Kubernetes的Leader选举机制 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"9833e14d2936cbe8d78e70d38568bf63"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

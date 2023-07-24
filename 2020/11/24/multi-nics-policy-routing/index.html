@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="当一台机器有超过1块网卡，并且配置的IP地址不在一个段里的时候，会出现在外部只有一个IP地址能够ping通的情况，举个最简单的例子： 一个有2块网卡的机器： [root@test]# ip addr 2: enp24s0f0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP group default qlen 100">
+<meta property="og:type" content="article">
+<meta property="og:title" content="多网卡环境下利用策略路由实现网络流量同进同出">
+<meta property="og:url" content="https://www.ichenfu.com/2020/11/24/multi-nics-policy-routing/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="当一台机器有超过1块网卡，并且配置的IP地址不在一个段里的时候，会出现在外部只有一个IP地址能够ping通的情况，举个最简单的例子： 一个有2块网卡的机器： [root@test]# ip addr 2: enp24s0f0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP group default qlen 100">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-11-24T01:46:08.000Z">
+<meta property="article:modified_time" content="2020-11-24T06:49:40.110Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="rp_filter">
+<meta property="article:tag" content="策略路由">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2020/11/24/multi-nics-policy-routing/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2020/11/24/multi-nics-policy-routing/","path":"2020/11/24/multi-nics-policy-routing/","title":"多网卡环境下利用策略路由实现网络流量同进同出"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>多网卡环境下利用策略路由实现网络流量同进同出 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/11/24/multi-nics-policy-routing/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="多网卡环境下利用策略路由实现网络流量同进同出 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          多网卡环境下利用策略路由实现网络流量同进同出
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020年11月24日 9:46 9:46:08" itemprop="dateCreated datePublished" datetime="2020-11-24T09:46:08+08:00">2020年11月24日 9:46</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年11月24日 14:49 14:49:40" itemprop="dateModified" datetime="2020-11-24T14:49:40+08:00">2020年11月24日 14:49</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>当一台机器有超过1块网卡，并且配置的IP地址不在一个段里的时候，会出现在外部只有一个IP地址能够ping通的情况，举个最简单的例子：</p>
+<p>一个有2块网卡的机器：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test<span class="token punctuation">]</span><span class="token comment"># ip addr</span>
+<span class="token number">2</span>: enp24s0f0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq state UP group default qlen <span class="token number">1000</span>
+    link/ether <span class="token number">11</span>:11:11:11:11:11 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">192.168</span>.100.10/24 brd <span class="token number">192.168</span>.100.255 scope global enp24s0f1
+       valid_lft forever preferred_lft forever
+<span class="token number">3</span>: enp24s0f1: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq state UP group default qlen <span class="token number">1000</span>
+    link/ether <span class="token number">22</span>:22:22:22:22:22 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">192.168</span>.200.10/24 brd <span class="token number">192.168</span>.200.255 scope global enp24s0f1
+       valid_lft forever preferred_lft forever<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到两块网卡，分别配置了<code>192.168.100.10</code>和<code>192.168.200.10</code>这两个IP，再看看机器的默认路由：<span id="more"></span></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test<span class="token punctuation">]</span><span class="token comment"># ip route</span>
+default via <span class="token number">192.168</span>.100.1 dev enp24s0f0
+<span class="token number">192.168</span>.100.0/24 dev enp24s0f0 proto kernel scope <span class="token function">link</span> src <span class="token number">192.168</span>.100.10
+<span class="token number">192.168</span>.200.0/24 dev enp24s0f1 proto kernel scope <span class="token function">link</span> src <span class="token number">192.168</span>.200.10<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>从路由可以发现这机器的默认网关是<code>192.168.100.1</code>，那么，如果跨越网关去ping这台机器的话，会出现只有<code>192.168.100.10</code>能通的情况：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test2<span class="token punctuation">]</span><span class="token comment"># ping 192.168.100.10 -c 2</span>
+PING <span class="token number">192.168</span>.100.10 <span class="token punctuation">(</span><span class="token number">192.168</span>.100.10<span class="token punctuation">)</span> <span class="token number">56</span><span class="token punctuation">(</span><span class="token number">84</span><span class="token punctuation">)</span> bytes of data.
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.100.10: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">1</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">56</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">1.84</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.100.10: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">2</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">56</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.804</span> ms
+
+--- <span class="token number">192.168</span>.100.10 <span class="token function">ping</span> statistics ---
+<span class="token number">2</span> packets transmitted, <span class="token number">2</span> received, <span class="token number">0</span>% packet loss, <span class="token function">time</span> 1001ms
+rtt min/avg/max/mdev <span class="token operator">=</span> <span class="token number">0.804</span>/1.319/1.835/0.515 ms
+
+<span class="token punctuation">[</span>root@test2<span class="token punctuation">]</span><span class="token comment"># ping 192.168.200.10 -c 2</span>
+PING <span class="token function">ping</span> <span class="token number">192.168</span>.200.10 <span class="token punctuation">(</span>ping <span class="token number">192.168</span>.200.10<span class="token punctuation">)</span> <span class="token number">56</span><span class="token punctuation">(</span><span class="token number">84</span><span class="token punctuation">)</span> bytes of data.
+^C
+--- <span class="token function">ping</span> <span class="token number">192.168</span>.200.10 <span class="token function">ping</span> statistics ---
+<span class="token number">2</span> packets transmitted, <span class="token number">0</span> received, <span class="token number">100</span>% packet loss, <span class="token function">time</span> 1062ms<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到只有第一个IP能通。那么，如果想让两个IP都能通信需要怎么做呢？我们简单分析一下：</p>
+<p>假设ping的源主机IP地址是<code>192.168.1.20</code>，那么ping包会首先到达<code>192.168.200.0/24</code>的网关，在这个场景是<code>192.168.200.1</code>，然后网关把包转发给机器的第二块网卡，从接收的这条链路来说，是没有问题的。</p>
+<p>那么回包的链路呢？因为发起通信的源IP不在同网段，所以会查询路由表，会根据路由表发给默认网关，而测试机器的默认网关是<code>192.168.100.1</code>，需要将流量从第一块网卡出去。</p>
+<p>从回包的链路考虑就会有一些问题，相当于流量从一块网卡进来，但是又从另外网卡出去。默认情况下，Linux会通过一个Reverse Path Filtering (rp_filter)的机制，限制这种情况发生。<br>那么要修改也很简单：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test2<span class="token punctuation">]</span><span class="token comment"># echo "net.ipv4.conf.all.rp_filter = 0" >> /etc/sysctl.conf</span>
+<span class="token punctuation">[</span>root@test2<span class="token punctuation">]</span><span class="token comment"># sysctl -p</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>配置<code>rp_filter=0</code>之后，再去测试，发现第二块网卡已经可以正常被外部访问了。</p>
+<p>到这里，网络通断问题算是解决了，但是呢，流量路径并不是最优解。目前这个情况，所有出去的流量全都走网卡1，一方面网卡2的出方向带宽浪费了，另外一方面如果网卡1出现一些问题导致中断，那网卡2的IP地址也无法访问了，可用性并没有提升。</p>
+<p>针对两块网卡的机器，一个很自然的想法，是不是可以某一块网卡进来的流量，也从同一块网卡出去呢？</p>
+<p>这里就需要策略路由的帮助了，其实这个问题，可以转化成根据source地址选择不同的路由，因为从这台机器发出去的网络包，源地址不是<code>192.168.100.10</code>，就是<code>192.168.200.10</code>，那需求就很简单了，如果发现源地址是<code>192.168.100.10</code>，那就走网卡1的默认路由出去，如果源地址是<code>192.168.200.10</code>，那就走网卡2的默认路由出去。这样的话，相当于机器上有两个默认路由了，这样可以么？</p>
+<p>答案是可以的，不过需要将这两个默认路由分到两张不同的路由表上。根据<a target="_blank" rel="noopener" href="http://linux-ip.net/html/routing-tables.html">这篇Routing Tables文章</a>可以看到Linux支持很多张路由表，其实默认我们用<code>ip route</code>命令操作的就是<code>main</code>这张表。通过加表id或者名字的方式，可以让ip命令操作不同的路由表。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test<span class="token punctuation">]</span><span class="token comment"># ip route add default via 192.168.200.1 dev enp24s0f1 table 101</span>
+<span class="token punctuation">[</span>root@test<span class="token punctuation">]</span><span class="token comment"># ip route show table 101</span>
+default via <span class="token number">192.168</span>.200.1 dev enp24s0f1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>这里添加了一条新的默认路由<code>default via 192.168.200.1 dev enp24s0f1</code>到编号为101的表里。现在有了路由表，还需要一个策略，来让对应源地址的流量查找这张路由表就行了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test<span class="token punctuation">]</span><span class="token comment"># ip rule add from 192.168.200.0/24 table 101</span>
+<span class="token punctuation">[</span>root@test<span class="token punctuation">]</span><span class="token comment"># ip rule show</span>
+<span class="token number">0</span>:      from all lookup <span class="token builtin class-name">local</span>
+<span class="token number">32765</span>:  from <span class="token number">192.168</span>.200.0/24 lookup <span class="token number">101</span>
+<span class="token number">32766</span>:  from all lookup main
+<span class="token number">32767</span>:  from all lookup default<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里加了一条规则，如果源地址在<code>192.168.200.0/24</code>内，就使用101这张路由表，而这张路由表就上面加的以网卡2为出口的。这样就实现了网卡流量同进同出的需求。</p>
+<p>其实可以通过<code>ip rule show</code>看到，默认有几条规则，优先级最高的规则是local这张表，其次是刚添加的规则，然后是main这张表，最后是default这张表。</p>
+<p>最后还有一个问题，这些配置怎么持久化呢？参考红帽的文档<a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/networking_guide/sec-configuring_static_routes_in_ifcfg_files#sec-Understanding_Policy-routing">Networking Guide</a>，可以在<code>/etc/sysconfig/network-scripts</code>目录下，添加<code>rule-XXXX</code>和<code>route-XXXX</code>文件，实现配置持久化：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test<span class="token punctuation">]</span><span class="token comment"># cat route-enp24s0f1</span>
+default via <span class="token number">192.168</span>.200.1 dev eth1 table <span class="token number">101</span>
+<span class="token punctuation">[</span>root@test<span class="token punctuation">]</span><span class="token comment"># cat rule-enp24s0f1</span>
+from <span class="token number">192.168</span>.200.0/24 table <span class="token number">101</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>添加了配置文件后，执行<code>ifup enp24s0f1</code>就可以实现自动的配置了。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/rp-filter/" rel="tag"># rp_filter</a>
+              <a href="/tags/%E7%AD%96%E7%95%A5%E8%B7%AF%E7%94%B1/" rel="tag"># 策略路由</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/11/10/consistent-network-device-naming/" rel="prev" title="再谈网卡的一致性命名">
+                  <i class="fa fa-chevron-left"></i> 再谈网卡的一致性命名
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/12/17/cpuinfo-model-name/" rel="next" title="/proc/cpuinfo里的CPU型号怎么来的？">
+                  /proc/cpuinfo里的CPU型号怎么来的？ <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"11957469d148fa675334511f058e52c0"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

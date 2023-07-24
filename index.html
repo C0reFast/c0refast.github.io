@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta property="og:type" content="website">
+<meta property="og:title" content="C0reFast记事本">
+<meta property="og:url" content="https://www.ichenfu.com/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:author" content="Chen Fu">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":true,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"index.html","title":""}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">C0reFast记事本</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2023/07/13/parse-aws-aliyun-like-api-request/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/07/13/parse-aws-aliyun-like-api-request/" class="post-title-link" itemprop="url">反序列化AWS/阿里云样式的基于Query的API请求</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023年7月13日 19:46 19:46:12" itemprop="dateCreated datePublished" datetime="2023-07-13T19:46:12+08:00">2023年7月13日 19:46</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023年7月24日 16:40 16:40:29" itemprop="dateModified" datetime="2023-07-24T16:40:29+08:00">2023年7月24日 16:40</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>对于比较了解云计算的人来说，一定接触过AWS、阿里云的API接口，这两者的API调用方式很相似，当然具体谁参考谁这里就不深究了。以给EC2&#x2F;ECS添加Tag这个接口为例：</p>
+<p>AWS:</p>
+<pre class="line-numbers language-none"><code class="language-none">https:&#x2F;&#x2F;ec2.amazonaws.com&#x2F;?Action&#x3D;CreateTags
+&amp;ResourceId.1&#x3D;ami-1a2b3c4d
+&amp;ResourceId.2&#x3D;i-1234567890abcdef0
+&amp;Tag.1.Key&#x3D;webserver
+&amp;Tag.1.Value&#x3D;
+&amp;Tag.2.Key&#x3D;stack
+&amp;Tag.2.Value&#x3D;Production
+&amp;AUTHPARAMS<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>阿里云：</p>
+<pre class="line-numbers language-none"><code class="language-none">https:&#x2F;&#x2F;ecs.aliyuncs.com&#x2F;?Action&#x3D;TagResources
+&amp;RegionId&#x3D;cn-hangzhou
+&amp;ResourceId.1&#x3D;i-bp1j6qtvdm8w0z1o0****
+&amp;ResourceId.2&#x3D;i-bp1j6qtvdm8w0z1oP****
+&amp;ResourceType&#x3D;instance
+&amp;Tag.1.Key&#x3D;TestKey
+&amp;Tag.1.Value&#x3D;TestKey
+&amp;&lt;公共请求参数&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2023/07/13/parse-aws-aliyun-like-api-request/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2023/01/26/diy-a-8bay-ssd-nas/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/01/26/diy-a-8bay-ssd-nas/" class="post-title-link" itemprop="url">DIY一个8盘位全闪NAS</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023年1月26日 15:43 15:43:28" itemprop="dateCreated datePublished" datetime="2023-01-26T15:43:28+08:00">2023年1月26日 15:43</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023年2月10日 10:45 10:45:27" itemprop="dateModified" datetime="2023-02-10T10:45:27+08:00">2023年2月10日 10:45</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>接上篇<a href="/2022/11/05/lsi-raid-controller-and-hba-complete-listing-plus-oem-models/">LSI RAID卡芯片和各个OEM对应卡型号列表</a>里说的后续DIY NAS的想法，经过快3个月的时间，终于来更新整个DIY过程了，总结起来在整个过程中，收获的主要还是折腾的乐趣，要说折腾的尽头是白群晖，随着时间的推移，个人还是比较认同的，不过不得不说白群晖确实太贵了，都说群晖是买软件送硬件，但是这软件也太贵了点。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2023/01/26/diy-a-8bay-ssd-nas/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/11/05/lsi-raid-controller-and-hba-complete-listing-plus-oem-models/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/11/05/lsi-raid-controller-and-hba-complete-listing-plus-oem-models/" class="post-title-link" itemprop="url">分享一个记录LSI RAID卡芯片和各个OEM对应卡型号列表的神贴</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022年11月5日 21:17 21:17:50" itemprop="dateCreated datePublished" datetime="2022-11-05T21:17:50+08:00">2022年11月5日 21:17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023年1月29日 9:28 9:28:30" itemprop="dateModified" datetime="2023-01-29T09:28:30+08:00">2023年1月29日 9:28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>最近想买一张拆机的HBA卡组一个NAS玩玩，目前用SAS 2308的拆机OEM HBA卡（IT Mode，也可以刷固件刷成IR Mode从而直接变成RAID卡，但是只支持RAID 0, 1, 1E和10）只需要不到100块钱，非常划算，除了功耗高点（差不多10W）比较热之外，感觉没啥缺点。</p>
+<p>于是就被各种原厂的或者OEM厂的各种型号搞晕了，因为基于这个芯片的各种OEM马甲卡实在太多了。于是乎就找到了一篇神贴，帖子里覆盖了几乎所有的LSI的RAID卡芯片以及大部分国外厂商对应的OEM卡型号，而且一直在更新，最新的一些SAS芯片也有记录，比较可惜的是国内的一些OEM厂商，特别是在淘宝保有量相当大的浪潮的OEM卡型号没有记录。</p>
+<p>帖子的地址在：<a target="_blank" rel="noopener" href="https://forums.servethehome.com/index.php?threads/lsi-raid-controller-and-hba-complete-listing-plus-oem-models.599/">LSI RAID Controller and HBA Complete Listing Plus OEM Models</a>。有需要的可以参考一下。</p>
+<p>后续组NAS的经历我也会持续分享，敬请关注~</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/10/05/enable-trim-on-usb-attached-scsi-ssds/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/10/05/enable-trim-on-usb-attached-scsi-ssds/" class="post-title-link" itemprop="url">在移动硬盘盒上启用SSD的Trim功能</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022年10月5日 19:57 19:57:02" itemprop="dateCreated datePublished" datetime="2022-10-05T19:57:02+08:00">2022年10月5日 19:57</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023年1月29日 9:28 9:28:30" itemprop="dateModified" datetime="2023-01-29T09:28:30+08:00">2023年1月29日 9:28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>最近折腾了一小段时间的PCDN，家里刚好有一个闲置的JetsonNano和一块闲置的SSD，刚好可以跑跑PCDN，每天挣个宽带钱。具体跑的哪家，就不说了，说说在这过程中遇到的一个小问题：一般来说，PCDN或者类似的业务，对磁盘的写入压力还是比较大的，虽然可能平均的写入带宽并不高，但是也架不住每天读写的时间相当长，虽然我这块SSD是闲置的，但好歹是个传家宝，不管怎么说，还是有那么点点心疼的，肯定是不太希望哪天这SSD被写坏了。</p>
+<p>在这种场景下，尽可能延长SSD的写入寿命就很重要了，而方法之一呢，就是想办法把SSD的<code>Trim</code>命令给用上。</p>
+<p>用上<code>Trim</code>命令之前，可以先简单了解一下背后的逻辑，具体的可以参考<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/Trim%E5%91%BD%E4%BB%A4">Wiki</a>，简单来说呢，因为SSD依赖垃圾回收机制来平衡NAND的磨损，但是呢具体到一整个LBA空间，只有文件系统知道哪些数据块是有效数据，所以就需要通过<code>Trim</code>命令，建立文件系统空闲空间和SSD底层数据块的关联，从而让SSD的主控更好的进行垃圾回收操作，一般来说，合理的使用Trim，可以有效的提高SSD的性能和寿命。当然了，<code>Trim</code>命令是ATA指令集里的，也就是SATA接口SSD才会有，对于SCSI以及SAS接口SSD，还有NVMe SSD来说，也有相应的<code>UNMAP</code>和<code>Deallocate</code>指令，作用都是一样的。</p>
+<p>一般来说，在Linux下，一个设备是否支持<code>Trim</code>操作，可以通过<code>lsblk --discard</code>进行查看，当输出中的<code>DISC-GRAN</code>和<code>DISC-MAX</code>列不为0时，说明这个设备是支持<code>Trim</code>操作的：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/10/05/enable-trim-on-usb-attached-scsi-ssds/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/04/05/spdk-reduce-block-compression-algorithm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/04/05/spdk-reduce-block-compression-algorithm/" class="post-title-link" itemprop="url">SPDK的“Reduce”块压缩算法</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022年4月5日 21:03 21:03:28" itemprop="dateCreated datePublished" datetime="2022-04-05T21:03:28+08:00">2022年4月5日 21:03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022年4月28日 13:53 13:53:29" itemprop="dateModified" datetime="2022-04-28T13:53:29+08:00">2022年4月28日 13:53</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/SPDK/" itemprop="url" rel="index"><span itemprop="name">SPDK</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>本文是SPDK文档<a target="_blank" rel="noopener" href="https://spdk.io/doc/reduce.html">SPDK “Reduce” Block Compression Algorithm</a>的翻译，在读SPDK的文档过程中，刚好看到了SPDK里<code>bdev reduce</code>模块实现背后的算法描述，于是就想着翻译一下，正好也借翻译的同时仔细理解一下背后算法的原理，当然本人的水平有限，如果译文有任何歧义，还请参考原文并以实际原文为准。</p>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>SPDK的“reduce”块压缩方案使用SSD存储压缩后的块数据，同时将元数据存放到持久内存中。此元数据包含用户数据的逻辑块到压缩后的物理块的对应关系。本文档中描述的方案是通用的，不依赖于包括<code>SPDK</code>在内任何特定的块设备框架。该算法会在一个叫做<code>libreduce</code>的库中实现。更高层次的软件可以基于该模块创建和呈现特定的块设备。对于SPDK来说，<code>bdev_reduce</code>模块封装了<code>libreduce</code>库，从而在SPDK中提供一个bdev以实现压缩功能。</p>
+<p>本方案仅仅解释压缩后的数据块和用于跟踪这些数据块的元数据的管理。它依赖于高层软件模块来执行压缩操作。对于SPDK，<code>bdev_reduce</code>模块利用<code>DPDK compressdev</code>框架执行压缩和解压缩。</p>
+<p>（需要注意的是，在某些情况下，数据块可能是不可压缩的，或者无法压缩到足以实现空间节省的程度。在这些情况下，数据可能不经过压缩，直接存储在磁盘上。“压缩的存储块”包括这些不经压缩的块。）</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/04/05/spdk-reduce-block-compression-algorithm/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/03/20/implement-a-k8s-authenticating-proxy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/03/20/implement-a-k8s-authenticating-proxy/" class="post-title-link" itemprop="url">实现一个Kubernetes的身份认证代理服务</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022年3月20日 16:41 16:41:36" itemprop="dateCreated datePublished" datetime="2022-03-20T16:41:36+08:00">2022年3月20日 16:41</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022年4月28日 13:53 13:53:29" itemprop="dateModified" datetime="2022-04-28T13:53:29+08:00">2022年4月28日 13:53</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>最近接到一个需求：把K8s的认证和授权体系，整合到我们内部的系统中，使得我们内部系统的用户，可以无缝的直接访问K8s集群，同时也需要限制好用户对应namespace的权限。</p>
+<p>对于需求的用户授权也就是authorization (authz)部分，实现思路还是比较简单的，毕竟K8s的<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/access-authn-authz/rbac/">RBAC</a>实现相对来说还是非常完善的，而且RBAC对于我们目前的用户和组织权限管理理念十分的接近。所以只需要将目前系统里的用户权限和组织关系，对应到一系列的RBAC Role和RoleBinding里，就可以实现对于用户权限的精细化控制。</p>
+<p>而对于用户的认证authentication (authn)部分，K8s提供了非常多的<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/access-authn-authz/authentication/">身份认证策略</a>。但是如文档里明确的一点：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/03/20/implement-a-k8s-authenticating-proxy/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/03/05/build-a-ceph-rbd-http-api-with-go-ceph/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/03/05/build-a-ceph-rbd-http-api-with-go-ceph/" class="post-title-link" itemprop="url">使用Go-Ceph库编写一个更简单的RBD HTTP API</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022年3月5日 22:27 22:27:13" itemprop="dateCreated datePublished" datetime="2022-03-05T22:27:13+08:00">2022年3月5日 22:27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022年3月14日 9:46 9:46:02" itemprop="dateModified" datetime="2022-03-14T09:46:02+08:00">2022年3月14日 9:46</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>很多人看到这个标题会很奇怪，Ceph不是有一个<a target="_blank" rel="noopener" href="https://docs.ceph.com/en/pacific/mgr/ceph_api/index.html">RESTful API</a>么，为什么又要造一遍轮子？</p>
+<p>的确，Ceph的官方组件Dashboard，内置了一些非常强大的RESTful API，功能也是比较的全面。为啥又要自己写一个呢？在我们的环境里，有一个自己实现的类似Openstack的虚拟机管理平台。而这个平台对接Ceph RBD时，就是使用的Dashboard模块提供的API。个人觉得啊，官方的API，虽然功能全，但确实对于对接的用户来说，真的不是那么友好。这里举几个简单的点：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/03/05/build-a-ceph-rbd-http-api-with-go-ceph/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/12/25/server-net-boot-part-2-uefi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/12/25/server-net-boot-part-2-uefi/" class="post-title-link" itemprop="url">服务器网络启动方式探索Part2：UEFI启动篇</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021年12月25日 17:31 17:31:14" itemprop="dateCreated datePublished" datetime="2021-12-25T17:31:14+08:00">2021年12月25日 17:31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年12月27日 10:05 10:05:47" itemprop="dateModified" datetime="2021-12-27T10:05:47+08:00">2021年12月27日 10:05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>上一篇<a href="/2021/11/28/server-net-boot-part-1-legacy/">服务器网络启动方式探索Part1：Legacy启动篇</a>里，总结了一些在Legacy启动模式下的一些网络启动方案，那么这一篇，很自然的就需要介绍一下在纯UEFI模式下的网络启动了。</p>
+<p>相比Legacy启动直接读取MBR启动分区的第一个扇区作为引导的逻辑，UEFI启动变得强大了很多，在UEFI模式下，固件直接具有的读取FAT文件系统的能力，并且直接通过运行EFI可执行文件的方式进行引导。<br>因为这个显而易见的变化，导致对应到PXE相关的实现上，也会有相应的区别。不过相比于Legacy启动的那些方案，区别不是那么大，依然是可以做到功能上一一对应的，同样的，我们从最简单的情况开始看起。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/12/25/server-net-boot-part-2-uefi/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/11/28/server-net-boot-part-1-legacy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/11/28/server-net-boot-part-1-legacy/" class="post-title-link" itemprop="url">服务器网络启动方式探索Part1：Legacy启动篇</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021年11月28日 15:41 15:41:38" itemprop="dateCreated datePublished" datetime="2021-11-28T15:41:38+08:00">2021年11月28日 15:41</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年11月29日 10:08 10:08:02" itemprop="dateModified" datetime="2021-11-29T10:08:02+08:00">2021年11月29日 10:08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>最近花了很多时间、调研了服务器的网络启动方案，目的呢是想设计并实现一个更加统一和标准化的装机系统尽最大努力把物理机、裸金属、虚拟机、以及基于裸金属的虚拟机的操作系统镜像和装机方案融合起来，同时能适应现代的硬件。<br>本来以为是一件很轻松的事情，毕竟基于PXE的方案已经运行很多年了，似乎简单的修改一些问题、老方案上打打补丁就能很好的实现。但现实又被疯狂打脸，因为面对多个OEM厂商提供的服务器、每家厂商不同的BMC管理系统、每家厂商不同的接口格式和功能。在没有统一服务器供应商或者基于ODM方案之前，似乎那个“完美”的方案并不很容易实现。</p>
+<p>不过呢，这些问题也都不重要，关键是在整个调研的过程中，也是补足了很多似懂非懂、一知半解的技术细节，也算是一个非常大的提升了，其实短期的妥协方案，也不影响最终的实现效果。所以准备写写这段时间学习到的知识，也算是补足了之前网络上找不到技术细节的坑吧，本篇算是第一部分吧，从最简单的开始，说说当前Legacy Boot相关的网络启动方案。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/11/28/server-net-boot-part-1-legacy/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/10/23/wsl2-ubuntu-dockerd-iptables-problem/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/10/23/wsl2-ubuntu-dockerd-iptables-problem/" class="post-title-link" itemprop="url">WSL2 Ubuntu 21.04原生Docker无法运行的问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021年10月23日 19:27 19:27:32" itemprop="dateCreated datePublished" datetime="2021-10-23T19:27:32+08:00">2021年10月23日 19:27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年11月29日 10:08 10:08:02" itemprop="dateModified" datetime="2021-11-29T10:08:02+08:00">2021年11月29日 10:08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>最近为了用上更新一点的软件，把运行在WSL2里的Ubuntu 20.04 LTS版本升级了一下，升级到了Ubuntu 21.04，升级之后呢，大部分功能都正常（当然本身我用的功能也不会很多），但是确实也遇到了个小问题：Docker Daemon无法启动了。这个确实很影响工作，因为很多时候写完代码会本地打个镜像运行一下，简单测试一下代码是否有问题。但是升级之后，突然发现Docker用不了了。</p>
+<p>具体点呢，是会报一个<code>iptables</code>相关的错误：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>
+WARN<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:05.864210900+08:00<span class="token punctuation">]</span> Your kernel does not support cgroup blkio throttle.write_iops_device
+INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:05.864538700+08:00<span class="token punctuation">]</span> Loading containers: start.
+INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:06.135353300+08:00<span class="token punctuation">]</span> stopping event stream following graceful <span class="token function">shutdown</span>  <span class="token assign-left variable">error</span><span class="token operator">=</span><span class="token string">"context canceled"</span> <span class="token assign-left variable">module</span><span class="token operator">=</span>libcontainerd <span class="token assign-left variable">namespace</span><span class="token operator">=</span>moby
+INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:06.135542600+08:00<span class="token punctuation">]</span> stopping healthcheck following graceful <span class="token function">shutdown</span>  <span class="token assign-left variable">module</span><span class="token operator">=</span>libcontainerd
+INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:06.136083800+08:00<span class="token punctuation">]</span> stopping event stream following graceful <span class="token function">shutdown</span>  <span class="token assign-left variable">error</span><span class="token operator">=</span><span class="token string">"context canceled"</span> <span class="token assign-left variable">module</span><span class="token operator">=</span>libcontainerd <span class="token assign-left variable">namespace</span><span class="token operator">=</span>plugins.moby
+failed to start daemon: Error initializing network controller: error obtaining controller instance: unable to <span class="token function">add</span> <span class="token builtin class-name">return</span> rule <span class="token keyword">in</span> DOCKER-ISOLATION-STAGE-1 chain:  <span class="token punctuation">(</span>iptables failed: iptables <span class="token parameter variable">--wait</span> <span class="token parameter variable">-A</span> DOCKER-ISOLATION-STAGE-1 <span class="token parameter variable">-j</span> RETURN: iptables v1.8.7 <span class="token punctuation">(</span>nf_tables<span class="token punctuation">)</span>:  RULE_APPEND failed <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>: rule <span class="token keyword">in</span> chain DOCKER-ISOLATION-STAGE-1
+ <span class="token punctuation">(</span>exit status <span class="token number">4</span><span class="token punctuation">))</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/10/23/wsl2-ubuntu-dockerd-iptables-problem/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+  <nav class="pagination">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/">10</a><a class="extend next" rel="next" title="下一页" aria-label="下一页" href="/page/2/"><i class="fa fa-angle-right"></i></a>
+  </nav>
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"d1546d731a9f30cc80127d57142a482b"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

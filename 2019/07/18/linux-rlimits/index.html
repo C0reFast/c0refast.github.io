@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.17.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="在Linux下，可以对进程使用的资源做一些限制，比如，可以使用的内存、可以使用的线程、最大能打开的文件数等等，这些也就是我们常说的rlimit，在bash里，可以非常方便的用ulimit这个内置的命令查看和修改这些限制，那么到底这些限制有那些，是怎么来的呢？ 首先，在C编程环境下，系统提供了三个接口：int getrlimit(int resource, struct rlimit *rlim);">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux下的resource limits(ulimit)">
+<meta property="og:url" content="https://www.ichenfu.com/2019/07/18/linux-rlimits/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="在Linux下，可以对进程使用的资源做一些限制，比如，可以使用的内存、可以使用的线程、最大能打开的文件数等等，这些也就是我们常说的rlimit，在bash里，可以非常方便的用ulimit这个内置的命令查看和修改这些限制，那么到底这些限制有那些，是怎么来的呢？ 首先，在C编程环境下，系统提供了三个接口：int getrlimit(int resource, struct rlimit *rlim);">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-07-18T01:45:16.000Z">
+<meta property="article:modified_time" content="2020-10-12T01:50:42.300Z">
+<meta property="article:author" content="Chen Fu">
+<meta property="article:tag" content="setrlimit">
+<meta property="article:tag" content="ulimit">
+<meta property="article:tag" content="PAM">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2019/07/18/linux-rlimits/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2019/07/18/linux-rlimits/","path":"2019/07/18/linux-rlimits/","title":"Linux下的resource limits(ulimit)"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Linux下的resource limits(ulimit) | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Fu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2019/07/18/linux-rlimits/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Linux下的resource limits(ulimit) | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Linux下的resource limits(ulimit)
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019年7月18日 9:45 9:45:16" itemprop="dateCreated datePublished" datetime="2019-07-18T09:45:16+08:00">2019年7月18日 9:45</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>在Linux下，可以对进程使用的资源做一些限制，比如，可以使用的内存、可以使用的线程、最大能打开的文件数等等，这些也就是我们常说的<code>rlimit</code>，在bash里，可以非常方便的用<code>ulimit</code>这个内置的命令查看和修改这些限制，那么到底这些限制有那些，是怎么来的呢？</p>
+<p>首先，在C编程环境下，系统提供了三个接口：<code>int getrlimit(int resource, struct rlimit *rlim);</code>、<code>int setrlimit(int resource, const struct rlimit *rlim);</code>、<code>int prlimit(pid_t pid, int resource, const struct rlimit *new_limit, struct rlimit *old_limit);</code>分别用来获取当前进程的限制、设置当前进程的限制以及根据Pid设置对应进程的限制。</p>
+<p>那么具体有哪些限制，也就是接口中的<code>resource</code>参数有哪些，可以参考man里的信息，这里大致翻译一下：</p>
+<span id="more"></span>
+
+<ul>
+<li><p>RLIMIT_AS<br>进程最大可使用的虚拟内存空间，以bytes计算。这个限制主要影响<code>brk</code>、<code>mmap</code>、<code>mremap</code>这几个系统调用，当达到限制时，这些系统调用就会返回<code>ENOMEM</code>提示无内存可分配了。</p>
+</li>
+<li><p>RLIMIT_CORE<br>coredump文件最大的大小，如果为0，则不会产生coredump，当是非0值时，如果coredump超过这个值会被truncated到这个大小</p>
+</li>
+<li><p>RLIMIT_CPU<br>CPU使用时间限制，单位秒。当进程CPU时间达到软限制时，系统会给进程发送一个<code>SIGXCPU</code>信号，默认行为是将进程终止，但是进程可以选择捕获这个信号并作出相应选择，如果继续执行达到了硬限制则会发送<code>SIGKILL</code>信号终止进程</p>
+</li>
+<li><p>RLIMIT_DATA<br>进程数据段的最大值，主要是堆空间，影响<code>brk</code>和<code>sbrk</code>两个系统调用，达到限制时返回<code>ENOMEM</code></p>
+</li>
+<li><p>RLIMIT_FSIZE<br>进程可建立的文件的最大长度。如果超出这一限制时，系统会发送<code>SIGXFSZ</code>信号，默认行为是将进程终止，但是进程可以选择捕获这个信号，这时对应的调用返回<code>EFBIG</code>。</p>
+</li>
+<li><p>RLIMIT_LOCKS (Early Linux 2.4 only)<br>进程可以进程可创建的锁数量，包括<code>flock</code>和<code>fcntl</code>两个调用</p>
+</li>
+<li><p>RLIMIT_MEMLOCK<br>进程可锁定在内存中的最大数据量，单位bytes。</p>
+</li>
+<li><p>RLIMIT_MSGQUEUE (Since Linux 2.6.8)<br>进程可为POSIX消息队列分配的最大字节数</p>
+</li>
+<li><p>RLIMIT_NICE (since Linux 2.6.12, but see BUGS below)<br>进程可通过<code>setpriority</code>和<code>nice</code>调用设置的最大nice值</p>
+</li>
+<li><p>RLIMIT_NOFILE<br>进程可打开的最大文件数，影响<code>open</code>、<code>pipe</code>、<code>dup</code>等调用，达到限制时会返回<code>EMFILE</code>错误</p>
+</li>
+<li><p>RLIMIT_NPROC<br>实际运行进程的用户所能运行的最大进程数（在linux里更准确的说法是线程），如果达到这个限制，<code>fork</code>调用返回<code>EAGAIN</code></p>
+</li>
+<li><p>RLIMIT_RSS<br>进程最大驻留内存页数，单位内存页个</p>
+</li>
+<li><p>RLIMIT_RTPRIO (Since Linux 2.6.12, but see BUGS)<br>进程最大可设置的实时调度优先级</p>
+</li>
+<li><p>RLIMIT_RTTIME (Since Linux 2.6.25)<br>实时调度情况下进程最大占用的时间片，单位微秒</p>
+</li>
+<li><p>RLIMIT_SIGPENDING (Since Linux 2.6.8)<br>实际运行进程的用户所能拥有的最大挂起信号数量</p>
+</li>
+<li><p>RLIMIT_STACK<br>进程栈空间的最大大小，单位字节，如果达到了这个限制，系统会发送<code>SIGSEGV</code>信号</p>
+</li>
+</ul>
+<p>从编程角度可设置的东西很多，而且很复杂，很多其实都用不到，需要注意的是，设置这些需要<code>CAP_SYS_RESOURCE</code>权限。</p>
+<p>有几个注意的点：</p>
+<ul>
+<li>通过<code>fork</code>创建的子进程，是继承父进程的配置的。而<code>execve</code>调用则会保留原进程的配置。</li>
+<li>Linux 2.6.24之后，进程的限制信息可以通过 <code>/proc/&#123;pid&#125;/limits</code>查看。</li>
+</ul>
+<p>说完了这么多，其实有个很关键的问题没有弄明白，默认值是怎么设置的？bash里ulimt -a显示的所有限制，默认值是多少？</p>
+<p>如果稍微搜索一下，大概率会出现一个配置文件，位于<code>/etc/security/limits.conf</code>，这个文件可以针对用户设置默认值，然而，是谁负责读取这个文件内容的呢？</p>
+<p>实际上只有PAM会有可能读取这个配置，准确的说是<code>pam_limits.so</code>读取的，具体还需要看PAM的配置，举个比较简单的例子，有些时候，我们可能会用<code>sudo -u xxxx command</code>来切换用户执行某些命令，如果按上面所说的子进程继承父进程的相关配置的话，是不是执行的进程配置和当前session一样了？实际上并不是。</p>
+<p>以CentOS 7为例，在我们执行<code>sudo -u</code>的时候，是会调用到PAM的配置的，具体的配置在<code>/etc/pam.d/sudo</code>文件：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment">#%PAM-1.0</span>
+auth       include      system-auth
+account    include      system-auth
+password   include      system-auth
+session    optional     pam_keyinit.so revoke
+session    required     pam_limits.so<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，在执行sudo的时候，创建session过程中，必须要依赖<code>pam_limits.so</code>，这时就会读取<code>/etc/security/limits.conf</code>相关配置，设置默认的limits配置。</p>
+<p>所以在很多场景下，特别是需要切换到另一个用户的session启动进程的时候，需要主要limits相关配置，避免因为用户配置不一致导致的问题。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="Chen Fu wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/setrlimit/" rel="tag"># setrlimit</a>
+              <a href="/tags/ulimit/" rel="tag"># ulimit</a>
+              <a href="/tags/PAM/" rel="tag"># PAM</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/05/22/merge-commits-with-git-rebase/" rel="prev" title="利用Git的Rebase功能合并一系列commits">
+                  <i class="fa fa-chevron-left"></i> 利用Git的Rebase功能合并一系列commits
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/07/25/git-shallow-clone/" rel="next" title="Git的浅克隆功能">
+                  Git的浅克隆功能 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/jquery@3.7.0/dist/jquery.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"2da191d40461ce6fe3f752bf0da8c338"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>
