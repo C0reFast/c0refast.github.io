@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.0.0">
 
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
@@ -14,10 +14,10 @@
 
 
 
-<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.24/dist/fancybox/fancybox.css" integrity="sha256-vQkngPS8jiHHH0I6ABTZroZk8NPZ7b+MUReOFE9UsXQ=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.14.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
 
     <meta name="description" content="最近折腾了一小段时间的PCDN，家里刚好有一个闲置的JetsonNano和一块闲置的SSD，刚好可以跑跑PCDN，每天挣个宽带钱。具体跑的哪家，就不说了，说说在这过程中遇到的一个小问题：一般来说，PCDN或者类似的业务，对磁盘的写入压力还是比较大的，虽然可能平均的写入带宽并不高，但是也架不住每天读写的时间相当长，虽然我这块SSD是闲置的，但好歹是个传家宝，不管怎么说，还是有那么点点心疼的，肯定是不">
 <meta property="og:type" content="article">
@@ -53,9 +53,7 @@
 
 
 
-  <script async defer data-website-id="" src=""></script>
 
-  <script defer data-domain="" src=""></script>
 
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
@@ -160,7 +158,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-count">99</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -280,8 +278,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody">
-        <p>最近折腾了一小段时间的PCDN，家里刚好有一个闲置的JetsonNano和一块闲置的SSD，刚好可以跑跑PCDN，每天挣个宽带钱。具体跑的哪家，就不说了，说说在这过程中遇到的一个小问题：一般来说，PCDN或者类似的业务，对磁盘的写入压力还是比较大的，虽然可能平均的写入带宽并不高，但是也架不住每天读写的时间相当长，虽然我这块SSD是闲置的，但好歹是个传家宝，不管怎么说，还是有那么点点心疼的，肯定是不太希望哪天这SSD被写坏了。</p>
+    <div class="post-body" itemprop="articleBody"><p>最近折腾了一小段时间的PCDN，家里刚好有一个闲置的JetsonNano和一块闲置的SSD，刚好可以跑跑PCDN，每天挣个宽带钱。具体跑的哪家，就不说了，说说在这过程中遇到的一个小问题：一般来说，PCDN或者类似的业务，对磁盘的写入压力还是比较大的，虽然可能平均的写入带宽并不高，但是也架不住每天读写的时间相当长，虽然我这块SSD是闲置的，但好歹是个传家宝，不管怎么说，还是有那么点点心疼的，肯定是不太希望哪天这SSD被写坏了。</p>
 <p>在这种场景下，尽可能延长SSD的写入寿命就很重要了，而方法之一呢，就是想办法把SSD的<code>Trim</code>命令给用上。</p>
 <p>用上<code>Trim</code>命令之前，可以先简单了解一下背后的逻辑，具体的可以参考<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/Trim%E5%91%BD%E4%BB%A4">Wiki</a>，简单来说呢，因为SSD依赖垃圾回收机制来平衡NAND的磨损，但是呢具体到一整个LBA空间，只有文件系统知道哪些数据块是有效数据，所以就需要通过<code>Trim</code>命令，建立文件系统空闲空间和SSD底层数据块的关联，从而让SSD的主控更好的进行垃圾回收操作，一般来说，合理的使用Trim，可以有效的提高SSD的性能和寿命。当然了，<code>Trim</code>命令是ATA指令集里的，也就是SATA接口SSD才会有，对于SCSI以及SAS接口SSD，还有NVMe SSD来说，也有相应的<code>UNMAP</code>和<code>Deallocate</code>指令，作用都是一样的。</p>
 <p>一般来说，在Linux下，一个设备是否支持<code>Trim</code>操作，可以通过<code>lsblk --discard</code>进行查看，当输出中的<code>DISC-GRAN</code>和<code>DISC-MAX</code>列不为0时，说明这个设备是支持<code>Trim</code>操作的：</p>
@@ -384,12 +381,12 @@ mmcblk1            <span class="token number">0</span>        4M      76M       
           <div class="post-nav">
             <div class="post-nav-item">
                 <a href="/2022/04/05/spdk-reduce-block-compression-algorithm/" rel="prev" title="SPDK的“Reduce”块压缩算法">
-                  <i class="fa fa-chevron-left"></i> SPDK的“Reduce”块压缩算法
+                  <i class="fa fa-angle-left"></i> SPDK的“Reduce”块压缩算法
                 </a>
             </div>
             <div class="post-nav-item">
                 <a href="/2022/11/05/lsi-raid-controller-and-hba-complete-listing-plus-oem-models/" rel="next" title="分享一个记录LSI RAID卡芯片和各个OEM对应卡型号列表的神贴">
-                  分享一个记录LSI RAID卡芯片和各个OEM对应卡型号列表的神贴 <i class="fa fa-chevron-right"></i>
+                  分享一个记录LSI RAID卡芯片和各个OEM对应卡型号列表的神贴 <i class="fa fa-angle-right"></i>
                 </a>
             </div>
           </div>
@@ -402,22 +399,21 @@ mmcblk1            <span class="token number">0</span>        4M      76M       
 
 
 
-    <div class="comments gitalk-container"></div>
+    <div class="comments utterances-container"></div>
 </div>
   </main>
 
   <footer class="footer">
     <div class="footer-inner">
 
-
-<div class="copyright">
-  &copy; 
-  <span itemprop="copyrightYear">2023</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">Chen Fu</span>
-</div>
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
 <div class="busuanzi-count">
     <span class="post-meta-item" id="busuanzi_container_site_uv">
       <span class="post-meta-item-icon">
@@ -454,17 +450,18 @@ mmcblk1            <span class="token number">0</span>        4M      76M       
 
 
   
-  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
-  <script src="https://npm.elemecdn.com/jquery@3.6.3/dist/jquery.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
-  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.24/dist/fancybox/fancybox.umd.js" integrity="sha256-oyhjPiYRWGXaAt+ny/mTMWOnN1GBoZDUQnzzgC7FRI4=" crossorigin="anonymous"></script>
 <script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
-  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
 <script src="/js/third-party/search/local-search.js"></script>
 
 
 
+
   <script src="/js/third-party/fancybox.js"></script>
+
 
 
   
@@ -473,10 +470,8 @@ mmcblk1            <span class="token number">0</span>        4M      76M       
 
 
 
-<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
-
-<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"5502892e81cfbf8340bbca7221b36ce1"}</script>
-<script src="/js/third-party/comments/gitalk.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
 
 </body>
 </html>

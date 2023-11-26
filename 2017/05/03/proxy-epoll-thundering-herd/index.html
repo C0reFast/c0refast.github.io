@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.0.0">
 
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
@@ -14,10 +14,10 @@
 
 
 
-<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.24/dist/fancybox/fancybox.css" integrity="sha256-vQkngPS8jiHHH0I6ABTZroZk8NPZ7b+MUReOFE9UsXQ=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.14.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
 
     <meta name="description" content="在我们内部的系统中，有一个tcp的代理服务，用户所有的网络相关的请求，比如访问外网，或者访问在内网的某些服务，都需要通过这个服务，一方面是实现对外网访问的计费，另外也通过白名单机制，对应用的内网访问进行相应的限制。随着业务量的增加，发现提供服务的机器负载逐渐变高，当流量高峰的时候，经常出现客户端无法连接的情况，本来这个服务也是一个无状态的服务，可以很方便的水平扩容，在添加机器的同时，也尝试去分析一">
 <meta property="og:type" content="article">
@@ -56,9 +56,7 @@
 
 
 
-  <script async defer data-website-id="" src=""></script>
 
-  <script defer data-domain="" src=""></script>
 
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
@@ -163,7 +161,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-count">99</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -274,30 +272,29 @@
     
     
     
-    <div class="post-body" itemprop="articleBody">
-        <p>在我们内部的系统中，有一个tcp的代理服务，用户所有的网络相关的请求，比如访问外网，或者访问在内网的某些服务，都需要通过这个服务，一方面是实现对外网访问的计费，另外也通过白名单机制，对应用的内网访问进行相应的限制。<br>随着业务量的增加，发现提供服务的机器负载逐渐变高，当流量高峰的时候，经常出现客户端无法连接的情况，本来这个服务也是一个无状态的服务，可以很方便的水平扩容，在添加机器的同时，也尝试去分析一下程序本身的瓶颈，看能否提升一下程序本身的处理能力，通过分析和优化，还是在一定程度上提升了处理能力<span id="more"></span></p>
+    <div class="post-body" itemprop="articleBody"><p>在我们内部的系统中，有一个tcp的代理服务，用户所有的网络相关的请求，比如访问外网，或者访问在内网的某些服务，都需要通过这个服务，一方面是实现对外网访问的计费，另外也通过白名单机制，对应用的内网访问进行相应的限制。<br>随着业务量的增加，发现提供服务的机器负载逐渐变高，当流量高峰的时候，经常出现客户端无法连接的情况，本来这个服务也是一个无状态的服务，可以很方便的水平扩容，在添加机器的同时，也尝试去分析一下程序本身的瓶颈，看能否提升一下程序本身的处理能力，通过分析和优化，还是在一定程度上提升了处理能力<span id="more"></span></p>
 <p>首先还是在线上使用<code>perf</code>工具生成了一下火焰图：<br><img src="/images/proxy_flame_before.png" alt="火焰图"></p>
 <p>第一次看到这个火焰图感觉很奇怪，主要的问题集中在为什么<code>__accept_nocancel</code>也就是<code>accept</code>的调用会如此频繁，首先想到的就是<code>惊群效应</code>了，但是应该在Linux内核2.6.18的时候，<code>accept</code>的惊群问题在内核中就已经解决了，我们线上用的CentOS 6.5内核版本已经到了2.6.32，理论上不应该会有类似的问题。<br>于是还是到线上尝试strace看一下程序的系统调用：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>绝大部分都是<code>epoll_wait</code>返回，尝试<code>accept</code>，但是<code>accept</code>返回<code>EAGAIN</code>，这应该就是火焰图中那么多<code>accept</code>调用的原因。又查找了一下资料，发现在<code>epoll</code>编程模型中是不会处理惊群的，当一个socket有事件，内核会唤醒所有监听的<code>epoll_wait</code>调用，从而导致这个问题。<br>我们先分析一下程序，目前程序的工作流程是：</p>
 <ol>
 <li>master进程启动，bind并监听一系列fd;</li>
@@ -342,12 +339,12 @@ accept<span class="token punctuation">(</span><span class="token number">6</span
           <div class="post-nav">
             <div class="post-nav-item">
                 <a href="/2017/04/25/cgroups-pids-controller/" rel="prev" title="利用Cgroups的pids子系统限制进程(线程)数量">
-                  <i class="fa fa-chevron-left"></i> 利用Cgroups的pids子系统限制进程(线程)数量
+                  <i class="fa fa-angle-left"></i> 利用Cgroups的pids子系统限制进程(线程)数量
                 </a>
             </div>
             <div class="post-nav-item">
                 <a href="/2017/05/24/openstack-swift-object-replicator-source-code/" rel="next" title="Openstack Swift object replicator 代码分析">
-                  Openstack Swift object replicator 代码分析 <i class="fa fa-chevron-right"></i>
+                  Openstack Swift object replicator 代码分析 <i class="fa fa-angle-right"></i>
                 </a>
             </div>
           </div>
@@ -360,22 +357,21 @@ accept<span class="token punctuation">(</span><span class="token number">6</span
 
 
 
-    <div class="comments gitalk-container"></div>
+    <div class="comments utterances-container"></div>
 </div>
   </main>
 
   <footer class="footer">
     <div class="footer-inner">
 
-
-<div class="copyright">
-  &copy; 
-  <span itemprop="copyrightYear">2023</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">Chen Fu</span>
-</div>
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
 <div class="busuanzi-count">
     <span class="post-meta-item" id="busuanzi_container_site_uv">
       <span class="post-meta-item-icon">
@@ -412,17 +408,18 @@ accept<span class="token punctuation">(</span><span class="token number">6</span
 
 
   
-  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
-  <script src="https://npm.elemecdn.com/jquery@3.6.3/dist/jquery.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
-  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.24/dist/fancybox/fancybox.umd.js" integrity="sha256-oyhjPiYRWGXaAt+ny/mTMWOnN1GBoZDUQnzzgC7FRI4=" crossorigin="anonymous"></script>
 <script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
-  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
 <script src="/js/third-party/search/local-search.js"></script>
 
 
 
+
   <script src="/js/third-party/fancybox.js"></script>
+
 
 
   
@@ -431,10 +428,8 @@ accept<span class="token punctuation">(</span><span class="token number">6</span
 
 
 
-<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
-
-<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"d37fd42d8b3129f9dbfada733870500c"}</script>
-<script src="/js/third-party/comments/gitalk.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
 
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.0.0">
 
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
@@ -14,10 +14,10 @@
 
 
 
-<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.24/dist/fancybox/fancybox.css" integrity="sha256-vQkngPS8jiHHH0I6ABTZroZk8NPZ7b+MUReOFE9UsXQ=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.14.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
 
     <meta name="description" content="本篇是Building a Consistent Hashing Ring 第三到第五部分的翻译，上篇翻译了原文的第一到第三部分，在第三到第五部分中，引入了分区概念，多副本，多可用区，以及权重的概念，更加接近一个高可用的实际一致性环">
 <meta property="og:type" content="article">
@@ -52,9 +52,7 @@
 
 
 
-  <script async defer data-website-id="" src=""></script>
 
-  <script defer data-domain="" src=""></script>
 
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
@@ -160,7 +158,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-count">99</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -280,8 +278,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody">
-        <p>本篇是<a target="_blank" rel="noopener" href="https://docs.openstack.org/swift/latest/ring_background.html">Building a Consistent Hashing Ring</a> 第三到第五部分的翻译，上篇翻译了原文的第一到第三部分，在第三到第五部分中，引入了分区概念，多副本，多可用区，以及权重的概念，更加接近一个高可用的实际一致性环<span id="more"></span></p>
+    <div class="post-body" itemprop="articleBody"><p>本篇是<a target="_blank" rel="noopener" href="https://docs.openstack.org/swift/latest/ring_background.html">Building a Consistent Hashing Ring</a> 第三到第五部分的翻译，上篇翻译了原文的第一到第三部分，在第三到第五部分中，引入了分区概念，多副本，多可用区，以及权重的概念，更加接近一个高可用的实际一致性环<span id="more"></span></p>
 <h2 id="Part-3"><a href="#Part-3" class="headerlink" title="Part 3"></a>Part 3</h2><p>在本系列的第2部分中，我们实现了一种算法，在集群添加新节点时也能够很好地运行。我们使用了可以独立分配给物理节点的1000个虚拟节点，这样我们可以最小化添加节点时移动的数据量。</p>
 <p>虚拟节点数量确定了我们可以拥有多少物理节点。例如，如果您有1000个虚拟节点，并且尝试添加一个第1001个物理节点，那么在不替换任何物理节点的情况下是没有虚拟节点可以分配的，最终只会剩下1000个活动的物理节点。</p>
 <p>不幸的是，在集群的整个生命周期中，在不进行很多细致的工作的情况下，创建时确定的虚拟节点的数量几乎永远无法改变。例如，可以将原有的一个虚拟节点拆成两个，而且将拆出的两个新虚拟节点分配给同一个物理节点，这样可以实现增加一倍的虚拟节点数量。然而，如果物理节点需要借助虚拟节点的id来更好地存储数据（例如，所有数据可能存储在&#x2F;[虚拟节点id]&#x2F;[数据id]目录中），则必须要移动数据来适应虚拟节点数量变化了。而且在移动的过程中，新旧位置都必须要有数据，很难或者基本不可能实现原子性操作。</p>
@@ -770,12 +767,12 @@ under <span class="token operator">=</span> <span class="token number">100.0</sp
           <div class="post-nav">
             <div class="post-nav-item">
                 <a href="/2017/04/17/building-a-consistent-hashing-ring-1-2/" rel="prev" title="Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2)">
-                  <i class="fa fa-chevron-left"></i> Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2)
+                  <i class="fa fa-angle-left"></i> Building a Consistent Hashing Ring Part1-Part2(构建一个一致性哈希环 Part1-Part2)
                 </a>
             </div>
             <div class="post-nav-item">
                 <a href="/2017/04/25/cgroups-pids-controller/" rel="next" title="利用Cgroups的pids子系统限制进程(线程)数量">
-                  利用Cgroups的pids子系统限制进程(线程)数量 <i class="fa fa-chevron-right"></i>
+                  利用Cgroups的pids子系统限制进程(线程)数量 <i class="fa fa-angle-right"></i>
                 </a>
             </div>
           </div>
@@ -788,22 +785,21 @@ under <span class="token operator">=</span> <span class="token number">100.0</sp
 
 
 
-    <div class="comments gitalk-container"></div>
+    <div class="comments utterances-container"></div>
 </div>
   </main>
 
   <footer class="footer">
     <div class="footer-inner">
 
-
-<div class="copyright">
-  &copy; 
-  <span itemprop="copyrightYear">2023</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">Chen Fu</span>
-</div>
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
 <div class="busuanzi-count">
     <span class="post-meta-item" id="busuanzi_container_site_uv">
       <span class="post-meta-item-icon">
@@ -840,17 +836,18 @@ under <span class="token operator">=</span> <span class="token number">100.0</sp
 
 
   
-  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
-  <script src="https://npm.elemecdn.com/jquery@3.6.3/dist/jquery.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
-  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.24/dist/fancybox/fancybox.umd.js" integrity="sha256-oyhjPiYRWGXaAt+ny/mTMWOnN1GBoZDUQnzzgC7FRI4=" crossorigin="anonymous"></script>
 <script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
-  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
 <script src="/js/third-party/search/local-search.js"></script>
 
 
 
+
   <script src="/js/third-party/fancybox.js"></script>
+
 
 
   
@@ -859,10 +856,8 @@ under <span class="token operator">=</span> <span class="token number">100.0</sp
 
 
 
-<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
-
-<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"e133e4f2c3ec70835810b8a76186b062"}</script>
-<script src="/js/third-party/comments/gitalk.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
 
 </body>
 </html>

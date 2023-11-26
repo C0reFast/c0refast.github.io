@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.0.0">
 
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
@@ -14,10 +14,10 @@
 
 
 
-<link rel="stylesheet" href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.24/dist/fancybox/fancybox.css" integrity="sha256-vQkngPS8jiHHH0I6ABTZroZk8NPZ7b+MUReOFE9UsXQ=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.14.1","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
 
     <meta name="description" content="接上篇LSI RAID卡芯片和各个OEM对应卡型号列表里说的后续DIY NAS的想法，经过快3个月的时间，终于来更新整个DIY过程了，总结起来在整个过程中，收获的主要还是折腾的乐趣，要说折腾的尽头是白群晖，随着时间的推移，个人还是比较认同的，不过不得不说白群晖确实太贵了，都说群晖是买软件送硬件，但是这软件也太贵了点。">
 <meta property="og:type" content="article">
@@ -60,9 +60,7 @@
 
 
 
-  <script async defer data-website-id="" src=""></script>
 
-  <script defer data-domain="" src=""></script>
 
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
@@ -155,7 +153,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%9C%80%E6%B1%82%E6%8F%8F%E8%BF%B0%E5%92%8C%E5%88%86%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">需求描述和分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A1%AC%E7%9B%98%E7%AC%BC%E9%80%89%E6%8B%A9"><span class="nav-number">2.</span> <span class="nav-text">硬盘笼选择</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%AA%E6%BD%AE12%E7%9B%98%E4%BD%8D3-5%E5%AF%B8%E7%A1%AC%E7%9B%98%E7%AC%BC"><span class="nav-number">2.1.</span> <span class="nav-text">浪潮12盘位3.5寸硬盘笼</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intel-8%E7%9B%98%E4%BD%8D%E7%83%AD%E6%8F%92%E6%8B%94%E7%AC%BC%E5%AD%90-8-AnyBay"><span class="nav-number">2.2.</span> <span class="nav-text">Intel 8盘位热插拔笼子(8 AnyBay)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intel-8%E7%9B%98%E4%BD%8D%E7%83%AD%E6%8F%92%E6%8B%94%E7%AC%BC%E5%AD%90-4-AnyBay-4-SATA-x2F-SAS"><span class="nav-number">2.3.</span> <span class="nav-text">Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intel-8%E7%9B%98%E4%BD%8D%E7%83%AD%E6%8F%92%E6%8B%94%E7%AC%BC%E5%AD%90-8-SATA-x2F-SAS"><span class="nav-number">2.4.</span> <span class="nav-text">Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HP%E7%83%AD%E6%8F%92%E6%8B%94380-G6-x2F-G7%E7%A1%AC%E7%9B%98%E7%AC%BC"><span class="nav-number">2.5.</span> <span class="nav-text">HP热插拔380 G6&#x2F;G7硬盘笼</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RAID-x2F-HBA%E5%8D%A1%E9%80%89%E6%8B%A9"><span class="nav-number">3.</span> <span class="nav-text">RAID&#x2F;HBA卡选择</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A1%AC%E7%9B%98%E9%80%89%E6%8B%A9"><span class="nav-number">4.</span> <span class="nav-text">硬盘选择</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#NAS%E7%B3%BB%E7%BB%9F%E9%80%89%E6%8B%A9"><span class="nav-number">5.</span> <span class="nav-text">NAS系统选择</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E5%92%8C%E5%90%8E%E7%BB%AD"><span class="nav-number">6.</span> <span class="nav-text">总结和后续</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%9C%80%E6%B1%82%E6%8F%8F%E8%BF%B0%E5%92%8C%E5%88%86%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">需求描述和分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A1%AC%E7%9B%98%E7%AC%BC%E9%80%89%E6%8B%A9"><span class="nav-number">2.</span> <span class="nav-text">硬盘笼选择</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%AA%E6%BD%AE12%E7%9B%98%E4%BD%8D3-5%E5%AF%B8%E7%A1%AC%E7%9B%98%E7%AC%BC"><span class="nav-number">2.1.</span> <span class="nav-text">浪潮12盘位3.5寸硬盘笼</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intel-8%E7%9B%98%E4%BD%8D%E7%83%AD%E6%8F%92%E6%8B%94%E7%AC%BC%E5%AD%90-8-AnyBay"><span class="nav-number">2.2.</span> <span class="nav-text">Intel 8盘位热插拔笼子(8 AnyBay)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intel-8%E7%9B%98%E4%BD%8D%E7%83%AD%E6%8F%92%E6%8B%94%E7%AC%BC%E5%AD%90-4-AnyBay-4-SATA-SAS"><span class="nav-number">2.3.</span> <span class="nav-text">Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intel-8%E7%9B%98%E4%BD%8D%E7%83%AD%E6%8F%92%E6%8B%94%E7%AC%BC%E5%AD%90-8-SATA-SAS"><span class="nav-number">2.4.</span> <span class="nav-text">Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HP%E7%83%AD%E6%8F%92%E6%8B%94380-G6-G7%E7%A1%AC%E7%9B%98%E7%AC%BC"><span class="nav-number">2.5.</span> <span class="nav-text">HP热插拔380 G6&#x2F;G7硬盘笼</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RAID-HBA%E5%8D%A1%E9%80%89%E6%8B%A9"><span class="nav-number">3.</span> <span class="nav-text">RAID&#x2F;HBA卡选择</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A1%AC%E7%9B%98%E9%80%89%E6%8B%A9"><span class="nav-number">4.</span> <span class="nav-text">硬盘选择</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#NAS%E7%B3%BB%E7%BB%9F%E9%80%89%E6%8B%A9"><span class="nav-number">5.</span> <span class="nav-text">NAS系统选择</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E5%92%8C%E5%90%8E%E7%BB%AD"><span class="nav-number">6.</span> <span class="nav-text">总结和后续</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -168,7 +166,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">98</span>
+          <span class="site-state-item-count">99</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -288,8 +286,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody">
-        <p>接上篇<a href="/2022/11/05/lsi-raid-controller-and-hba-complete-listing-plus-oem-models/">LSI RAID卡芯片和各个OEM对应卡型号列表</a>里说的后续DIY NAS的想法，经过快3个月的时间，终于来更新整个DIY过程了，总结起来在整个过程中，收获的主要还是折腾的乐趣，要说折腾的尽头是白群晖，随着时间的推移，个人还是比较认同的，不过不得不说白群晖确实太贵了，都说群晖是买软件送硬件，但是这软件也太贵了点。</p>
+    <div class="post-body" itemprop="articleBody"><p>接上篇<a href="/2022/11/05/lsi-raid-controller-and-hba-complete-listing-plus-oem-models/">LSI RAID卡芯片和各个OEM对应卡型号列表</a>里说的后续DIY NAS的想法，经过快3个月的时间，终于来更新整个DIY过程了，总结起来在整个过程中，收获的主要还是折腾的乐趣，要说折腾的尽头是白群晖，随着时间的推移，个人还是比较认同的，不过不得不说白群晖确实太贵了，都说群晖是买软件送硬件，但是这软件也太贵了点。</p>
 <span id="more"></span>
 
 <h1 id="需求描述和分析"><a href="#需求描述和分析" class="headerlink" title="需求描述和分析"></a>需求描述和分析</h1><p>说起来，为啥会有个DIY NAS的需求呢？一个重要的原因是家里的小宝贝出生了，不知不觉也拍了好多的照片和视频，还是希望能更长久的把这些记忆保留下来。另外呢，之前更新自己的电脑，淘汰下来一套i5 6500 CPU加16G内存以及主板的准系统，买个机箱还有电源就直接可以用了，本着废物利用的原则，做个NAS也不亏，而且还多了很多可玩性。</p>
@@ -309,16 +306,16 @@
 <p>这是Intel一个颜值和功能都超级能打的硬盘笼，具体的参数可以参考<a target="_blank" rel="noopener" href="https://www.intel.com/content/www/us/en/products/sku/99083/2u-hotswap-8x2-5inch-sasnvme-combo-drive-bay-kit-a2u8x25s3phs/specifications.html">Intel的Spec文档</a>（不得不说Intel的文档写的是真的好），甚至当前这个时间点，依然在量产状态，这个笼子一般来说都是在2U机箱上做竖插24盘位的组件的，这几乎是我心目中最理想的硬盘笼选择，8盘位AnyBay，支持SATA、SAS、U.2 NVMe接口的硬盘，特别是在现在咸鱼有大量的U.2接口的大容量企业级SSD，价格十分友好。最关键的是这个硬盘笼的尺寸非常完美，可以无缝的塞进两个5.25英寸光驱位中，网上也有这个硬盘笼搭配银欣（SilverStone）SG02-F机箱组NAS的方案：<a target="_blank" rel="noopener" href="https://www.bilibili.com/read/cv16906380">全网首发【8盘位热插拔NVMe SSD NAS】DIY指南简章</a>，不得不说这个方案真的让人流口水，但确实不得不说成本太高了。</p>
 <p>这个硬盘笼呢，什么都好，就是成本太高，不仅仅笼子本身（大约1100+）更重要的是其配套的组件，首先这个硬盘笼是MiniSAS HD（SFF‑8643）接口的，支持这个接口的HBA或者RAID卡也比较贵，其次如果说要支持8个NVMe硬盘的话，需要准备8个OcuLink接口，那PCIe转OcuLink接口的转接卡又是不小的支出。更重要的是，8个NVMe需要32个PCIe lane，这直接超出了当前大部分平台的能力，基本只有服务器平台的CPU+主板才能支持这么多的PCIe lane，成本很可观。最后还有一个不得不考虑的问题，U.2 NVMe硬盘一般来说功耗都比较高，很多盘能到10几20W往上，如果是8块硬盘，那整体功耗可能会超过100W，所以散热的问题就不得不考虑了，这个笼子如果插NVMe硬盘的话，需要额外的散热。</p>
 <p>所以呢，东西虽好，但确实不符合我当前的需求和预算（流下贫穷的泪水）。据说H3C也有类似的笼子，价格要便宜1半，如果大家有类似的需求可以考虑。好像类似的8盘位AnyBay硬盘笼，各家OEM都有，但是好像好买且价格合适的不多。</p>
-<h2 id="Intel-8盘位热插拔笼子-4-AnyBay-4-SATA-x2F-SAS"><a href="#Intel-8盘位热插拔笼子-4-AnyBay-4-SATA-x2F-SAS" class="headerlink" title="Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)"></a>Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)</h2><p>这是另外一个Intel的硬盘笼子，大概可以算是上面笼子的低配版，<a target="_blank" rel="noopener" href="https://www.intel.com/content/www/us/en/products/sku/82790/hotswap-backplane-pcie-combination-drive-cage-kit-for-p4000-server-chassis-fup8x25s3nvdk-2-5in-nvme-ssd/specifications.html">文档看这里</a>，这个笼子支持4个NVMe + 4个SATA&#x2F;SAS硬盘，价格在淘宝也相对便宜，看到加上PCIe转接卡大概1000不到可以拿下，其实是个不错的选择，但是依然超出我的预算不少（继续流下贫穷的泪水）。</p>
-<h2 id="Intel-8盘位热插拔笼子-8-SATA-x2F-SAS"><a href="#Intel-8盘位热插拔笼子-8-SATA-x2F-SAS" class="headerlink" title="Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)"></a>Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)</h2><p><img src="/images/intel-8-sas.jpg"></p>
+<h2 id="Intel-8盘位热插拔笼子-4-AnyBay-4-SATA-SAS"><a href="#Intel-8盘位热插拔笼子-4-AnyBay-4-SATA-SAS" class="headerlink" title="Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)"></a>Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)</h2><p>这是另外一个Intel的硬盘笼子，大概可以算是上面笼子的低配版，<a target="_blank" rel="noopener" href="https://www.intel.com/content/www/us/en/products/sku/82790/hotswap-backplane-pcie-combination-drive-cage-kit-for-p4000-server-chassis-fup8x25s3nvdk-2-5in-nvme-ssd/specifications.html">文档看这里</a>，这个笼子支持4个NVMe + 4个SATA&#x2F;SAS硬盘，价格在淘宝也相对便宜，看到加上PCIe转接卡大概1000不到可以拿下，其实是个不错的选择，但是依然超出我的预算不少（继续流下贫穷的泪水）。</p>
+<h2 id="Intel-8盘位热插拔笼子-8-SATA-SAS"><a href="#Intel-8盘位热插拔笼子-8-SATA-SAS" class="headerlink" title="Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)"></a>Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)</h2><p><img src="/images/intel-8-sas.jpg"></p>
 <p>Intel还有一种硬盘笼（Intel出的好东西真不少啊），<a target="_blank" rel="noopener" href="https://www.intel.com/content/www/us/en/products/sku/60221/spare-8x2-5-hotswap-drive-cage-kit-fup8x25hsdks/specifications.html">文档看这里</a>，这个笼子支持8个SATA&#x2F;SAS硬盘，使用两个MiniSAS（SFF8087）接口，是一开始我选中的方案，整体还是很平衡的，淘宝大概400不到，在我找到下面的硬盘笼之前，一度准备剁手入了。</p>
-<h2 id="HP热插拔380-G6-x2F-G7硬盘笼"><a href="#HP热插拔380-G6-x2F-G7硬盘笼" class="headerlink" title="HP热插拔380 G6&#x2F;G7硬盘笼"></a>HP热插拔380 G6&#x2F;G7硬盘笼</h2><p><img src="/images/hp-8-sas.jpg"></p>
+<h2 id="HP热插拔380-G6-G7硬盘笼"><a href="#HP热插拔380-G6-G7硬盘笼" class="headerlink" title="HP热插拔380 G6&#x2F;G7硬盘笼"></a>HP热插拔380 G6&#x2F;G7硬盘笼</h2><p><img src="/images/hp-8-sas.jpg"></p>
 <p>这个是我最后选择的笼子，这个硬盘笼原本是给HP DL380G6&#x2F;G7升级16盘位的套件，在HP那边的编号是：<code>507690-001</code>和<code>516914-B21</code>（这俩编号是一个东西），这个套件包含的几个组件和对应的物料编号如下：</p>
 <blockquote><p>硬盘笼子：463173-001 496074-001<br>硬盘背板：507690-001 451283-002<br>硬盘供电线：514217-001<br>硬盘SAS数据线：498425-001 493228-005</p>
 </blockquote>
 
 <p>为什么我选择这个硬盘笼子呢，因为它真的便宜，笼子加上背板、送供电线和两根SAS线，只需要50块钱，当然是不带硬盘托架的，不过算上硬盘托架的价钱也只需要80。80块钱真买不了上当和吃亏。说实话它也有一些小问题，比如坑爹的HP不知道为啥要设计成横向的两个4盘位，尺寸比竖向8盘位相比宽了一点点，直接导致没办法塞进2个5.25英寸光驱位。另外电源接口的设计也比较恶心，是向外的，如果想塞进机箱，那突出来的电源线会成为一个大问题，另外HP的电源接口定义也是每代一改，虽然复用了10pin的接口，但是定义并不标准，导致我花了非常长的时间去寻找各个pin的定义，生怕弄错接口定义把背板烧了，最终还是在一个德语的论坛找到<a target="_blank" rel="noopener" href="https://www.hardwareluxx.de/community/threads/adapter-auf-hp-10-pin-stromanschlu%C3%9F-gesucht-f%C3%BCr-hp-sas-backplane.865625/page-2#post-19825023">一个评论</a>说了这个硬盘笼子的定义，需要说明的是这个背板不接3.3V的供电也没有影响，所以也是淘宝了两根大4P的电源线和10pin线，自己DIY了一个电源线，最终把这个硬盘盒的供电问题解决。总的来说，主要这个笼子实在是太便宜了，便宜到它的这几个缺点都可以忍受（还是流下贫穷的泪水）。</p>
-<h1 id="RAID-x2F-HBA卡选择"><a href="#RAID-x2F-HBA卡选择" class="headerlink" title="RAID&#x2F;HBA卡选择"></a>RAID&#x2F;HBA卡选择</h1><p>针对上面几个硬盘笼，特别是最终我选的硬盘笼，都使用了MiniSAS（SFF8087）接口，所以要想使用硬盘笼的话，需要有支持MiniSAS接口的SATA控制器或者RAID&#x2F;HBA卡，根据之前的调查，大致有几种方案：</p>
+<h1 id="RAID-HBA卡选择"><a href="#RAID-HBA卡选择" class="headerlink" title="RAID&#x2F;HBA卡选择"></a>RAID&#x2F;HBA卡选择</h1><p>针对上面几个硬盘笼，特别是最终我选的硬盘笼，都使用了MiniSAS（SFF8087）接口，所以要想使用硬盘笼的话，需要有支持MiniSAS接口的SATA控制器或者RAID&#x2F;HBA卡，根据之前的调查，大致有几种方案：</p>
 <pre><code>1. 可以使用MiniSAS转4SATA线实现，不过需要注意的是，这种线是区分正反的，正向线是MiniSAS口转4SATA，需要买反接线，将4SATA转换成MiniSAS口，从而实现将主板上的4个SATA口转成一个MiniSAS口。
 2. 市面上还有一些基于类似ASM1166（或者类似芯片）的PCI-E转SFF-8087转接卡，但ASM1166原生只支持6SATA Port，是否两个SFF-8087端口的8个端口都能使用，这个存疑。
    另外还有也有一些M.2转8口SATA扩展卡也是用的两个SFF-8087转接卡，理论上也可以使用。
@@ -414,12 +411,12 @@
           <div class="post-nav">
             <div class="post-nav-item">
                 <a href="/2022/11/05/lsi-raid-controller-and-hba-complete-listing-plus-oem-models/" rel="prev" title="分享一个记录LSI RAID卡芯片和各个OEM对应卡型号列表的神贴">
-                  <i class="fa fa-chevron-left"></i> 分享一个记录LSI RAID卡芯片和各个OEM对应卡型号列表的神贴
+                  <i class="fa fa-angle-left"></i> 分享一个记录LSI RAID卡芯片和各个OEM对应卡型号列表的神贴
                 </a>
             </div>
             <div class="post-nav-item">
                 <a href="/2023/07/13/parse-aws-aliyun-like-api-request/" rel="next" title="反序列化AWS/阿里云样式的基于Query的API请求">
-                  反序列化AWS/阿里云样式的基于Query的API请求 <i class="fa fa-chevron-right"></i>
+                  反序列化AWS/阿里云样式的基于Query的API请求 <i class="fa fa-angle-right"></i>
                 </a>
             </div>
           </div>
@@ -432,22 +429,21 @@
 
 
 
-    <div class="comments gitalk-container"></div>
+    <div class="comments utterances-container"></div>
 </div>
   </main>
 
   <footer class="footer">
     <div class="footer-inner">
 
-
-<div class="copyright">
-  &copy; 
-  <span itemprop="copyrightYear">2023</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">Chen Fu</span>
-</div>
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Fu</span>
+  </div>
 <div class="busuanzi-count">
     <span class="post-meta-item" id="busuanzi_container_site_uv">
       <span class="post-meta-item-icon">
@@ -484,17 +480,18 @@
 
 
   
-  <script src="https://npm.elemecdn.com/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
-  <script src="https://npm.elemecdn.com/jquery@3.6.3/dist/jquery.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
-  <script src="https://npm.elemecdn.com/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.24/dist/fancybox/fancybox.umd.js" integrity="sha256-oyhjPiYRWGXaAt+ny/mTMWOnN1GBoZDUQnzzgC7FRI4=" crossorigin="anonymous"></script>
 <script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
 
-  <script src="https://npm.elemecdn.com/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
 <script src="/js/third-party/search/local-search.js"></script>
 
 
 
+
   <script src="/js/third-party/fancybox.js"></script>
+
 
 
   
@@ -503,10 +500,8 @@
 
 
 
-<link rel="stylesheet" href="https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
-
-<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"C0reFast","repo":"c0refast.github.io","client_id":"28277c1cf88cb302f885","client_secret":"bcfe1ceea3fadd1bc4981fbcb4ee36d4047d8280","admin_user":"C0reFast","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://npm.elemecdn.com/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"d2a4ec3c03978d93a38b52f44633b0eb"}</script>
-<script src="/js/third-party/comments/gitalk.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
 
 </body>
 </html>

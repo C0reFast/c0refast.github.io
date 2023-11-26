@@ -481,7 +481,7 @@ key        semid      owner      perms      nsems
 0x00000000 <span class="token number">586973200</span>  nobody     <span class="token number">600</span>        <span class="token number">1</span>
 <span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>其中nobody用户占用的信号量总数非常多，超过了100个，而我们的Apache也是运行在nobody下的，应该是信号量没有正确释放导致的，手动释放一下：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token keyword">for</span> <span class="token for-or-select variable">i</span> <span class="token keyword">in</span> <span class="token variable"><span class="token variable">`</span>ipcs -s<span class="token operator">|</span><span class="token function">awk</span> <span class="token string">'/nobody/ &#123;print $2&#125;'</span><span class="token variable">`</span></span><span class="token punctuation">;</span> <span class="token keyword">do</span> <span class="token punctuation">(</span>ipcrm -s <span class="token variable">$i</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token keyword">done</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token keyword">for</span> <span class="token for-or-select variable">i</span> <span class="token keyword">in</span> <span class="token variable"><span class="token variable">`</span>ipcs -s<span class="token operator">|</span><span class="token function">awk</span> <span class="token string">'/nobody/ &#123;print $2&#125;'</span><span class="token variable">`</span></span><span class="token punctuation">;</span> <span class="token keyword">do</span> <span class="token punctuation">(</span>ipcrm <span class="token parameter variable">-s</span> <span class="token variable">$i</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token keyword">done</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>释放结束后，Apache便可以正常启动了。</p>
 <p>具体到Semaphore，也就是信号量，有一个内核参数可以修改：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@yq138.phpruntime ~<span class="token punctuation">]</span><span class="token comment"># cat /proc/sys/kernel/sem</span>
@@ -712,7 +712,7 @@ key        semid      owner      perms      nsems
     <content><![CDATA[<p>在使用普通用户执行需要超级用户权限的指令时，经常忘记前面加上sudo，等到命令输入完成，再加sudo很麻烦，可以绑定一个快捷方式快速输入最前面的sudo:<br>如果使用Bash，在<code>~/.bashrc</code>中加入：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">bind</span> <span class="token string">'"\e\e":"\C-asudo \C-e"'</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>如果使用Zsh，在<code>~/.zshrc</code>中加入：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">bindkey -s <span class="token string">'\e\e'</span> <span class="token string">'\C-asudo \C-e'</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">bindkey <span class="token parameter variable">-s</span> <span class="token string">'\e\e'</span> <span class="token string">'\C-asudo \C-e'</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>生效后，只需要连续按两下<code>ESC</code>键，即可快速将sudo添加到命令最前端。</p>
 ]]></content>
       <categories>
@@ -739,11 +739,11 @@ key        semid      owner      perms      nsems
         ipset <span class="token function">add</span> whitelist-china <span class="token variable">$i</span><span class="token punctuation">;</span>
 <span class="token keyword">done</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <p>最后，在通过iptables封锁所有不在这个集合中的IP，因为不想影响我访问国内的地址，所以在这里，只需要将TCP协议的SYN包，以及ICMP包丢弃掉就可以：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m <span class="token builtin class-name">set</span> <span class="token operator">!</span> --match-set whitelist-china src -j DROP
-iptables -A INPUT -p icmp -m <span class="token builtin class-name">set</span> <span class="token operator">!</span> --match-set whitelist-china src -j DROP<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-A</span> INPUT <span class="token parameter variable">-p</span> tcp <span class="token parameter variable">-m</span> tcp --tcp-flags FIN,SYN,RST,ACK SYN <span class="token parameter variable">-m</span> <span class="token builtin class-name">set</span> <span class="token operator">!</span> --match-set whitelist-china src <span class="token parameter variable">-j</span> DROP
+iptables <span class="token parameter variable">-A</span> INPUT <span class="token parameter variable">-p</span> icmp <span class="token parameter variable">-m</span> <span class="token builtin class-name">set</span> <span class="token operator">!</span> --match-set whitelist-china src <span class="token parameter variable">-j</span> DROP<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <p>这么设置之后，出现了一些问题，我在本地无法通过127.0.0.1访问本机的MySQL服务了，为什么呢？因为连接本机，那么客户端的IP就是127.0.0.1，很显然这个IP也不在国内的地址段里，直接导致iptables错误的把本地的请求也丢弃了。于是还需要放行本地发起的请求：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables -A INPUT -s <span class="token number">127.0</span>.0.1/8 -j ACCEPT<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-A</span> INPUT <span class="token parameter variable">-s</span> <span class="token number">127.0</span>.0.1/8 <span class="token parameter variable">-j</span> ACCEPT<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
 <p>好了，经过这样的设置，世界清净了不少，如果想看看到底有多少的数据被iptables丢弃，只需要执行<code>iptables -vnL</code>查看命中数量：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># iptables -vnL</span>
@@ -1978,7 +1978,7 @@ ceph-mon: created monfs at /data0/ceph/mon/mon.mon2 <span class="token keyword">
     <url>/2021/03/16/ceph-osd-heartbeat/</url>
     <content><![CDATA[<p>心跳机制在Ceph中承担非常重要的角色，所有OSD之间都需要通过心跳来确认各个OSD的状态，并且在OSD出现失联，Crash等情况下能及时的被发现，从而进行故障OSD摘除，触发数据重平衡等，保证数据的安全性。</p>
 <p>所以弄明白当前Ceph的心跳机制，理顺OSD从故障到被集群踢出的流程是十分必要的。</p>
-<h3 id="心跳初始化-amp-心跳发送"><a href="#心跳初始化-amp-心跳发送" class="headerlink" title="心跳初始化 &amp; 心跳发送"></a>心跳初始化 &amp; 心跳发送</h3><p>首先我们从Ceph OSD进程的启动main函数开始，代码在<code>src/ceph_osd.cc</code>：</p>
+<h3 id="心跳初始化-心跳发送"><a href="#心跳初始化-心跳发送" class="headerlink" title="心跳初始化 &amp; 心跳发送"></a>心跳初始化 &amp; 心跳发送</h3><p>首先我们从Ceph OSD进程的启动main函数开始，代码在<code>src/ceph_osd.cc</code>：</p>
 <span id="more"></span>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span><span class="token operator">*</span>argv<span class="token punctuation">)</span>
 <span class="token punctuation">&#123;</span>
@@ -2582,11 +2582,11 @@ ba380679-0a81-4bbc-a5f0-27fd93137c78
 <span class="token number">2</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>调用 <code>ceph-osd -i &#123;num&#125; --mkfs --mkkey --osd-uuid &#123;uid&#125;</code> 初始化OSD目录：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-osd -i 0 --mkfs --mkkey --osd-uuid 63970d8a-597a-4123-9767-097f88bbcd00</span>
-<span class="token number">2017</span>-02-09 09:34:29.961006 7ff9e6ef3800 -1 journal FileJournal::_open: disabling aio <span class="token keyword">for</span> non-block journal.  Use journal_force_aio to force use of aio anyway
-<span class="token number">2017</span>-02-09 09:34:30.268810 7ff9e6ef3800 -1 journal FileJournal::_open: disabling aio <span class="token keyword">for</span> non-block journal.  Use journal_force_aio to force use of aio anyway
-<span class="token number">2017</span>-02-09 09:34:30.277939 7ff9e6ef3800 -1 filestore<span class="token punctuation">(</span>/data0/osd.0<span class="token punctuation">)</span> could not <span class="token function">find</span> <span class="token comment">#-1:7b3f43c4:::osd_superblock:0# in index: (2) No such file or directory</span>
-<span class="token number">2017</span>-02-09 09:34:30.607425 7ff9e6ef3800 -1 created object store /data0/osd.0 <span class="token keyword">for</span> osd.0 fsid def5bc47-3d8a-4ca0-9cd6-77243339ab0f
-<span class="token number">2017</span>-02-09 09:34:30.607495 7ff9e6ef3800 -1 auth: error reading file: /data0/osd.0/keyring: can<span class="token string">'t open /data0/osd.0/keyring: (2) No such file or directory
+<span class="token number">2017</span>-02-09 09:34:29.961006 7ff9e6ef3800 <span class="token parameter variable">-1</span> journal FileJournal::_open: disabling aio <span class="token keyword">for</span> non-block journal.  Use journal_force_aio to force use of aio anyway
+<span class="token number">2017</span>-02-09 09:34:30.268810 7ff9e6ef3800 <span class="token parameter variable">-1</span> journal FileJournal::_open: disabling aio <span class="token keyword">for</span> non-block journal.  Use journal_force_aio to force use of aio anyway
+<span class="token number">2017</span>-02-09 09:34:30.277939 7ff9e6ef3800 <span class="token parameter variable">-1</span> filestore<span class="token punctuation">(</span>/data0/osd.0<span class="token punctuation">)</span> could not <span class="token function">find</span> <span class="token comment">#-1:7b3f43c4:::osd_superblock:0# in index: (2) No such file or directory</span>
+<span class="token number">2017</span>-02-09 09:34:30.607425 7ff9e6ef3800 <span class="token parameter variable">-1</span> created object store /data0/osd.0 <span class="token keyword">for</span> osd.0 fsid def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+<span class="token number">2017</span>-02-09 09:34:30.607495 7ff9e6ef3800 <span class="token parameter variable">-1</span> auth: error reading file: /data0/osd.0/keyring: can<span class="token string">'t open /data0/osd.0/keyring: (2) No such file or directory
 2017-02-09 09:34:30.607747 7ff9e6ef3800 -1 created new key in keyring /data0/osd.0/keyring
 
 [root@test ~]# ceph-osd -i 1 --mkfs --mkkey --osd-uuid ba380679-0a81-4bbc-a5f0-27fd93137c78
@@ -2595,15 +2595,15 @@ ba380679-0a81-4bbc-a5f0-27fd93137c78
 2017-02-09 09:34:40.481165 7fcac9aef800 -1 filestore(/data0/osd.1) could not find #-1:7b3f43c4:::osd_superblock:0# in index: (2) No such file or directory
 2017-02-09 09:34:40.810678 7fcac9aef800 -1 created object store /data0/osd.1 for osd.1 fsid def5bc47-3d8a-4ca0-9cd6-77243339ab0f
 2017-02-09 09:34:40.810743 7fcac9aef800 -1 auth: error reading file: /data0/osd.1/keyring: can'</span>t <span class="token function">open</span> /data0/osd.1/keyring: <span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span> No such <span class="token function">file</span> or directory
-<span class="token number">2017</span>-02-09 09:34:40.810982 7fcac9aef800 -1 created new key <span class="token keyword">in</span> keyring /data0/osd.1/keyring
+<span class="token number">2017</span>-02-09 09:34:40.810982 7fcac9aef800 <span class="token parameter variable">-1</span> created new key <span class="token keyword">in</span> keyring /data0/osd.1/keyring
 
 <span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph-osd -i 2 --mkfs --mkkey --osd-uuid 7545c284-1cda-4cad-b23a-2e7c81cb8a47</span>
-<span class="token number">2017</span>-02-09 09:34:51.793012 7fa0fc68b800 -1 journal FileJournal::_open: disabling aio <span class="token keyword">for</span> non-block journal.  Use journal_force_aio to force use of aio anyway
-<span class="token number">2017</span>-02-09 09:34:52.116001 7fa0fc68b800 -1 journal FileJournal::_open: disabling aio <span class="token keyword">for</span> non-block journal.  Use journal_force_aio to force use of aio anyway
-<span class="token number">2017</span>-02-09 09:34:52.124229 7fa0fc68b800 -1 filestore<span class="token punctuation">(</span>/data0/osd.2<span class="token punctuation">)</span> could not <span class="token function">find</span> <span class="token comment">#-1:7b3f43c4:::osd_superblock:0# in index: (2) No such file or directory</span>
-<span class="token number">2017</span>-02-09 09:34:52.447702 7fa0fc68b800 -1 created object store /data0/osd.2 <span class="token keyword">for</span> osd.2 fsid def5bc47-3d8a-4ca0-9cd6-77243339ab0f
-<span class="token number">2017</span>-02-09 09:34:52.447761 7fa0fc68b800 -1 auth: error reading file: /data0/osd.2/keyring: can't <span class="token function">open</span> /data0/osd.2/keyring: <span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span> No such <span class="token function">file</span> or directory
-<span class="token number">2017</span>-02-09 09:34:52.447980 7fa0fc68b800 -1 created new key <span class="token keyword">in</span> keyring /data0/osd.2/keyring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token number">2017</span>-02-09 09:34:51.793012 7fa0fc68b800 <span class="token parameter variable">-1</span> journal FileJournal::_open: disabling aio <span class="token keyword">for</span> non-block journal.  Use journal_force_aio to force use of aio anyway
+<span class="token number">2017</span>-02-09 09:34:52.116001 7fa0fc68b800 <span class="token parameter variable">-1</span> journal FileJournal::_open: disabling aio <span class="token keyword">for</span> non-block journal.  Use journal_force_aio to force use of aio anyway
+<span class="token number">2017</span>-02-09 09:34:52.124229 7fa0fc68b800 <span class="token parameter variable">-1</span> filestore<span class="token punctuation">(</span>/data0/osd.2<span class="token punctuation">)</span> could not <span class="token function">find</span> <span class="token comment">#-1:7b3f43c4:::osd_superblock:0# in index: (2) No such file or directory</span>
+<span class="token number">2017</span>-02-09 09:34:52.447702 7fa0fc68b800 <span class="token parameter variable">-1</span> created object store /data0/osd.2 <span class="token keyword">for</span> osd.2 fsid def5bc47-3d8a-4ca0-9cd6-77243339ab0f
+<span class="token number">2017</span>-02-09 09:34:52.447761 7fa0fc68b800 <span class="token parameter variable">-1</span> auth: error reading file: /data0/osd.2/keyring: can't <span class="token function">open</span> /data0/osd.2/keyring: <span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span> No such <span class="token function">file</span> or directory
+<span class="token number">2017</span>-02-09 09:34:52.447980 7fa0fc68b800 <span class="token parameter variable">-1</span> created new key <span class="token keyword">in</span> keyring /data0/osd.2/keyring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>添加OSD授权：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph auth add osd.0 osd 'allow *' mon 'allow profile osd' -i /data0/osd.0/keyring</span>
 added key <span class="token keyword">for</span> osd.0
@@ -2618,9 +2618,9 @@ added bucket node1 <span class="token builtin class-name">type</span> <span clas
 <span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd crush add-bucket node2 host     # 添加一个host节点node2</span>
 added bucket node2 <span class="token builtin class-name">type</span> <span class="token function">host</span> to crush map
 <span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd crush move node1 root=default   # 将node1移到default下</span>
-moved item <span class="token function">id</span> -2 name <span class="token string">'node1'</span> to location <span class="token punctuation">&#123;</span>root<span class="token operator">=</span>default<span class="token punctuation">&#125;</span> <span class="token keyword">in</span> crush map
+moved item <span class="token function">id</span> <span class="token parameter variable">-2</span> name <span class="token string">'node1'</span> to location <span class="token punctuation">&#123;</span>root<span class="token operator">=</span>default<span class="token punctuation">&#125;</span> <span class="token keyword">in</span> crush map
 <span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd crush move node2 root=default   # 将node2移到default下</span>
-moved item <span class="token function">id</span> -3 name <span class="token string">'node2'</span> to location <span class="token punctuation">&#123;</span>root<span class="token operator">=</span>default<span class="token punctuation">&#125;</span> <span class="token keyword">in</span> crush map
+moved item <span class="token function">id</span> <span class="token parameter variable">-3</span> name <span class="token string">'node2'</span> to location <span class="token punctuation">&#123;</span>root<span class="token operator">=</span>default<span class="token punctuation">&#125;</span> <span class="token keyword">in</span> crush map
 <span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd crush add osd.0 1.0 host=node1  # 将osd.0以1.0的权重加到node1中</span>
 <span class="token function">add</span> item <span class="token function">id</span> <span class="token number">0</span> name <span class="token string">'osd.0'</span> weight <span class="token number">1</span> at location <span class="token punctuation">&#123;</span>host<span class="token operator">=</span>node1<span class="token punctuation">&#125;</span> to crush map
 <span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd crush add osd.1 1.0 host=node1  # 将osd.1以1.0的权重加到node1中</span>
@@ -2629,11 +2629,11 @@ moved item <span class="token function">id</span> -3 name <span class="token str
 <span class="token function">add</span> item <span class="token function">id</span> <span class="token number">2</span> name <span class="token string">'osd.2'</span> weight <span class="token number">1</span> at location <span class="token punctuation">&#123;</span>host<span class="token operator">=</span>node2<span class="token punctuation">&#125;</span> to crush map
 <span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ceph osd tree    # 查看当前OSD Tree</span>
 ID WEIGHT  TYPE NAME      UP/DOWN REWEIGHT PRIMARY-AFFINITY
--1 <span class="token number">3.00000</span> root default
--2 <span class="token number">2.00000</span>     <span class="token function">host</span> node1
+<span class="token parameter variable">-1</span> <span class="token number">3.00000</span> root default
+<span class="token parameter variable">-2</span> <span class="token number">2.00000</span>     <span class="token function">host</span> node1
  <span class="token number">0</span> <span class="token number">1.00000</span>         osd.0     down        <span class="token number">0</span>          <span class="token number">1.00000</span>
  <span class="token number">1</span> <span class="token number">1.00000</span>         osd.1     down        <span class="token number">0</span>          <span class="token number">1.00000</span>
--3 <span class="token number">1.00000</span>     <span class="token function">host</span> node2
+<span class="token parameter variable">-3</span> <span class="token number">1.00000</span>     <span class="token function">host</span> node2
  <span class="token number">2</span> <span class="token number">1.00000</span>         osd.2     down        <span class="token number">0</span>          <span class="token number">1.00000</span>
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
@@ -3971,7 +3971,7 @@ E: <span class="token assign-left variable">TAGS</span><span class="token operat
 E: <span class="token assign-left variable">UDEV_BIOSDEVNAME</span><span class="token operator">=</span><span class="token number">1</span>
 E: <span class="token assign-left variable">USEC_INITIALIZED</span><span class="token operator">=</span><span class="token number">54242</span>
 E: <span class="token assign-left variable">biosdevname</span><span class="token operator">=</span><span class="token number">0</span>
-E: net.ifnames<span class="token operator">=</span><span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+E: <span class="token assign-left variable">net.ifnames</span><span class="token operator">=</span><span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>以<code>ID_NET_NAME_SLOT</code>命名的机器：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># udevadm info /sys/class/net/ens2f0</span>
 P: /devices/pci0000:85/0000:85:00.0/0000:86:00.0/net/ens2f0
@@ -3997,7 +3997,7 @@ E: <span class="token assign-left variable">TAGS</span><span class="token operat
 E: <span class="token assign-left variable">UDEV_BIOSDEVNAME</span><span class="token operator">=</span><span class="token number">0</span>
 E: <span class="token assign-left variable">USEC_INITIALIZED</span><span class="token operator">=</span><span class="token number">34864</span>
 E: <span class="token assign-left variable">biosdevname</span><span class="token operator">=</span><span class="token number">0</span>
-E: net.ifnames<span class="token operator">=</span><span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+E: <span class="token assign-left variable">net.ifnames</span><span class="token operator">=</span><span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>大部分都是一样的，但是以<code>ID_NET_NAME_SLOT</code>命名的机器，ID_NET_NAME_SLOT这个ENV不为空，而以<code>ID_NET_NAME_PATH</code>命名的机器直接就没有<code>ID_NET_NAME_SLOT</code>这个ENV。那么按照<code>/usr/lib/udev/rules.d/80-net-name-slot.rules</code>里的udev规则：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@ ~<span class="token punctuation">]</span><span class="token comment"># cat /usr/lib/udev/rules.d/80-net-name-slot.rules</span>
@@ -4734,16 +4734,16 @@ Type <span class="token string">"help"</span>, <span class="token string">"copyr
 <p>这是Intel一个颜值和功能都超级能打的硬盘笼，具体的参数可以参考<a href="https://www.intel.com/content/www/us/en/products/sku/99083/2u-hotswap-8x2-5inch-sasnvme-combo-drive-bay-kit-a2u8x25s3phs/specifications.html">Intel的Spec文档</a>（不得不说Intel的文档写的是真的好），甚至当前这个时间点，依然在量产状态，这个笼子一般来说都是在2U机箱上做竖插24盘位的组件的，这几乎是我心目中最理想的硬盘笼选择，8盘位AnyBay，支持SATA、SAS、U.2 NVMe接口的硬盘，特别是在现在咸鱼有大量的U.2接口的大容量企业级SSD，价格十分友好。最关键的是这个硬盘笼的尺寸非常完美，可以无缝的塞进两个5.25英寸光驱位中，网上也有这个硬盘笼搭配银欣（SilverStone）SG02-F机箱组NAS的方案：<a href="https://www.bilibili.com/read/cv16906380">全网首发【8盘位热插拔NVMe SSD NAS】DIY指南简章</a>，不得不说这个方案真的让人流口水，但确实不得不说成本太高了。</p>
 <p>这个硬盘笼呢，什么都好，就是成本太高，不仅仅笼子本身（大约1100+）更重要的是其配套的组件，首先这个硬盘笼是MiniSAS HD（SFF‑8643）接口的，支持这个接口的HBA或者RAID卡也比较贵，其次如果说要支持8个NVMe硬盘的话，需要准备8个OcuLink接口，那PCIe转OcuLink接口的转接卡又是不小的支出。更重要的是，8个NVMe需要32个PCIe lane，这直接超出了当前大部分平台的能力，基本只有服务器平台的CPU+主板才能支持这么多的PCIe lane，成本很可观。最后还有一个不得不考虑的问题，U.2 NVMe硬盘一般来说功耗都比较高，很多盘能到10几20W往上，如果是8块硬盘，那整体功耗可能会超过100W，所以散热的问题就不得不考虑了，这个笼子如果插NVMe硬盘的话，需要额外的散热。</p>
 <p>所以呢，东西虽好，但确实不符合我当前的需求和预算（流下贫穷的泪水）。据说H3C也有类似的笼子，价格要便宜1半，如果大家有类似的需求可以考虑。好像类似的8盘位AnyBay硬盘笼，各家OEM都有，但是好像好买且价格合适的不多。</p>
-<h2 id="Intel-8盘位热插拔笼子-4-AnyBay-4-SATA-x2F-SAS"><a href="#Intel-8盘位热插拔笼子-4-AnyBay-4-SATA-x2F-SAS" class="headerlink" title="Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)"></a>Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)</h2><p>这是另外一个Intel的硬盘笼子，大概可以算是上面笼子的低配版，<a href="https://www.intel.com/content/www/us/en/products/sku/82790/hotswap-backplane-pcie-combination-drive-cage-kit-for-p4000-server-chassis-fup8x25s3nvdk-2-5in-nvme-ssd/specifications.html">文档看这里</a>，这个笼子支持4个NVMe + 4个SATA&#x2F;SAS硬盘，价格在淘宝也相对便宜，看到加上PCIe转接卡大概1000不到可以拿下，其实是个不错的选择，但是依然超出我的预算不少（继续流下贫穷的泪水）。</p>
-<h2 id="Intel-8盘位热插拔笼子-8-SATA-x2F-SAS"><a href="#Intel-8盘位热插拔笼子-8-SATA-x2F-SAS" class="headerlink" title="Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)"></a>Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)</h2><p><img src="/images/intel-8-sas.jpg"></p>
+<h2 id="Intel-8盘位热插拔笼子-4-AnyBay-4-SATA-SAS"><a href="#Intel-8盘位热插拔笼子-4-AnyBay-4-SATA-SAS" class="headerlink" title="Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)"></a>Intel 8盘位热插拔笼子(4 AnyBay + 4 SATA&#x2F;SAS)</h2><p>这是另外一个Intel的硬盘笼子，大概可以算是上面笼子的低配版，<a href="https://www.intel.com/content/www/us/en/products/sku/82790/hotswap-backplane-pcie-combination-drive-cage-kit-for-p4000-server-chassis-fup8x25s3nvdk-2-5in-nvme-ssd/specifications.html">文档看这里</a>，这个笼子支持4个NVMe + 4个SATA&#x2F;SAS硬盘，价格在淘宝也相对便宜，看到加上PCIe转接卡大概1000不到可以拿下，其实是个不错的选择，但是依然超出我的预算不少（继续流下贫穷的泪水）。</p>
+<h2 id="Intel-8盘位热插拔笼子-8-SATA-SAS"><a href="#Intel-8盘位热插拔笼子-8-SATA-SAS" class="headerlink" title="Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)"></a>Intel 8盘位热插拔笼子(8 SATA&#x2F;SAS)</h2><p><img src="/images/intel-8-sas.jpg"></p>
 <p>Intel还有一种硬盘笼（Intel出的好东西真不少啊），<a href="https://www.intel.com/content/www/us/en/products/sku/60221/spare-8x2-5-hotswap-drive-cage-kit-fup8x25hsdks/specifications.html">文档看这里</a>，这个笼子支持8个SATA&#x2F;SAS硬盘，使用两个MiniSAS（SFF8087）接口，是一开始我选中的方案，整体还是很平衡的，淘宝大概400不到，在我找到下面的硬盘笼之前，一度准备剁手入了。</p>
-<h2 id="HP热插拔380-G6-x2F-G7硬盘笼"><a href="#HP热插拔380-G6-x2F-G7硬盘笼" class="headerlink" title="HP热插拔380 G6&#x2F;G7硬盘笼"></a>HP热插拔380 G6&#x2F;G7硬盘笼</h2><p><img src="/images/hp-8-sas.jpg"></p>
+<h2 id="HP热插拔380-G6-G7硬盘笼"><a href="#HP热插拔380-G6-G7硬盘笼" class="headerlink" title="HP热插拔380 G6&#x2F;G7硬盘笼"></a>HP热插拔380 G6&#x2F;G7硬盘笼</h2><p><img src="/images/hp-8-sas.jpg"></p>
 <p>这个是我最后选择的笼子，这个硬盘笼原本是给HP DL380G6&#x2F;G7升级16盘位的套件，在HP那边的编号是：<code>507690-001</code>和<code>516914-B21</code>（这俩编号是一个东西），这个套件包含的几个组件和对应的物料编号如下：</p>
 <blockquote><p>硬盘笼子：463173-001 496074-001<br>硬盘背板：507690-001 451283-002<br>硬盘供电线：514217-001<br>硬盘SAS数据线：498425-001 493228-005</p>
 </blockquote>
 
 <p>为什么我选择这个硬盘笼子呢，因为它真的便宜，笼子加上背板、送供电线和两根SAS线，只需要50块钱，当然是不带硬盘托架的，不过算上硬盘托架的价钱也只需要80。80块钱真买不了上当和吃亏。说实话它也有一些小问题，比如坑爹的HP不知道为啥要设计成横向的两个4盘位，尺寸比竖向8盘位相比宽了一点点，直接导致没办法塞进2个5.25英寸光驱位。另外电源接口的设计也比较恶心，是向外的，如果想塞进机箱，那突出来的电源线会成为一个大问题，另外HP的电源接口定义也是每代一改，虽然复用了10pin的接口，但是定义并不标准，导致我花了非常长的时间去寻找各个pin的定义，生怕弄错接口定义把背板烧了，最终还是在一个德语的论坛找到<a href="https://www.hardwareluxx.de/community/threads/adapter-auf-hp-10-pin-stromanschlu%C3%9F-gesucht-f%C3%BCr-hp-sas-backplane.865625/page-2#post-19825023">一个评论</a>说了这个硬盘笼子的定义，需要说明的是这个背板不接3.3V的供电也没有影响，所以也是淘宝了两根大4P的电源线和10pin线，自己DIY了一个电源线，最终把这个硬盘盒的供电问题解决。总的来说，主要这个笼子实在是太便宜了，便宜到它的这几个缺点都可以忍受（还是流下贫穷的泪水）。</p>
-<h1 id="RAID-x2F-HBA卡选择"><a href="#RAID-x2F-HBA卡选择" class="headerlink" title="RAID&#x2F;HBA卡选择"></a>RAID&#x2F;HBA卡选择</h1><p>针对上面几个硬盘笼，特别是最终我选的硬盘笼，都使用了MiniSAS（SFF8087）接口，所以要想使用硬盘笼的话，需要有支持MiniSAS接口的SATA控制器或者RAID&#x2F;HBA卡，根据之前的调查，大致有几种方案：</p>
+<h1 id="RAID-HBA卡选择"><a href="#RAID-HBA卡选择" class="headerlink" title="RAID&#x2F;HBA卡选择"></a>RAID&#x2F;HBA卡选择</h1><p>针对上面几个硬盘笼，特别是最终我选的硬盘笼，都使用了MiniSAS（SFF8087）接口，所以要想使用硬盘笼的话，需要有支持MiniSAS接口的SATA控制器或者RAID&#x2F;HBA卡，根据之前的调查，大致有几种方案：</p>
 <pre><code>1. 可以使用MiniSAS转4SATA线实现，不过需要注意的是，这种线是区分正反的，正向线是MiniSAS口转4SATA，需要买反接线，将4SATA转换成MiniSAS口，从而实现将主板上的4个SATA口转成一个MiniSAS口。
 2. 市面上还有一些基于类似ASM1166（或者类似芯片）的PCI-E转SFF-8087转接卡，但ASM1166原生只支持6SATA Port，是否两个SFF-8087端口的8个端口都能使用，这个存疑。
    另外还有也有一些M.2转8口SATA扩展卡也是用的两个SFF-8087转接卡，理论上也可以使用。
@@ -5139,7 +5139,7 @@ From https://github.com/php/php-src
  * branch              master     -<span class="token operator">></span> FETCH_HEAD
  * <span class="token punctuation">[</span>new branch<span class="token punctuation">]</span>        PHP-7.3.8  -<span class="token operator">></span> origin/PHP-7.3.8
 <span class="token function">git</span> remote set-branches origin <span class="token string">'PHP-7.3.8'</span>
-<span class="token function">git</span> fetch --depth<span class="token operator">=</span><span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token function">git</span> fetch <span class="token parameter variable">--depth</span><span class="token operator">=</span><span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>如果转换成常规克隆，需要使用<code>--unshallow</code>：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'</span>
@@ -5207,24 +5207,6 @@ log<span class="token punctuation">.</span><span class="token function">Println<
       </tags>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2014/11/20/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="http://hexo.io/">Hexo</a>! This is your very first post. Check <a href="http://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="http://hexo.io/docs/troubleshooting.html">trobuleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo new <span class="token string">"My New Post"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="http://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo server<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="http://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo generate<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="http://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo deploy<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="http://hexo.io/docs/deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>如何在一秒之内丢弃1000万个网络数据包？</title>
     <url>/2019/03/10/how-to-drop-10-million-packets-per-second/</url>
     <content><![CDATA[<p>偶然看到一篇cloudflare的博客<a href="https://blog.cloudflare.com/how-to-drop-10-million-packets/">How to drop 10 million packets per second</a>，如何实现单核情况下一秒钟丢弃1000万个数据包，原文循序渐进，从最简单的用户态丢弃到使用非常新的技术XDP，逐步将单核丢包性能提升到10mpps，很有意思，网上也没有看到原文的中文版本，所以这里顺便翻译一下，看看cloudflare是如何处理类似的情况的。<span id="more"></span></p>
@@ -5241,7 +5223,7 @@ log<span class="token punctuation">.</span><span class="token function">Println<
 </ul>
 <p>我们并没有尝试优化用户空间应用程序的速度，也没有尝试提升数据吞吐量 - 相反，我们尝试专门展示内核层的瓶颈。</p>
 <p>生成的流量可以对<code>conntrack</code>施加最大压力 - 数据包使用随机源IP和端口字段。 <code>tcpdump</code>的结果如下：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ tcpdump -ni vlan100 -c <span class="token number">10</span> -t udp and dst port <span class="token number">1234</span>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ tcpdump <span class="token parameter variable">-ni</span> vlan100 <span class="token parameter variable">-c</span> <span class="token number">10</span> <span class="token parameter variable">-t</span> udp and dst port <span class="token number">1234</span>
 IP <span class="token number">198.18</span>.40.55.32059 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
 IP <span class="token number">198.18</span>.51.16.30852 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
 IP <span class="token number">198.18</span>.35.51.61823 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
@@ -5253,19 +5235,19 @@ IP <span class="token number">198.18</span>.50.73.22989 <span class="token opera
 IP <span class="token number">198.18</span>.43.204.37895 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span>
 IP <span class="token number">198.18</span>.104.128.1543 <span class="token operator">></span> <span class="token number">198.18</span>.0.12.1234: UDP, length <span class="token number">16</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>在目标机器，我们将所有的流量都定向到网卡同一个RX队列上，也就是说所有的数据都只会被一个CPU核处理。我们通过硬件流转向实现这一目标：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">ethtool</span> -N ext0 flow-type udp4 dst-ip <span class="token number">198.18</span>.0.12 dst-port <span class="token number">1234</span> action <span class="token number">2</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">ethtool</span> <span class="token parameter variable">-N</span> ext0 flow-type udp4 dst-ip <span class="token number">198.18</span>.0.12 dst-port <span class="token number">1234</span> action <span class="token number">2</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
 <p>基准测试通常也很困难，当我们在准备测试的过程中，我们发现如果系统中有活动的raw socket也会影响性能，事后看很明显，但是也很容易忽略类似的问题。所以在测试之前需要确认没有任何<code>tcpdump</code>进程在运行，可以通过下面的方式查看：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ ss -A raw,packet_raw -l -p<span class="token operator">|</span><span class="token function">cat</span>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ ss <span class="token parameter variable">-A</span> raw,packet_raw <span class="token parameter variable">-l</span> -p<span class="token operator">|</span><span class="token function">cat</span>
 Netid  State      Recv-Q Send-Q Local Address:Port
 p_raw  UNCONN     <span class="token number">525157</span> <span class="token number">0</span>      *:vlan100          users:<span class="token variable"><span class="token punctuation">((</span>"tcpdump"<span class="token punctuation">,</span>pid<span class="token operator">=</span><span class="token number">23683</span><span class="token punctuation">,</span>fd<span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">))</span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <p>最后，我们要关闭<code>Intel Turbo Boost</code>特性：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">echo</span> <span class="token number">1</span> <span class="token operator">|</span> <span class="token function">sudo</span> <span class="token function">tee</span> /sys/devices/system/cpu/intel_pstate/no_turbo<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>虽然<code>Turbo Boost</code>很好，而且可以提升至少20%的吞吐量，但是也会极大的影响测试结果的标准差，在开启状态下偏大达到了 ±1.5%，而关闭之后偏差下降到了0.25%。<br><img src="/images/xdp-layers.jpg"></p>
 <h2 id="第一阶段-在应用程序中丢弃包"><a href="#第一阶段-在应用程序中丢弃包" class="headerlink" title="第一阶段 在应用程序中丢弃包"></a>第一阶段 在应用程序中丢弃包</h2><p>让我们从将数据包传递到应用程序并在用户空间代码中忽略它们的想法开始。 对于测试设置，首先需要确保iptables不会影响性能：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables -I PREROUTING -t mangle -d <span class="token number">198.18</span>.0.12 -p udp --dport <span class="token number">1234</span> -j ACCEPT
-iptables -I PREROUTING -t raw -d <span class="token number">198.18</span>.0.12 -p udp --dport <span class="token number">1234</span> -j ACCEPT
-iptables -I INPUT -t filter -d <span class="token number">198.18</span>.0.12 -p udp --dport <span class="token number">1234</span> -j ACCEPT<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-I</span> PREROUTING <span class="token parameter variable">-t</span> mangle <span class="token parameter variable">-d</span> <span class="token number">198.18</span>.0.12 <span class="token parameter variable">-p</span> udp <span class="token parameter variable">--dport</span> <span class="token number">1234</span> <span class="token parameter variable">-j</span> ACCEPT
+iptables <span class="token parameter variable">-I</span> PREROUTING <span class="token parameter variable">-t</span> raw <span class="token parameter variable">-d</span> <span class="token number">198.18</span>.0.12 <span class="token parameter variable">-p</span> udp <span class="token parameter variable">--dport</span> <span class="token number">1234</span> <span class="token parameter variable">-j</span> ACCEPT
+iptables <span class="token parameter variable">-I</span> INPUT <span class="token parameter variable">-t</span> filter <span class="token parameter variable">-d</span> <span class="token number">198.18</span>.0.12 <span class="token parameter variable">-p</span> udp <span class="token parameter variable">--dport</span> <span class="token number">1234</span> <span class="token parameter variable">-j</span> ACCEPT<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <p>应用程序的代码就是一个简单的循环，获取数据，然后直接丢弃：</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python">s <span class="token operator">=</span> socket<span class="token punctuation">.</span>socket<span class="token punctuation">(</span>AF_INET<span class="token punctuation">,</span> SOCK_DGRAM<span class="token punctuation">)</span>
 s<span class="token punctuation">.</span>bind<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token string">"0.0.0.0"</span><span class="token punctuation">,</span> <span class="token number">1234</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
@@ -5285,7 +5267,7 @@ s<span class="token punctuation">.</span>bind<span class="token punctuation">(</
 01:32:06 PM    <span class="token number">3</span>    <span class="token number">0.95</span>    <span class="token number">0.00</span>    <span class="token number">1.90</span>    <span class="token number">0.95</span>    <span class="token number">0.00</span>    <span class="token number">3.81</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>    <span class="token number">0.00</span>   <span class="token number">92.38</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>可以看到用户代码不是瓶颈，在CPU #1上有 27% sys + 2% userspace的占用，但是CPU #2被网络软中断(SOFTIRQ)占用了100%。</p>
 <p>需要说明的是，使用<code>recvmmsg(2)</code>很重要，在Spectre漏洞被发现的现在，系统调用的成本变得更加高了，我们使用了4.14版本的内核，并开启了KPTI和Retpoline：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">tail</span> -n +1 /sys/devices/system/cpu/vulnerabilities/*
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">tail</span> <span class="token parameter variable">-n</span> +1 /sys/devices/system/cpu/vulnerabilities/*
 <span class="token operator">==</span><span class="token operator">></span> /sys/devices/system/cpu/vulnerabilities/meltdown <span class="token operator">&lt;=</span><span class="token operator">=</span>
 Mitigation: PTI
 
@@ -5296,17 +5278,17 @@ Mitigation: __user pointer sanitization
 Mitigation: Full generic retpoline, IBPB, IBRS_FW<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="第二阶段-干掉conntrack"><a href="#第二阶段-干掉conntrack" class="headerlink" title="第二阶段 干掉conntrack"></a>第二阶段 干掉conntrack</h2><p>我们特别的设计了这个测试，用随机的原IP和端口，用来给conntrack层施加压力。这个可以通过查看conntrack数量的方式确认，在测试中，conntrack数量达到最大：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ conntrack -C
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ conntrack <span class="token parameter variable">-C</span>
 <span class="token number">2095202</span>
 
-$ sysctl net.netfilter.nf_conntrack_max
+$ <span class="token function">sysctl</span> net.netfilter.nf_conntrack_max
 net.netfilter.nf_conntrack_max <span class="token operator">=</span> <span class="token number">2097152</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>也能从<code>dmesg</code>中看到conntrack日志：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span><span class="token number">4029612.456673</span><span class="token punctuation">]</span> nf_conntrack: nf_conntrack: table full, dropping packet
 <span class="token punctuation">[</span><span class="token number">4029612.465787</span><span class="token punctuation">]</span> nf_conntrack: nf_conntrack: table full, dropping packet
 <span class="token punctuation">[</span><span class="token number">4029617.175957</span><span class="token punctuation">]</span> net_ratelimit: <span class="token number">5731</span> callbacks suppressed<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <p>为了加速我们的测试，把它关掉：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables -t raw -I PREROUTING -d <span class="token number">198.18</span>.0.12 -p udp -m udp --dport <span class="token number">1234</span> -j NOTRACK<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-t</span> raw <span class="token parameter variable">-I</span> PREROUTING <span class="token parameter variable">-d</span> <span class="token number">198.18</span>.0.12 <span class="token parameter variable">-p</span> udp <span class="token parameter variable">-m</span> udp <span class="token parameter variable">--dport</span> <span class="token number">1234</span> <span class="token parameter variable">-j</span> NOTRACK<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>然后重新测试：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ ./dropping-packets/recvmmsg-loop
 <span class="token assign-left variable">packets</span><span class="token operator">=</span><span class="token number">331008</span> <span class="token assign-left variable">bytes</span><span class="token operator">=</span><span class="token number">5296128</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
@@ -5317,7 +5299,7 @@ net.netfilter.nf_conntrack_max <span class="token operator">=</span> <span class
 <span class="token assign-left variable">packets</span><span class="token operator">=</span><span class="token number">0</span> <span class="token assign-left variable">bytes</span><span class="token operator">=</span><span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <p>使用BPF进行丢弃操作（cBPF和eBPF有相似的性能），我们大致达到了512kpps的性能。所有的包都在BPF过滤器中丢弃了，由于依然需要使用到软中断，所以只是省掉了唤醒用户态程序的CPU消耗。</p>
 <h2 id="第四阶段-使用iptables在路由阶段结束后丢弃"><a href="#第四阶段-使用iptables在路由阶段结束后丢弃" class="headerlink" title="第四阶段 使用iptables在路由阶段结束后丢弃"></a>第四阶段 使用iptables在路由阶段结束后丢弃</h2><p>在下个阶段，我们可以简单的设置iptables INPUT规则来丢弃包：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables -I INPUT -d <span class="token number">198.18</span>.0.12 -p udp --dport <span class="token number">1234</span> -j DROP<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-I</span> INPUT <span class="token parameter variable">-d</span> <span class="token number">198.18</span>.0.12 <span class="token parameter variable">-p</span> udp <span class="token parameter variable">--dport</span> <span class="token number">1234</span> <span class="token parameter variable">-j</span> DROP<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>需要注意的是我们之前已经通过-j NOTRACK关闭了conntrack，这两条规则实现了608kbps的性能。<br>看下iptables的统计信息：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ mmwatch <span class="token string">'iptables -L -v -n -x | head'</span>
 
@@ -5326,12 +5308,12 @@ Chain INPUT <span class="token punctuation">(</span>policy DROP <span class="tok
 <span class="token number">605</span>.9k/s    <span class="token number">26</span>.7m/s DROP       udp  --  *      *       <span class="token number">0.0</span>.0.0/0            <span class="token number">198.18</span>.0.12          udp dpt:1234<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>600kpps不差了，但是我们能做到更好！</p>
 <h2 id="第五阶段-使用iptables在路由之前丢弃"><a href="#第五阶段-使用iptables在路由之前丢弃" class="headerlink" title="第五阶段 使用iptables在路由之前丢弃"></a>第五阶段 使用iptables在路由之前丢弃</h2><p>有一个更快的方法，就是在包路由之前丢弃，可以通过下面的命令：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables -I PREROUTING -t raw -d <span class="token number">198.18</span>.0.12 -p udp --dport <span class="token number">1234</span> -j DROP<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-I</span> PREROUTING <span class="token parameter variable">-t</span> raw <span class="token parameter variable">-d</span> <span class="token number">198.18</span>.0.12 <span class="token parameter variable">-p</span> udp <span class="token parameter variable">--dport</span> <span class="token number">1234</span> <span class="token parameter variable">-j</span> DROP<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>这个方法的性能高达1.688pps。<br>这是非常明显的性能提升，我并不是特别明白多了一次路由差距这么大，要么是我们的路由层非常的复杂，或者在服务器的配置上有bug。<br>在任何情况下，通过iptables的<code>raw</code>表进行操作绝对是最快的方法。</p>
 <h2 id="第六阶段，使用nftables在CONNTRACK之前丢弃"><a href="#第六阶段，使用nftables在CONNTRACK之前丢弃" class="headerlink" title="第六阶段，使用nftables在CONNTRACK之前丢弃"></a>第六阶段，使用nftables在CONNTRACK之前丢弃</h2><p>iptables在现在已经有点过时了，更新的玩意是nftables，关于为什么nftables技术更优越，请参阅此<a href="https://www.youtube.com/watch?v=9Zr8XqdET1c">视频</a>。 由于许多原因，Nftables承诺比老旧的iptables更快，其中有一个说法是retpolines（没有间接跳跃的猜测）严重影响了iptables性能。</p>
 <p>由于这篇文章不是关于比较nftables和iptables的速度，让我们尝试一下我能想到的最快的方法：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">nft <span class="token function">add</span> table netdev filter
-nft -- <span class="token function">add</span> chain netdev filter input <span class="token punctuation">&#123;</span> <span class="token builtin class-name">type</span> filter hook ingress device vlan100 priority -500 <span class="token punctuation">\</span><span class="token punctuation">;</span> policy accept <span class="token punctuation">\</span><span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+nft -- <span class="token function">add</span> chain netdev filter input <span class="token punctuation">&#123;</span> <span class="token builtin class-name">type</span> filter hook ingress device vlan100 priority <span class="token parameter variable">-500</span> <span class="token punctuation">\</span><span class="token punctuation">;</span> policy accept <span class="token punctuation">\</span><span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
 nft <span class="token function">add</span> rule netdev filter input <span class="token function">ip</span> daddr <span class="token number">198.18</span>.0.0/24 udp dport <span class="token number">1234</span> counter drop
 nft <span class="token function">add</span> rule netdev filter input ip6 daddr fd00::/64 udp dport <span class="token number">1234</span> counter drop<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <p>相关的统计信息可以通过这个命令查看：</p>
@@ -5501,6 +5483,24 @@ filter parent ffff: protocol <span class="token function">ip</span> pref <span c
       </tags>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2014/11/20/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="http://hexo.io/">Hexo</a>! This is your very first post. Check <a href="http://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="http://hexo.io/docs/troubleshooting.html">trobuleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo new <span class="token string">"My New Post"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>More info: <a href="http://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo server<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>More info: <a href="http://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo generate<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>More info: <a href="http://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo deploy<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>More info: <a href="http://hexo.io/docs/deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>Intel X700系列网卡（i40e驱动）收不到LLDP包问题</title>
     <url>/2020/05/07/intel-x700-i40e-do-not-receive-LLDP-frames/</url>
     <content><![CDATA[<p>在我们的机房服务器上，启用了LLDPD服务，通过LLDP协议实现网络层的自动发现，从而根据收到的消息绘制网络拓扑关系。</p>
@@ -5535,7 +5535,7 @@ Interface:    eth0, via: LLDP, RID: <span class="token number">1</span>, Time: <
 <p>可以看到机器的<code>eth0</code>网口连接到了<code>sw1.ichenfu.com</code>这个交换机的<code>Twenty-FiveGigE1/0/10</code>这个口。</p>
 <p>但是在出问题的机器上，执行<code>lldpctl</code>却什么也不会显示，第一反应，先重启试试，于是重启了<code>lldpd</code>进程，发现也不行，又尝试重启机器，还是不行。更奇怪的是，让网络组看了一下这台交换机底下其他的机器，都是正常的，这就很奇怪了。既然不知道怎么回事，那就抓个包试试：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">]</span><span class="token comment"># tcpdump -ieth0 ether proto 0x88cc                                                                                             </span>
-tcpdump: verbose output suppressed, use -v or -vv <span class="token keyword">for</span> full protocol decode
+tcpdump: verbose output suppressed, use <span class="token parameter variable">-v</span> or <span class="token parameter variable">-vv</span> <span class="token keyword">for</span> full protocol decode
 listening on eth0, link-type EN10MB <span class="token punctuation">(</span>Ethernet<span class="token punctuation">)</span>, capture size <span class="token number">262144</span> bytes
 <span class="token number">17</span>:26:35.251321 LLDP, length <span class="token number">133</span>: node1-ichenfu-com
 <span class="token number">17</span>:27:05.252325 LLDP, length <span class="token number">133</span>: node1-ichenfu-com
@@ -5543,7 +5543,7 @@ listening on eth0, link-type EN10MB <span class="token punctuation">(</span>Ethe
 <span class="token number">17</span>:28:05.254863 LLDP, length <span class="token number">133</span>: node1-ichenfu-com<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>出问题的机器，发现抓包只能看到本机发出去的LLDP包，看不到交换机发出的LLDP包。</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">]</span><span class="token comment"># tcpdump -ieth0 ether proto 0x88cc                                                                                             </span>
-tcpdump: verbose output suppressed, use -v or -vv <span class="token keyword">for</span> full protocol decode
+tcpdump: verbose output suppressed, use <span class="token parameter variable">-v</span> or <span class="token parameter variable">-vv</span> <span class="token keyword">for</span> full protocol decode
 listening on eth0, link-type EN10MB <span class="token punctuation">(</span>Ethernet<span class="token punctuation">)</span>, capture size <span class="token number">262144</span> bytes
 <span class="token number">17</span>:26:35.251321 LLDP, length <span class="token number">133</span>: node2-ichenfu-com
 <span class="token number">17</span>:26:40.693320 LLDP, length <span class="token number">337</span>: sw1.ichenfu.com
@@ -5603,7 +5603,7 @@ Interface:    eth0, via: LLDP, RID: <span class="token number">1</span>, Time: <
     <url>/2019/11/03/interpreting-the-output-of-lspci/</url>
     <content><![CDATA[<p>最近一段时间在折腾虚拟化，想把SR-IOV硬件直通给用起来，所以免不了要利用<code>lspci</code>这个工具，用来查看当前系统连接的所有PCI&#x2F;PCIe设备。其实之前也有用到过，也有一些不理解的地方，只是当时无脑跟着文档设置，也就没多关心了，这次需要好好的理解一下相关的概念什么的。</p>
 <p>首先很简单，看看不加参数直接调用<code>lspci</code>命令的输出结果，下面的是我笔记本上的输出：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">00:00.0 Host bridge: Intel Corporation Broadwell-U Host Bridge -OPI <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">00:00.0 Host bridge: Intel Corporation Broadwell-U Host Bridge <span class="token parameter variable">-OPI</span> <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
 00:02.0 VGA compatible controller: Intel Corporation HD Graphics <span class="token number">5500</span> <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
 00:03.0 Audio device: Intel Corporation Broadwell-U Audio Controller <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
 00:04.0 Signal processing controller: Intel Corporation Broadwell-U Processor Thermal Subsystem <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
@@ -5660,7 +5660,7 @@ Interface:    eth0, via: LLDP, RID: <span class="token number">1</span>, Time: <
 <p>同样的，作为ServiceMesh界的当红实现Istio，也会遇到类似的问题，如何在程序完全没有感知的情况下悄无声息的将程序的流量劫持到自己的代理呢？</p>
 <p>借助Istio的两种实现方式，也说一下目前Liunx下两种透明代理的实现。</p>
 <h2 id="REDIRECT"><a href="#REDIRECT" class="headerlink" title="REDIRECT"></a>REDIRECT</h2><p>首先是使用iptables的<code>REDIRECT</code>模式，通过iptables，可以将所有的流量都重定向到一个特定的端口上，如果配置过<code>ss-redir</code>的话，应该会对这种实现非常的熟悉，具体的，在iptables里对应一条规则：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables -t nat -A PREROUTING -p tcp -j REDIRECT --to-port <span class="token number">5000</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-t</span> nat <span class="token parameter variable">-A</span> PREROUTING <span class="token parameter variable">-p</span> tcp <span class="token parameter variable">-j</span> REDIRECT --to-port <span class="token number">5000</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>即将所有流量都重定向到<code>5000</code>端口，仔细看一下，是不是和iptables实现DNAT有点相似？没错！本质上<code>REDIRECT</code>就是一个特殊的DNAT规则，一般情况下，我们利用iptables做DNAT的时候，需要指定目标的IP和端口，这样iptables才能知道需要将数据包的目的修改成什么，而<code>REDIRECT</code>模式下，只需要指定端口就可以，iptables会自动帮我们判断需要设置的IP地址。</p>
 <p>继续思考，会发现另一个问题，那就是，既然是做了DNAT，也就意味着数据包里已经没有原始的目的地址了，那数据包到了代理程序，代理程序是如何知道这个数据包应该往什么地方发送呢？这个是个非常核心的问题，因为如果不知道原始的目的IP端口信息，代理完全不能起作用啊！</p>
 <p>当然问题是有办法的，<code>conntrack</code>在这时候起作用了，<code>conntrack</code>会记录原始的地址，而在用户侧，内核提供了一个接口，可以让应用程序获取到原始的IP端口，可以参考一下<code>ss-redir</code>的实现：</p>
@@ -5681,7 +5681,7 @@ Interface:    eth0, via: LLDP, RID: <span class="token number">1</span>, Time: <
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>利用<code>getsockopt</code>的<code>SO_ORIGINAL_DST</code>参数，可以获取到原始的连接IP和端口，好了，目前代理所需要的所有的信息都完整了，整个代理理论上就可以工作了，剩下的就是代理如何实现的问题了，这里就不探讨了。</p>
 <h2 id="TPROXY"><a href="#TPROXY" class="headerlink" title="TPROXY"></a>TPROXY</h2><p>除了利用<code>REDIRECT</code>模式，Istio还提供<code>TPROXY</code>模式，当然也是借助Linux内核提供的功能实现的，对于<code>TPROXY</code>模式，实现的原理要相对复杂不少，需要借助iptables和路由：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables -t mangle -A PREROUTING -p tcp -j TPROXY --tproxy-mark 0x1/0x1 --on-port <span class="token number">8888</span>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-t</span> mangle <span class="token parameter variable">-A</span> PREROUTING <span class="token parameter variable">-p</span> tcp <span class="token parameter variable">-j</span> TPROXY --tproxy-mark 0x1/0x1 --on-port <span class="token number">8888</span>
 <span class="token function">ip</span> rule <span class="token function">add</span> fwmark 0x1/0x1 pref <span class="token number">100</span> table <span class="token number">100</span>
 <span class="token function">ip</span> route <span class="token function">add</span> <span class="token builtin class-name">local</span> default dev lo table <span class="token number">100</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 
@@ -6635,17 +6635,17 @@ options ndots:2 edns0<span aria-hidden="true" class="line-numbers-rows"><span></
 
 <p>Makefile:</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">obj-m :<span class="token operator">=</span> client_example.o
-KDIR :<span class="token operator">=</span> /lib/modules/<span class="token variable"><span class="token variable">$(</span>shell <span class="token function">uname</span> -r<span class="token variable">)</span></span>/build
+KDIR :<span class="token operator">=</span> /lib/modules/<span class="token variable"><span class="token variable">$(</span>shell <span class="token function">uname</span> <span class="token parameter variable">-r</span><span class="token variable">)</span></span>/build
 <span class="token environment constant">PWD</span> :<span class="token operator">=</span> <span class="token variable"><span class="token variable">$(</span>shell <span class="token builtin class-name">pwd</span><span class="token variable">)</span></span>
 default:
-		<span class="token variable"><span class="token variable">$(</span>MAKE<span class="token variable">)</span></span> -C <span class="token variable"><span class="token variable">$(</span>KDIR<span class="token variable">)</span></span> <span class="token assign-left variable">SUBDIRS</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span><span class="token environment constant">PWD</span><span class="token variable">)</span></span> modules<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+		<span class="token variable"><span class="token variable">$(</span>MAKE<span class="token variable">)</span></span> <span class="token parameter variable">-C</span> <span class="token variable"><span class="token variable">$(</span>KDIR<span class="token variable">)</span></span> <span class="token assign-left variable">SUBDIRS</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span><span class="token environment constant">PWD</span><span class="token variable">)</span></span> modules<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>在192.168.1.10上 <code>nc -lk 8888</code> 监听8888端口，作为服务端，等待数据后输入 <code>111111111111111</code>。</p>
 <p>客户端：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">make</span>
 <span class="token function">sudo</span> insmod client_example.ko <span class="token comment">#加载模块</span>
 <span class="token function">sudo</span> rmmod client_example     <span class="token comment">#卸载模块</span>
-<span class="token function">sudo</span> journalctl -k            <span class="token comment">#查看dmesg</span>
+<span class="token function">sudo</span> journalctl <span class="token parameter variable">-k</span>            <span class="token comment">#查看dmesg</span>
 
 Jan <span class="token number">16</span> <span class="token number">10</span>:50:58 work kernel: client: init
 Jan <span class="token number">16</span> <span class="token number">10</span>:50:58 work kernel: client: socket create ok<span class="token operator">!</span>
@@ -6657,7 +6657,7 @@ Jan <span class="token number">16</span> <span class="token number">10</span>:51
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>服务端：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">nc</span> -lk <span class="token number">8888</span>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">nc</span> <span class="token parameter variable">-lk</span> <span class="token number">8888</span>
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa111111111111111<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 ]]></content>
       <categories>
@@ -6903,7 +6903,7 @@ Nov <span class="token number">29</span> <span class="token number">23</span>:32
 
 <p>日志里的<code>Failed to start ContainerManager failed to initialize top level QOS containers: failed to update top level BestEffort QOS cgroup : failed to set supported cgroup subsystems for cgroup [kubepods besteffort]: Failed to set config for supported subsystems : failed to write 4611686018427387904 to hugetlb.1GB.limit_in_bytes: open /sys/fs/cgroup/hugetlb/kubepods.slice/kubepods-besteffort.slice/hugetlb.1GB.limit_in_bytes: no such file or directory</code>就是问题所在，查了一下，确实这个目录不存在，很奇怪，这个subsystem明明就是<code>kubelet</code>所创建的啊。</p>
 <p>之前的做法就是重启一下这个节点，重启完成问题也解决了，不过显然重启不是最优解，于是还是动手查了一下，发现了这个issue： <a href="https://github.com/kubernetes/kubernetes/issues/43856">Failed to start ContainerManager failed to initialise top level QOS containers #43856</a>，虽然这个issue已经被修复关闭了，但实际我们还是遇到了类似的问题，好在评论里给出了一种解决办法，执行：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token keyword">for</span> <span class="token for-or-select variable">i</span> <span class="token keyword">in</span> <span class="token variable"><span class="token variable">$(</span>systemctl list-unit-files --no-legend --no-pager -l <span class="token operator">|</span> <span class="token function">grep</span> --color<span class="token operator">=</span>never -o .*.slice <span class="token operator">|</span> <span class="token function">grep</span> kubepod<span class="token variable">)</span></span><span class="token punctuation">;</span>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token keyword">for</span> <span class="token for-or-select variable">i</span> <span class="token keyword">in</span> <span class="token variable"><span class="token variable">$(</span>systemctl list-unit-files --no-legend --no-pager <span class="token parameter variable">-l</span> <span class="token operator">|</span> <span class="token function">grep</span> <span class="token parameter variable">--color</span><span class="token operator">=</span>never <span class="token parameter variable">-o</span> .*.slice <span class="token operator">|</span> <span class="token function">grep</span> kubepod<span class="token variable">)</span></span><span class="token punctuation">;</span>
 <span class="token keyword">do</span> systemctl stop <span class="token variable">$i</span><span class="token punctuation">;</span>
 <span class="token keyword">done</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 
@@ -7118,8 +7118,8 @@ session    required     pam_limits.so<span aria-hidden="true" class="line-number
     <content><![CDATA[<p>在Docker环境中经常会遇到时区相关的问题，所以顺便也看了一下Linux系统下时间相关的一下配置和概念：</p>
 <h2 id="硬件时钟"><a href="#硬件时钟" class="headerlink" title="硬件时钟"></a>硬件时钟</h2><p>硬件时钟也叫RTC（Real Time Clock）或者CMOS时钟，这个是保存在BIOS中的，仅能保存：年、月、日、时、分、秒这些时间数值，无法保存当前时区以及是否使用夏令时调节。</p>
 <h2 id="系统时钟"><a href="#系统时钟" class="headerlink" title="系统时钟"></a>系统时钟</h2><p>系统时钟也叫软件时钟，在系统时钟里是有时区等概念的，在Linux内核里，是保存为自 UTC 时间 1970 年1月1日经过的秒数。系统启动时会读取硬件时钟，并根据<code>/etc/adjtime</code>的设置计算当前的时钟。系统启动之后，系统时钟与硬件时钟独立运行，Linux 通过时钟中断计数维护系统时钟。</p>
-<h2 id="x2F-etc-x2F-localtime"><a href="#x2F-etc-x2F-localtime" class="headerlink" title="&#x2F;etc&#x2F;localtime"></a>&#x2F;etc&#x2F;localtime</h2><p>这个文件一般情况下是一个软链接，链接到<code>/usr/share/zoneinfo/</code>目录下的一个对应时区的二进制文件，比如设置<code>Asia/Shanghai</code>的时区，则<code>/etc/localtime -&gt; /usr/share/zoneinfo/Asia/Shanghai</code>，调用<code>date</code>等工具获取时间时会考虑这个配置。<br>建议并强烈建议将这个文件设置为软链接，很多人会直接拷贝文件，其实是不推荐的。所有的Linux系统都会依赖这个文件。</p>
-<h2 id="x2F-etc-x2F-timezone"><a href="#x2F-etc-x2F-timezone" class="headerlink" title="&#x2F;etc&#x2F;timezone"></a>&#x2F;etc&#x2F;timezone</h2><p>这个文件一般会记录时区的直接文字表示，或者是一个时间偏移（很少见），比如如果设置时区为<code>Asia/Shanghai</code>，则这个文件的内容就会是<code>Asia/Shanghai</code>。这个文件并不是在所有Linux中都存在，比如在我的ArchLinux中就没有这个文件。这个文件一般也仅仅是一个简单的表示。</p>
+<h2 id="etc-localtime"><a href="#etc-localtime" class="headerlink" title="&#x2F;etc&#x2F;localtime"></a>&#x2F;etc&#x2F;localtime</h2><p>这个文件一般情况下是一个软链接，链接到<code>/usr/share/zoneinfo/</code>目录下的一个对应时区的二进制文件，比如设置<code>Asia/Shanghai</code>的时区，则<code>/etc/localtime -&gt; /usr/share/zoneinfo/Asia/Shanghai</code>，调用<code>date</code>等工具获取时间时会考虑这个配置。<br>建议并强烈建议将这个文件设置为软链接，很多人会直接拷贝文件，其实是不推荐的。所有的Linux系统都会依赖这个文件。</p>
+<h2 id="etc-timezone"><a href="#etc-timezone" class="headerlink" title="&#x2F;etc&#x2F;timezone"></a>&#x2F;etc&#x2F;timezone</h2><p>这个文件一般会记录时区的直接文字表示，或者是一个时间偏移（很少见），比如如果设置时区为<code>Asia/Shanghai</code>，则这个文件的内容就会是<code>Asia/Shanghai</code>。这个文件并不是在所有Linux中都存在，比如在我的ArchLinux中就没有这个文件。这个文件一般也仅仅是一个简单的表示。</p>
 <p>最后我们基本可以得到下面的结论：</p>
 <ol>
 <li>BIOS时间即硬件时间没有时区</li>
@@ -7463,10 +7463,10 @@ dns_resolver           <span class="token number">13140</span>  <span class="tok
 <p>发现不是内核模块的问题，因为一方面模块已经加载了，另外如果是内核模块的问题的话，应该会提示<code>unknown filesystem type</code>，而不是上面的错误。<br>怎么办呢，尝试<code>strace</code>看下具体的系统调用情况：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">]</span><span class="token comment"># strace -f mount -t ceph mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789:/ /tmp/data</span>
 <span class="token punctuation">..</span>.
-stat<span class="token punctuation">(</span><span class="token string">"/sbin/mount.ceph"</span>, 0x7ffd39101680<span class="token punctuation">)</span> <span class="token operator">=</span> -1 ENOENT <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>
-stat<span class="token punctuation">(</span><span class="token string">"/sbin/fs.d/mount.ceph"</span>, 0x7ffd39101680<span class="token punctuation">)</span> <span class="token operator">=</span> -1 ENOENT <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>
-stat<span class="token punctuation">(</span><span class="token string">"/sbin/fs/mount.ceph"</span>, 0x7ffd39101680<span class="token punctuation">)</span> <span class="token operator">=</span> -1 ENOENT <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>
-mount<span class="token punctuation">(</span><span class="token string">"mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789:/"</span>, <span class="token string">"/tmp/data"</span>, <span class="token string">"ceph"</span>, MS_MGC_VAL, NULL<span class="token punctuation">)</span> <span class="token operator">=</span> -1 ESRCH <span class="token punctuation">(</span>No such process<span class="token punctuation">)</span>
+stat<span class="token punctuation">(</span><span class="token string">"/sbin/mount.ceph"</span>, 0x7ffd39101680<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token parameter variable">-1</span> ENOENT <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>
+stat<span class="token punctuation">(</span><span class="token string">"/sbin/fs.d/mount.ceph"</span>, 0x7ffd39101680<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token parameter variable">-1</span> ENOENT <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>
+stat<span class="token punctuation">(</span><span class="token string">"/sbin/fs/mount.ceph"</span>, 0x7ffd39101680<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token parameter variable">-1</span> ENOENT <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>
+mount<span class="token punctuation">(</span><span class="token string">"mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789:/"</span>, <span class="token string">"/tmp/data"</span>, <span class="token string">"ceph"</span>, MS_MGC_VAL, NULL<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token parameter variable">-1</span> ESRCH <span class="token punctuation">(</span>No such process<span class="token punctuation">)</span>
 open<span class="token punctuation">(</span><span class="token string">"/usr/share/locale/locale.alias"</span>, O_RDONLY<span class="token operator">|</span>O_CLOEXEC<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">3</span>
 fstat<span class="token punctuation">(</span><span class="token number">3</span>, <span class="token punctuation">&#123;</span>st_mode<span class="token operator">=</span>S_IFREG<span class="token operator">|</span>0644, <span class="token assign-left variable">st_size</span><span class="token operator">=</span><span class="token number">2502</span>, <span class="token punctuation">..</span>.<span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">0</span>
 mmap<span class="token punctuation">(</span>NULL, <span class="token number">4096</span>, PROT_READ<span class="token operator">|</span>PROT_WRITE, MAP_PRIVATE<span class="token operator">|</span>MAP_ANONYMOUS, -1, <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">=</span> 0x7fb3a36e4000
@@ -7681,8 +7681,7 @@ mount<span class="token operator">:</span> mount mon1<span class="token punctuat
 <span class="token punctuation">[</span> <span class="token number">3056.185916</span><span class="token punctuation">]</span> libceph<span class="token operator">:</span> resolve <span class="token char">'mon1.ichenfu.com'</span> <span class="token punctuation">(</span>ret<span class="token operator">=</span><span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token operator">:</span> failed
 <span class="token punctuation">[</span> <span class="token number">3056.185921</span><span class="token punctuation">]</span> libceph<span class="token operator">:</span> parse_ips bad ip 'mon1<span class="token punctuation">.</span>ichenfu<span class="token punctuation">.</span>com<span class="token operator">:</span><span class="token number">6789</span><span class="token punctuation">,</span>mon2<span class="token punctuation">.</span>ichenfu<span class="token punctuation">.</span>com<span class="token operator">:</span><span class="token number">6789</span><span class="token punctuation">,</span>mon3<span class="token punctuation">.</span>ichenfu<span class="token punctuation">.</span>com<span class="token operator">:</span><span class="token number">6789</span>'<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>看到<code>dns_query</code>的返回是<code>-2</code>，用perror看一下这个errno的意义：<code>OS error code   2:  No such file or directory</code>，没有找到文件，没找到什么文件呢？再看看这个模块的文档吧，文档在<a href="https://www.kernel.org/doc/Documentation/networking/dns_resolver.txt">https://www.kernel.org/doc/Documentation/networking/dns_resolver.txt</a>：</p>
-<blockquote><p>&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;<br>OVERVIEW<br>&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;</p>
-<p>The DNS resolver module provides a way for kernel services to make DNS queries<br>by way of requesting a key of key type dns_resolver.  These queries are<br>upcalled to userspace through &#x2F;sbin&#x2F;request-key.</p>
+<blockquote><h1 id="OVERVIEW"><a href="#OVERVIEW" class="headerlink" title="&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;OVERVIEW"></a>&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;<br>OVERVIEW</h1><p>The DNS resolver module provides a way for kernel services to make DNS queries<br>by way of requesting a key of key type dns_resolver.  These queries are<br>upcalled to userspace through &#x2F;sbin&#x2F;request-key.</p>
 <p>These routines must be supported by userspace tools dns.upcall, cifs.upcall and<br>request-key.  It is under development and does not yet provide the full feature<br>set.  The features it does support include:</p>
 <p> (*) Implements the dns_resolver key_type to contact userspace.</p>
 <p>It does not yet support the following AFS features:</p>
@@ -7728,8 +7727,8 @@ mount: wrong fs type, bad option, bad superblock on mon1.ichenfu.com:6789,mon2.i
 
 <p>看起来和之前的错误很相似，都是出在域名解析上，同样的手法，把域名换成IP地址试试，发现可以正常挂载，那么问题肯定还是出在域名解析上了，只是这次和上次不是同一个错误罢了。</p>
 <p>从strace的结果，确实也能看出一些不同，上次mount调用返回值是<code>ESRCH</code>，而这次的返回值是<code>EINVAL</code>：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">stat<span class="token punctuation">(</span><span class="token string">"/sbin/fs/mount.ceph"</span>, 0x7ffd47a8b8d0<span class="token punctuation">)</span> <span class="token operator">=</span> -1 ENOENT <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>
-mount<span class="token punctuation">(</span><span class="token string">"mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789:/"</span>, <span class="token string">"/tmp/ceph"</span>, <span class="token string">"ceph"</span>, MS_MGC_VAL, NULL<span class="token punctuation">)</span> <span class="token operator">=</span> -1 EINVAL <span class="token punctuation">(</span>Invalid argument<span class="token punctuation">)</span>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">stat<span class="token punctuation">(</span><span class="token string">"/sbin/fs/mount.ceph"</span>, 0x7ffd47a8b8d0<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token parameter variable">-1</span> ENOENT <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>
+mount<span class="token punctuation">(</span><span class="token string">"mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789:/"</span>, <span class="token string">"/tmp/ceph"</span>, <span class="token string">"ceph"</span>, MS_MGC_VAL, NULL<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token parameter variable">-1</span> EINVAL <span class="token punctuation">(</span>Invalid argument<span class="token punctuation">)</span>
 open<span class="token punctuation">(</span><span class="token string">"/usr/share/locale/locale.alias"</span>, O_RDONLY<span class="token operator">|</span>O_CLOEXEC<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">3</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 
 <p>于是尝试把相关内核模块的debug模块打开，看看能不能输出一些有用的日志信息，但是这次发现有些不太一样了：</p>
@@ -7880,8 +7879,8 @@ bad<span class="token operator">:</span>
     <content><![CDATA[<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">sudo</span> yum <span class="token function">install</span> libguestfs-tools      <span class="token comment"># Fedora/RHEL/CentOS</span>
 <span class="token function">sudo</span> <span class="token function">apt-get</span> <span class="token function">install</span> libguestfs-tools  <span class="token comment"># Debian/Ubuntu</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
-<h2 id="挂载"><a href="#挂载" class="headerlink" title="挂载"></a>挂载</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">mkdir</span> -p /tmp/mnt
-guestmount -a xxxx.qcow2 -m /dev/sda1 --rw /tmp/mnt<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h2 id="挂载"><a href="#挂载" class="headerlink" title="挂载"></a>挂载</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">mkdir</span> <span class="token parameter variable">-p</span> /tmp/mnt
+guestmount <span class="token parameter variable">-a</span> xxxx.qcow2 <span class="token parameter variable">-m</span> /dev/sda1 <span class="token parameter variable">--rw</span> /tmp/mnt<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <p>其中<code>/dev/sda1</code>参数是目标文件中的分区名称，如果输入错误，会报错并提示正确的分区名。</p>
 <h2 id="卸载"><a href="#卸载" class="headerlink" title="卸载"></a>卸载</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">guestunmount /tmp/mnt<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
@@ -7973,7 +7972,7 @@ from <span class="token number">192.168</span>.200.0/24 table <span class="token
     <title>ArchLinux下网易云音乐白屏问题</title>
     <url>/2017/04/17/netease-cloud-music-archlinux-whitescreen/</url>
     <content><![CDATA[<p>ArchLinux下网易云音乐会有偶然的白屏情况，是由于不支持某些emoji字体导致的，可以安装<code>noto-fonts-emoji</code>，然后配置一下字体即可解决：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">sudo</span> pacman -S noto-fonts-emoji<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">sudo</span> pacman <span class="token parameter variable">-S</span> noto-fonts-emoji<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>配置<code>~/.config/fontconfig/conf.d/51-noto-color-emoji.conf</code>文件：</p>
 <pre class="line-numbers language-markup" data-language="markup"><code class="language-markup"><span class="token prolog">&lt;?xml version="1.0"?></span>
 <span class="token doctype"><span class="token punctuation">&lt;!</span><span class="token doctype-tag">DOCTYPE</span> <span class="token name">fontconfig</span> <span class="token name">SYSTEM</span> <span class="token string">"fonts.dtd"</span><span class="token punctuation">></span></span>
@@ -8902,6 +8901,218 @@ PS：根据文档描述，包括上图中的备注也说明了，在实际上，
       </tags>
   </entry>
   <entry>
+    <title>反序列化AWS/阿里云样式的基于Query的API请求</title>
+    <url>/2023/07/13/parse-aws-aliyun-like-api-request/</url>
+    <content><![CDATA[<p>对于比较了解云计算的人来说，一定接触过AWS、阿里云的API接口，这两者的API调用方式很相似，当然具体谁参考谁这里就不深究了。以给EC2&#x2F;ECS添加Tag这个接口为例：</p>
+<p>AWS:</p>
+<pre class="line-numbers language-none"><code class="language-none">https:&#x2F;&#x2F;ec2.amazonaws.com&#x2F;?Action&#x3D;CreateTags
+&amp;ResourceId.1&#x3D;ami-1a2b3c4d
+&amp;ResourceId.2&#x3D;i-1234567890abcdef0
+&amp;Tag.1.Key&#x3D;webserver
+&amp;Tag.1.Value&#x3D;
+&amp;Tag.2.Key&#x3D;stack
+&amp;Tag.2.Value&#x3D;Production
+&amp;AUTHPARAMS<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>阿里云：</p>
+<pre class="line-numbers language-none"><code class="language-none">https:&#x2F;&#x2F;ecs.aliyuncs.com&#x2F;?Action&#x3D;TagResources
+&amp;RegionId&#x3D;cn-hangzhou
+&amp;ResourceId.1&#x3D;i-bp1j6qtvdm8w0z1o0****
+&amp;ResourceId.2&#x3D;i-bp1j6qtvdm8w0z1oP****
+&amp;ResourceType&#x3D;instance
+&amp;Tag.1.Key&#x3D;TestKey
+&amp;Tag.1.Value&#x3D;TestKey
+&amp;&lt;公共请求参数&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<span id="more"></span>
+<p>这种样式的接口设计，其实没有什么复杂的，相对比较特殊的地方在于，如果需要传入一个数组，则需要使用类似下标一样的<code>Tag.N.Key</code>这种格式进行传递，这个传递方式，和已有的一些诸如<a href="https://github.com/google/go-querystring">google&#x2F;go-querystring</a>的传递方式都不太相同，总之是个很特殊的设计。</p>
+<p>如果需要写一个类似的服务，使用和这两家相同的API格式的话，针对这种数组格式的请求反序列化是个挺麻烦的事，而且找了一圈也没有类似的开源项目做这个。</p>
+<p>今天借助ChatGPT写了一个反序列化函数，专门用来实现服务端对类似形态API的反序列化，通过这个函数可以很方便的将Query反序列化成一个对应的Struct：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">package</span> main
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+	<span class="token string">"encoding/json"</span>
+	<span class="token string">"fmt"</span>
+	<span class="token string">"net/url"</span>
+	<span class="token string">"reflect"</span>
+	<span class="token string">"strconv"</span>
+	<span class="token string">"strings"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">type</span> TagRequest <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Action       <span class="token builtin">string</span>   <span class="token string">`query:"Action"`</span>
+	RegionID     <span class="token builtin">string</span>   <span class="token string">`query:"RegionId"`</span>
+	ResourceIds  <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span> <span class="token string">`query:"ResourceId"`</span>
+	ResourceType <span class="token builtin">string</span>   <span class="token string">`query:"ResourceType"`</span>
+	Tags         <span class="token punctuation">[</span><span class="token punctuation">]</span>Tag    <span class="token string">`query:"Tag"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> Tag <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Key   <span class="token builtin">string</span> <span class="token string">`query:"Key"`</span>
+	Value <span class="token builtin">string</span> <span class="token string">`query:"Value"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">Unmarshal</span><span class="token punctuation">(</span>queryStr <span class="token builtin">string</span><span class="token punctuation">,</span> output <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	values<span class="token punctuation">,</span> err <span class="token operator">:=</span> url<span class="token punctuation">.</span><span class="token function">ParseQuery</span><span class="token punctuation">(</span>queryStr<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">return</span> <span class="token function">unmarshalData</span><span class="token punctuation">(</span>values<span class="token punctuation">,</span> output<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">unmarshalData</span><span class="token punctuation">(</span>values url<span class="token punctuation">.</span>Values<span class="token punctuation">,</span> output <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	outputVal <span class="token operator">:=</span> reflect<span class="token punctuation">.</span><span class="token function">ValueOf</span><span class="token punctuation">(</span>output<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> outputVal<span class="token punctuation">.</span><span class="token function">Kind</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> reflect<span class="token punctuation">.</span>Ptr <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"output must be a pointer"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	outputElem <span class="token operator">:=</span> outputVal<span class="token punctuation">.</span><span class="token function">Elem</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	outputType <span class="token operator">:=</span> outputElem<span class="token punctuation">.</span><span class="token function">Type</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> outputType<span class="token punctuation">.</span><span class="token function">NumField</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">&#123;</span>
+		field <span class="token operator">:=</span> outputType<span class="token punctuation">.</span><span class="token function">Field</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span>
+		tag <span class="token operator">:=</span> field<span class="token punctuation">.</span>Tag<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token string">"query"</span><span class="token punctuation">)</span>
+		<span class="token keyword">if</span> tag <span class="token operator">==</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">continue</span>
+		<span class="token punctuation">&#125;</span>
+
+		value <span class="token operator">:=</span> values<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span>tag<span class="token punctuation">)</span>
+		fieldVal <span class="token operator">:=</span> outputElem<span class="token punctuation">.</span><span class="token function">FieldByName</span><span class="token punctuation">(</span>field<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
+
+		<span class="token keyword">if</span> field<span class="token punctuation">.</span>Type<span class="token punctuation">.</span><span class="token function">Kind</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> reflect<span class="token punctuation">.</span>Slice <span class="token punctuation">&#123;</span>
+			elemType <span class="token operator">:=</span> field<span class="token punctuation">.</span>Type<span class="token punctuation">.</span><span class="token function">Elem</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+			<span class="token keyword">if</span> elemType<span class="token punctuation">.</span><span class="token function">Kind</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> reflect<span class="token punctuation">.</span>Struct <span class="token punctuation">&#123;</span>
+				prefix <span class="token operator">:=</span> tag <span class="token operator">+</span> <span class="token string">"."</span>
+				arrIndex <span class="token operator">:=</span> <span class="token number">1</span>
+				<span class="token keyword">for</span> <span class="token punctuation">&#123;</span>
+					currKey <span class="token operator">:=</span> prefix <span class="token operator">+</span> fmt<span class="token punctuation">.</span><span class="token function">Sprint</span><span class="token punctuation">(</span>arrIndex<span class="token punctuation">)</span>
+					currValue <span class="token operator">:=</span> values<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span>currKey<span class="token punctuation">)</span>
+					<span class="token keyword">if</span> currValue <span class="token operator">==</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
+						<span class="token keyword">break</span>
+					<span class="token punctuation">&#125;</span>
+
+					currSliceVal <span class="token operator">:=</span> reflect<span class="token punctuation">.</span><span class="token function">ValueOf</span><span class="token punctuation">(</span>currValue<span class="token punctuation">)</span>
+					fieldVal<span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span>reflect<span class="token punctuation">.</span><span class="token function">Append</span><span class="token punctuation">(</span>fieldVal<span class="token punctuation">,</span> currSliceVal<span class="token punctuation">)</span><span class="token punctuation">)</span>
+					arrIndex<span class="token operator">++</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+				prefix <span class="token operator">:=</span> tag <span class="token operator">+</span> <span class="token string">"."</span>
+				objIndex <span class="token operator">:=</span> <span class="token number">1</span>
+				outer <span class="token operator">:=</span> <span class="token boolean">true</span>
+				<span class="token keyword">for</span> outer <span class="token punctuation">&#123;</span>
+					innerValues <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span>url<span class="token punctuation">.</span>Values<span class="token punctuation">)</span>
+					<span class="token keyword">for</span> innerKey<span class="token punctuation">,</span> innerValue <span class="token operator">:=</span> <span class="token keyword">range</span> values <span class="token punctuation">&#123;</span>
+						<span class="token keyword">if</span> strings<span class="token punctuation">.</span><span class="token function">HasPrefix</span><span class="token punctuation">(</span>innerKey<span class="token punctuation">,</span> prefix<span class="token operator">+</span>strconv<span class="token punctuation">.</span><span class="token function">Itoa</span><span class="token punctuation">(</span>objIndex<span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">"."</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+							innerValues<span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span>strings<span class="token punctuation">.</span><span class="token function">TrimPrefix</span><span class="token punctuation">(</span>innerKey<span class="token punctuation">,</span> prefix<span class="token operator">+</span>strconv<span class="token punctuation">.</span><span class="token function">Itoa</span><span class="token punctuation">(</span>objIndex<span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">"."</span><span class="token punctuation">)</span><span class="token punctuation">,</span> innerValue<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+						<span class="token punctuation">&#125;</span>
+					<span class="token punctuation">&#125;</span>
+					<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>innerValues<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+						<span class="token keyword">break</span>
+					<span class="token punctuation">&#125;</span>
+
+					newStructPtr <span class="token operator">:=</span> reflect<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span>elemType<span class="token punctuation">)</span>
+					err <span class="token operator">:=</span> <span class="token function">unmarshalData</span><span class="token punctuation">(</span>innerValues<span class="token punctuation">,</span> newStructPtr<span class="token punctuation">.</span><span class="token function">Interface</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+					<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+						<span class="token keyword">return</span> err
+					<span class="token punctuation">&#125;</span>
+					fieldVal<span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span>reflect<span class="token punctuation">.</span><span class="token function">Append</span><span class="token punctuation">(</span>fieldVal<span class="token punctuation">,</span> newStructPtr<span class="token punctuation">.</span><span class="token function">Elem</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+					objIndex<span class="token operator">++</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+			fieldVal<span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span>reflect<span class="token punctuation">.</span><span class="token function">ValueOf</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	queryStr <span class="token operator">:=</span> <span class="token string">"?Action=TagResources&amp;RegionId=cn-hangzhou&amp;ResourceId.1=i-bp1j6qtvdm8w0z1o0&amp;ResourceId.2=i-bp1j6qtvdm8w0z1oP&amp;ResourceType=instance&amp;Tag.1.Key=TestKey&amp;Tag.1.Value=TestValue&amp;Tag.2.Key=TestKey&amp;Tag.2.Value=TestValue"</span>
+
+	req <span class="token operator">:=</span> TagRequest<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+	err <span class="token operator">:=</span> <span class="token function">Unmarshal</span><span class="token punctuation">(</span>strings<span class="token punctuation">.</span><span class="token function">TrimLeft</span><span class="token punctuation">(</span>queryStr<span class="token punctuation">,</span> <span class="token string">"?"</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>req<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Error:"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+
+	jsonOutput<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">MarshalIndent</span><span class="token punctuation">(</span>req<span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"  "</span><span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Unmarshaled output:"</span><span class="token punctuation">,</span> <span class="token function">string</span><span class="token punctuation">(</span>jsonOutput<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>测试一下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">% go run main.go
+Unmarshaled output: <span class="token punctuation">&#123;</span>
+  <span class="token string">"Action"</span><span class="token builtin class-name">:</span> <span class="token string">"TagResources"</span>,
+  <span class="token string">"RegionID"</span><span class="token builtin class-name">:</span> <span class="token string">"cn-hangzhou"</span>,
+  <span class="token string">"ResourceIds"</span><span class="token builtin class-name">:</span> <span class="token punctuation">[</span>
+    <span class="token string">"i-bp1j6qtvdm8w0z1o0"</span>,
+    <span class="token string">"i-bp1j6qtvdm8w0z1oP"</span>
+  <span class="token punctuation">]</span>,
+  <span class="token string">"ResourceType"</span><span class="token builtin class-name">:</span> <span class="token string">"instance"</span>,
+  <span class="token string">"Tags"</span><span class="token builtin class-name">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">&#123;</span>
+      <span class="token string">"Key"</span><span class="token builtin class-name">:</span> <span class="token string">"TestKey"</span>,
+      <span class="token string">"Value"</span><span class="token builtin class-name">:</span> <span class="token string">"TestValue"</span>
+    <span class="token punctuation">&#125;</span>,
+    <span class="token punctuation">&#123;</span>
+      <span class="token string">"Key"</span><span class="token builtin class-name">:</span> <span class="token string">"TestKey"</span>,
+      <span class="token string">"Value"</span><span class="token builtin class-name">:</span> <span class="token string">"TestValue"</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>嗯，ChatGPT牛逼！为了方便大家使用，我创建了一个项目<a href="https://github.com/C0reFast/aws-querystring">c0refast&#x2F;aws-querystring</a>，可以方便地作为库使用：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">package</span> main
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+	<span class="token string">"encoding/json"</span>
+	<span class="token string">"fmt"</span>
+	<span class="token string">"net/url"</span>
+
+	<span class="token string">"github.com/c0refast/aws-querystring/query"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">type</span> TagRequest <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Action       <span class="token builtin">string</span>   <span class="token string">`query:"Action"`</span>
+	RegionID     <span class="token builtin">string</span>   <span class="token string">`query:"RegionId"`</span>
+	ResourceIds  <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span> <span class="token string">`query:"ResourceId"`</span>
+	ResourceType <span class="token builtin">string</span>   <span class="token string">`query:"ResourceType"`</span>
+	Tags         <span class="token punctuation">[</span><span class="token punctuation">]</span>Tag    <span class="token string">`query:"Tag"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">type</span> Tag <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+	Key   <span class="token builtin">string</span> <span class="token string">`query:"Key"`</span>
+	Value <span class="token builtin">string</span> <span class="token string">`query:"Value"`</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	queryStr <span class="token operator">:=</span> <span class="token string">"Action=TagResources&amp;RegionId=cn-hangzhou&amp;ResourceId.1=i-bp1j6qtvdm8w0z1o0&amp;ResourceId.2=i-bp1j6qtvdm8w0z1oP&amp;ResourceType=instance&amp;Tag.1.Key=TestKey&amp;Tag.1.Value=TestValue&amp;Tag.2.Key=TestKey&amp;Tag.2.Value=TestValue"</span>
+	urlValues<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> url<span class="token punctuation">.</span><span class="token function">ParseQuery</span><span class="token punctuation">(</span>queryStr<span class="token punctuation">)</span>
+	req <span class="token operator">:=</span> TagRequest<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+	err <span class="token operator">:=</span> query<span class="token punctuation">.</span><span class="token function">BindQuery</span><span class="token punctuation">(</span>urlValues<span class="token punctuation">,</span> <span class="token operator">&amp;</span>req<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Error:"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">&#125;</span>
+
+	jsonOutput<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">MarshalIndent</span><span class="token punctuation">(</span>req<span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"  "</span><span class="token punctuation">)</span>
+	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Unmarshaled output:"</span><span class="token punctuation">,</span> <span class="token function">string</span><span class="token punctuation">(</span>jsonOutput<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>]]></content>
+      <categories>
+        <category>日常折腾</category>
+      </categories>
+      <tags>
+        <tag>Golang</tag>
+        <tag>AWS</tag>
+        <tag>Aliyun</tag>
+        <tag>ChatGPT</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>PHP扩展加载过程</title>
     <url>/2015/03/02/php-load-extension/</url>
     <content><![CDATA[<p>在PHP的配置文件中，添加一行extension&#x3D;xxxx.so，就可以使PHP加载xxx这个扩展，那么这个扩展具体是怎么被加载到PHP中的？可以看一下。</p>
@@ -9359,25 +9570,25 @@ default via <span class="token number">169.254</span>.1.1 dev eth0
 <p>首先还是在线上使用<code>perf</code>工具生成了一下火焰图：<br><img src="/images/proxy_flame_before.png" alt="火焰图"></p>
 <p>第一次看到这个火焰图感觉很奇怪，主要的问题集中在为什么<code>__accept_nocancel</code>也就是<code>accept</code>的调用会如此频繁，首先想到的就是<code>惊群效应</code>了，但是应该在Linux内核2.6.18的时候，<code>accept</code>的惊群问题在内核中就已经解决了，我们线上用的CentOS 6.5内核版本已经到了2.6.32，理论上不应该会有类似的问题。<br>于是还是到线上尝试strace看一下程序的系统调用：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span>
 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">9484480</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">9484480</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span>
-accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+accept<span class="token punctuation">(</span><span class="token number">6</span>, 0x7fff90830890, <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token punctuation">)</span>        <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>绝大部分都是<code>epoll_wait</code>返回，尝试<code>accept</code>，但是<code>accept</code>返回<code>EAGAIN</code>，这应该就是火焰图中那么多<code>accept</code>调用的原因。又查找了一下资料，发现在<code>epoll</code>编程模型中是不会处理惊群的，当一个socket有事件，内核会唤醒所有监听的<code>epoll_wait</code>调用，从而导致这个问题。<br>我们先分析一下程序，目前程序的工作流程是：</p>
 <ol>
 <li>master进程启动，bind并监听一系列fd;</li>
@@ -11020,7 +11231,7 @@ id为22957：Socket代理212发送剩余部分select语句168byte到数据库139
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token number">18</span>:42:52.119359 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLIN, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">38391536</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">38391536</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">&lt;</span><span class="token number">0.00017</span><span class="token operator"><span class="token file-descriptor important">5</span>></span>
 <span class="token number">18</span>:42:52.119672 recvfrom<span class="token punctuation">(</span><span class="token number">8</span>, <span class="token string">"<span class="token entity" title="\240">\240</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\3">\3</span>SELECT cat_id, cat_name, parent_id, is_show FROM <span class="token variable"><span class="token variable">`</span>jiewang300<span class="token variable">`</span></span>.<span class="token variable"><span class="token variable">`</span>jw_category<span class="token variable">`</span></span>WHERE parent_id = '1401' AND is_show = 1 ORDER B"</span>, <span class="token number">128</span>, <span class="token number">0</span>, NULL, NULL<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">128</span> <span class="token operator">&lt;</span><span class="token number">0.00001</span><span class="token operator"><span class="token file-descriptor important">4</span>></span>
 <span class="token number">18</span>:42:52.119758 recvfrom<span class="token punctuation">(</span><span class="token number">8</span>, <span class="token string">"Y sort_order ASC, cat_id ASC limit 8"</span>, <span class="token number">128</span>, <span class="token number">0</span>, NULL, NULL<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">36</span> <span class="token operator">&lt;</span><span class="token number">0.00001</span><span class="token operator"><span class="token file-descriptor important">6</span>></span>
-<span class="token number">18</span>:42:52.119823 recvfrom<span class="token punctuation">(</span><span class="token number">8</span>, 0x24a4494, <span class="token number">92</span>, <span class="token number">0</span>, <span class="token number">0</span>, <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">=</span> -1 EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span> <span class="token operator">&lt;</span><span class="token number">0.00001</span><span class="token operator"><span class="token file-descriptor important">3</span>></span>
+<span class="token number">18</span>:42:52.119823 recvfrom<span class="token punctuation">(</span><span class="token number">8</span>, 0x24a4494, <span class="token number">92</span>, <span class="token number">0</span>, <span class="token number">0</span>, <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token parameter variable">-1</span> EAGAIN <span class="token punctuation">(</span>Resource temporarily unavailable<span class="token punctuation">)</span> <span class="token operator">&lt;</span><span class="token number">0.00001</span><span class="token operator"><span class="token file-descriptor important">3</span>></span>
 <span class="token number">18</span>:42:52.119929 epoll_wait<span class="token punctuation">(</span><span class="token number">7</span>, <span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>EPOLLOUT, <span class="token punctuation">&#123;</span>u32<span class="token operator">=</span><span class="token number">38394672</span>, <span class="token assign-left variable">u64</span><span class="token operator">=</span><span class="token number">38394672</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>, <span class="token number">1024</span>, <span class="token number">500</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">&lt;</span><span class="token number">0.00002</span><span class="token operator"><span class="token file-descriptor important">2</span>></span>
 <span class="token number">18</span>:42:52.120074 sendto<span class="token punctuation">(</span><span class="token number">9</span>, <span class="token string">"<span class="token entity" title="\240">\240</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\0">\0</span><span class="token entity" title="\3">\3</span>SELECT cat_id, cat_name, parent_id, is_show FROM <span class="token variable"><span class="token variable">`</span>jiewang300<span class="token variable">`</span></span>.<span class="token variable"><span class="token variable">`</span>jw_category<span class="token variable">`</span></span>WHERE parent_id = '1401' AND is_show = 1 ORDER B"</span>, <span class="token number">128</span>, <span class="token number">0</span>, NULL, <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">128</span> <span class="token operator">&lt;</span><span class="token number">0.00005</span><span class="token operator"><span class="token file-descriptor important">2</span>></span>
 <span class="token number">18</span>:42:52.120238 sendto<span class="token punctuation">(</span><span class="token number">9</span>, <span class="token string">"Y sort_order ASC, cat_id ASC limit 8"</span>, <span class="token number">36</span>, <span class="token number">0</span>, NULL, <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token number">36</span> <span class="token operator">&lt;</span><span class="token number">0.00002</span><span class="token operator"><span class="token file-descriptor important">2</span>></span>
@@ -11100,8 +11311,8 @@ id为22957：Socket代理212发送剩余部分select语句168byte到数据库139
 <p>所以讨论过后，大家的想法还是要对Web服务器进行扩容，来满足这样突发的流量增长。但与此同时，Web服务器也有些不一样的异常，在报警的时候，系统负载<br>比较高，CPU也没有什么空闲了，但是有个比较特殊的现象，就是system占用的CPU比user占用的CPU要高，这是明显不合理的，一般情况下，system占用CPU较高<br>意味着系统可能存在瓶颈，比如大量的锁争用等情况。</p>
 <p>所以，在着手准备扩容Web服务器的同时，也尝试对现有系统进行一些性能分析，看是否能找到瓶颈，便于做一些优化，提升单Web服务器的容量。</p>
 <p>分析的第一步，就是要收集系统运行时的信息，因此我们使用了 <code>perf</code> 这个工具，在系统中对httpd进程进行了抓取，并使用<br><a href="https://github.com/brendangregg/FlameGraph">FlameGraph</a>生成相应的火焰图。</p>
-<pre class="line-numbers language-sh" data-language="sh"><code class="language-sh">$ perf record -g -a # 等待收集一段时间后Ctrl-c 退出
-$ perf script | stackcollapse-perf.pl | flamegraph.pl &gt; flame.svg<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ perf record <span class="token parameter variable">-g</span> <span class="token parameter variable">-a</span> <span class="token comment"># 等待收集一段时间后Ctrl-c 退出</span>
+$ perf script <span class="token operator">|</span> stackcollapse-perf.pl <span class="token operator">|</span> flamegraph.pl <span class="token operator">></span> flame.svg<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <p>最终生成的火焰图如下：</p>
 <p><img src="/images/webruntime-flame-before.png"></p>
@@ -11173,9 +11384,9 @@ sqlalchemy.url <span class="token operator">=</span> mysql://:@localhost:3306/re
 <p>分别是脚本路径和连接MySQL的地址，默认的在工具镜像中脚本路径是放在<code>/harbor-migration/</code>这个目录下，这个需要根据机器上的情况修改到对应目录，然后<code>sqlalchemy.url</code>配置也很明显，需要修改为实际线上数据库的连接地址。</p>
 <p>修改完成后，就可以调用<code>alembic</code>工具升级数据库了:</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">export</span> <span class="token assign-left variable">PYTHONPATH</span><span class="token operator">=</span><span class="token variable"><span class="token variable">`</span><span class="token builtin class-name">pwd</span><span class="token variable">`</span></span>    <span class="token comment"># 添加PYTHONPATH</span>
-alembic -c alembic.ini current <span class="token comment"># 查看当前数据库版本</span>
-alembic -c alembic.ini upgrade <span class="token number">1.5</span>  <span class="token comment"># 升级到1.5版本</span>
-alembic -c alembic.ini current <span class="token comment"># 查看升级后数据库版本</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+alembic <span class="token parameter variable">-c</span> alembic.ini current <span class="token comment"># 查看当前数据库版本</span>
+alembic <span class="token parameter variable">-c</span> alembic.ini upgrade <span class="token number">1.5</span>  <span class="token comment"># 升级到1.5版本</span>
+alembic <span class="token parameter variable">-c</span> alembic.ini current <span class="token comment"># 查看升级后数据库版本</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>脚本运行完成后，数据库结构就能升级成功了。需要提醒的是，建议先导出线上数据到单独的一个数据库中做一下测试，确认没有问题后再进行线上操作，另外，做好备份！</p>
 <p>数据库升级完成，该升级各个组建了，新版Harbor的配置也有比较大的变化，默认安装时会有个<code>harbor.cfg</code>，官方也提供了一个工具去做<code>harbor.cfg</code>的版本迁移，但是我们也不需要通过这个工具了，在安装时，<code>prepare</code>脚本会根据<code>harbor.cfg</code>文件生成对应组件所需要的配置和env文件，所以我们直接使用新版的默认<code>harbor.cfg</code>生成配置文件，再对比老的配置文件，然后直接修改最后的配置文件保持一致。</p>
@@ -11283,7 +11494,7 @@ INFO<span class="token punctuation">[</span><span class="token number">2021</spa
 INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:06.135353300+08:00<span class="token punctuation">]</span> stopping event stream following graceful <span class="token function">shutdown</span>  <span class="token assign-left variable">error</span><span class="token operator">=</span><span class="token string">"context canceled"</span> <span class="token assign-left variable">module</span><span class="token operator">=</span>libcontainerd <span class="token assign-left variable">namespace</span><span class="token operator">=</span>moby
 INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:06.135542600+08:00<span class="token punctuation">]</span> stopping healthcheck following graceful <span class="token function">shutdown</span>  <span class="token assign-left variable">module</span><span class="token operator">=</span>libcontainerd
 INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:06.136083800+08:00<span class="token punctuation">]</span> stopping event stream following graceful <span class="token function">shutdown</span>  <span class="token assign-left variable">error</span><span class="token operator">=</span><span class="token string">"context canceled"</span> <span class="token assign-left variable">module</span><span class="token operator">=</span>libcontainerd <span class="token assign-left variable">namespace</span><span class="token operator">=</span>plugins.moby
-failed to start daemon: Error initializing network controller: error obtaining controller instance: unable to <span class="token function">add</span> <span class="token builtin class-name">return</span> rule <span class="token keyword">in</span> DOCKER-ISOLATION-STAGE-1 chain:  <span class="token punctuation">(</span>iptables failed: iptables --wait -A DOCKER-ISOLATION-STAGE-1 -j RETURN: iptables v1.8.7 <span class="token punctuation">(</span>nf_tables<span class="token punctuation">)</span>:  RULE_APPEND failed <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>: rule <span class="token keyword">in</span> chain DOCKER-ISOLATION-STAGE-1
+failed to start daemon: Error initializing network controller: error obtaining controller instance: unable to <span class="token function">add</span> <span class="token builtin class-name">return</span> rule <span class="token keyword">in</span> DOCKER-ISOLATION-STAGE-1 chain:  <span class="token punctuation">(</span>iptables failed: iptables <span class="token parameter variable">--wait</span> <span class="token parameter variable">-A</span> DOCKER-ISOLATION-STAGE-1 <span class="token parameter variable">-j</span> RETURN: iptables v1.8.7 <span class="token punctuation">(</span>nf_tables<span class="token punctuation">)</span>:  RULE_APPEND failed <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>: rule <span class="token keyword">in</span> chain DOCKER-ISOLATION-STAGE-1
  <span class="token punctuation">(</span>exit status <span class="token number">4</span><span class="token punctuation">))</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <span id="more"></span>
 <p>提示<code>iptables</code> <code>RULE_APPEND</code>也不知道是咋回事，不过想着估计和Docker的网络有点关系，还好一般情况下编译和打镜像也不需要网络隔离，所以前几天就临时在启动Docker Daemon时加上<code>--iptables=false</code>参数，不加载iptables规则，当然<code>docker builld</code>和<code>docker run</code>的时候也得加上<code>--network=host</code>使用不隔离的Host网络，勉强扛了几天。</p>
@@ -11411,215 +11622,24 @@ Filesystem              Blocks      Quota      Limit  Warn/Time      Mounted on
       </tags>
   </entry>
   <entry>
-    <title>反序列化AWS/阿里云样式的基于Query的API请求</title>
-    <url>/2023/07/13/parse-aws-aliyun-like-api-request/</url>
-    <content><![CDATA[<p>对于比较了解云计算的人来说，一定接触过AWS、阿里云的API接口，这两者的API调用方式很相似，当然具体谁参考谁这里就不深究了。以给EC2&#x2F;ECS添加Tag这个接口为例：</p>
-<p>AWS:</p>
-<pre class="line-numbers language-none"><code class="language-none">https:&#x2F;&#x2F;ec2.amazonaws.com&#x2F;?Action&#x3D;CreateTags
-&amp;ResourceId.1&#x3D;ami-1a2b3c4d
-&amp;ResourceId.2&#x3D;i-1234567890abcdef0
-&amp;Tag.1.Key&#x3D;webserver
-&amp;Tag.1.Value&#x3D;
-&amp;Tag.2.Key&#x3D;stack
-&amp;Tag.2.Value&#x3D;Production
-&amp;AUTHPARAMS<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>阿里云：</p>
-<pre class="line-numbers language-none"><code class="language-none">https:&#x2F;&#x2F;ecs.aliyuncs.com&#x2F;?Action&#x3D;TagResources
-&amp;RegionId&#x3D;cn-hangzhou
-&amp;ResourceId.1&#x3D;i-bp1j6qtvdm8w0z1o0****
-&amp;ResourceId.2&#x3D;i-bp1j6qtvdm8w0z1oP****
-&amp;ResourceType&#x3D;instance
-&amp;Tag.1.Key&#x3D;TestKey
-&amp;Tag.1.Value&#x3D;TestKey
-&amp;&lt;公共请求参数&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
+    <title>在RHEL系统中快速抓取火焰图</title>
+    <url>/2023/10/18/rhel-perf-flamegraphs/</url>
+    <content><![CDATA[<p>在之前的好几篇Blog里，都使用了火焰图来对业务进行性能优化，之前为了抓取火焰图，需要用到好几个工具进行组合，流程还是比较麻烦的。随着RHEL的版本更新，Redhat提供了一个更简单快速的方法实现了一键抓取火焰图的功能。</p>
 <span id="more"></span>
-<p>这种样式的接口设计，其实没有什么复杂的，相对比较特殊的地方在于，如果需要传入一个数组，则需要使用类似下标一样的<code>Tag.N.Key</code>这种格式进行传递，这个传递方式，和已有的一些诸如<a href="https://github.com/google/go-querystring">google&#x2F;go-querystring</a>的传递方式都不太相同，总之是个很特殊的设计。</p>
-<p>如果需要写一个类似的服务，使用和这两家相同的API格式的话，针对这种数组格式的请求反序列化是个挺麻烦的事，而且找了一圈也没有类似的开源项目做这个。</p>
-<p>今天借助ChatGPT写了一个反序列化函数，专门用来实现服务端对类似形态API的反序列化，通过这个函数可以很方便的将Query反序列化成一个对应的Struct：</p>
-<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">package</span> main
+<p>这个功能在<code>RHEL 8.2</code>及以上版本可以使用，当然RHEL对应的衍生版比如<code>OracleLinux</code>、<code>AlmaLinux</code>、<code>RockyLinux</code>等也是可以直接使用的。</p>
+<p>首先需要安装<code>perf</code>和<code>js-d3-flame-graph</code>这两个软件包：</p>
+<pre class="line-numbers language-none"><code class="language-none"># yum install js-d3-flame-graph perf -y<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
-<span class="token keyword">import</span> <span class="token punctuation">(</span>
-	<span class="token string">"encoding/json"</span>
-	<span class="token string">"fmt"</span>
-	<span class="token string">"net/url"</span>
-	<span class="token string">"reflect"</span>
-	<span class="token string">"strconv"</span>
-	<span class="token string">"strings"</span>
-<span class="token punctuation">)</span>
-
-<span class="token keyword">type</span> TagRequest <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
-	Action       <span class="token builtin">string</span>   <span class="token string">`query:"Action"`</span>
-	RegionID     <span class="token builtin">string</span>   <span class="token string">`query:"RegionId"`</span>
-	ResourceIds  <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span> <span class="token string">`query:"ResourceId"`</span>
-	ResourceType <span class="token builtin">string</span>   <span class="token string">`query:"ResourceType"`</span>
-	Tags         <span class="token punctuation">[</span><span class="token punctuation">]</span>Tag    <span class="token string">`query:"Tag"`</span>
-<span class="token punctuation">&#125;</span>
-
-<span class="token keyword">type</span> Tag <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
-	Key   <span class="token builtin">string</span> <span class="token string">`query:"Key"`</span>
-	Value <span class="token builtin">string</span> <span class="token string">`query:"Value"`</span>
-<span class="token punctuation">&#125;</span>
-
-<span class="token keyword">func</span> <span class="token function">Unmarshal</span><span class="token punctuation">(</span>queryStr <span class="token builtin">string</span><span class="token punctuation">,</span> output <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
-	values<span class="token punctuation">,</span> err <span class="token operator">:=</span> url<span class="token punctuation">.</span><span class="token function">ParseQuery</span><span class="token punctuation">(</span>queryStr<span class="token punctuation">)</span>
-	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
-		<span class="token keyword">return</span> err
-	<span class="token punctuation">&#125;</span>
-
-	<span class="token keyword">return</span> <span class="token function">unmarshalData</span><span class="token punctuation">(</span>values<span class="token punctuation">,</span> output<span class="token punctuation">)</span>
-<span class="token punctuation">&#125;</span>
-
-<span class="token keyword">func</span> <span class="token function">unmarshalData</span><span class="token punctuation">(</span>values url<span class="token punctuation">.</span>Values<span class="token punctuation">,</span> output <span class="token keyword">interface</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
-	outputVal <span class="token operator">:=</span> reflect<span class="token punctuation">.</span><span class="token function">ValueOf</span><span class="token punctuation">(</span>output<span class="token punctuation">)</span>
-	<span class="token keyword">if</span> outputVal<span class="token punctuation">.</span><span class="token function">Kind</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> reflect<span class="token punctuation">.</span>Ptr <span class="token punctuation">&#123;</span>
-		<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"output must be a pointer"</span><span class="token punctuation">)</span>
-	<span class="token punctuation">&#125;</span>
-
-	outputElem <span class="token operator">:=</span> outputVal<span class="token punctuation">.</span><span class="token function">Elem</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-	outputType <span class="token operator">:=</span> outputElem<span class="token punctuation">.</span><span class="token function">Type</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-
-	<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> outputType<span class="token punctuation">.</span><span class="token function">NumField</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">&#123;</span>
-		field <span class="token operator">:=</span> outputType<span class="token punctuation">.</span><span class="token function">Field</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span>
-		tag <span class="token operator">:=</span> field<span class="token punctuation">.</span>Tag<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token string">"query"</span><span class="token punctuation">)</span>
-		<span class="token keyword">if</span> tag <span class="token operator">==</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
-			<span class="token keyword">continue</span>
-		<span class="token punctuation">&#125;</span>
-
-		value <span class="token operator">:=</span> values<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span>tag<span class="token punctuation">)</span>
-		fieldVal <span class="token operator">:=</span> outputElem<span class="token punctuation">.</span><span class="token function">FieldByName</span><span class="token punctuation">(</span>field<span class="token punctuation">.</span>Name<span class="token punctuation">)</span>
-
-		<span class="token keyword">if</span> field<span class="token punctuation">.</span>Type<span class="token punctuation">.</span><span class="token function">Kind</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> reflect<span class="token punctuation">.</span>Slice <span class="token punctuation">&#123;</span>
-			elemType <span class="token operator">:=</span> field<span class="token punctuation">.</span>Type<span class="token punctuation">.</span><span class="token function">Elem</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-			<span class="token keyword">if</span> elemType<span class="token punctuation">.</span><span class="token function">Kind</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> reflect<span class="token punctuation">.</span>Struct <span class="token punctuation">&#123;</span>
-				prefix <span class="token operator">:=</span> tag <span class="token operator">+</span> <span class="token string">"."</span>
-				arrIndex <span class="token operator">:=</span> <span class="token number">1</span>
-				<span class="token keyword">for</span> <span class="token punctuation">&#123;</span>
-					currKey <span class="token operator">:=</span> prefix <span class="token operator">+</span> fmt<span class="token punctuation">.</span><span class="token function">Sprint</span><span class="token punctuation">(</span>arrIndex<span class="token punctuation">)</span>
-					currValue <span class="token operator">:=</span> values<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span>currKey<span class="token punctuation">)</span>
-					<span class="token keyword">if</span> currValue <span class="token operator">==</span> <span class="token string">""</span> <span class="token punctuation">&#123;</span>
-						<span class="token keyword">break</span>
-					<span class="token punctuation">&#125;</span>
-
-					currSliceVal <span class="token operator">:=</span> reflect<span class="token punctuation">.</span><span class="token function">ValueOf</span><span class="token punctuation">(</span>currValue<span class="token punctuation">)</span>
-					fieldVal<span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span>reflect<span class="token punctuation">.</span><span class="token function">Append</span><span class="token punctuation">(</span>fieldVal<span class="token punctuation">,</span> currSliceVal<span class="token punctuation">)</span><span class="token punctuation">)</span>
-					arrIndex<span class="token operator">++</span>
-				<span class="token punctuation">&#125;</span>
-			<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
-				prefix <span class="token operator">:=</span> tag <span class="token operator">+</span> <span class="token string">"."</span>
-				objIndex <span class="token operator">:=</span> <span class="token number">1</span>
-				outer <span class="token operator">:=</span> <span class="token boolean">true</span>
-				<span class="token keyword">for</span> outer <span class="token punctuation">&#123;</span>
-					innerValues <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span>url<span class="token punctuation">.</span>Values<span class="token punctuation">)</span>
-					<span class="token keyword">for</span> innerKey<span class="token punctuation">,</span> innerValue <span class="token operator">:=</span> <span class="token keyword">range</span> values <span class="token punctuation">&#123;</span>
-						<span class="token keyword">if</span> strings<span class="token punctuation">.</span><span class="token function">HasPrefix</span><span class="token punctuation">(</span>innerKey<span class="token punctuation">,</span> prefix<span class="token operator">+</span>strconv<span class="token punctuation">.</span><span class="token function">Itoa</span><span class="token punctuation">(</span>objIndex<span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">"."</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-							innerValues<span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span>strings<span class="token punctuation">.</span><span class="token function">TrimPrefix</span><span class="token punctuation">(</span>innerKey<span class="token punctuation">,</span> prefix<span class="token operator">+</span>strconv<span class="token punctuation">.</span><span class="token function">Itoa</span><span class="token punctuation">(</span>objIndex<span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">"."</span><span class="token punctuation">)</span><span class="token punctuation">,</span> innerValue<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
-						<span class="token punctuation">&#125;</span>
-					<span class="token punctuation">&#125;</span>
-					<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>innerValues<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
-						<span class="token keyword">break</span>
-					<span class="token punctuation">&#125;</span>
-
-					newStructPtr <span class="token operator">:=</span> reflect<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span>elemType<span class="token punctuation">)</span>
-					err <span class="token operator">:=</span> <span class="token function">unmarshalData</span><span class="token punctuation">(</span>innerValues<span class="token punctuation">,</span> newStructPtr<span class="token punctuation">.</span><span class="token function">Interface</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-					<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
-						<span class="token keyword">return</span> err
-					<span class="token punctuation">&#125;</span>
-					fieldVal<span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span>reflect<span class="token punctuation">.</span><span class="token function">Append</span><span class="token punctuation">(</span>fieldVal<span class="token punctuation">,</span> newStructPtr<span class="token punctuation">.</span><span class="token function">Elem</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-
-					objIndex<span class="token operator">++</span>
-				<span class="token punctuation">&#125;</span>
-			<span class="token punctuation">&#125;</span>
-		<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
-			fieldVal<span class="token punctuation">.</span><span class="token function">Set</span><span class="token punctuation">(</span>reflect<span class="token punctuation">.</span><span class="token function">ValueOf</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">)</span>
-		<span class="token punctuation">&#125;</span>
-	<span class="token punctuation">&#125;</span>
-
-	<span class="token keyword">return</span> <span class="token boolean">nil</span>
-<span class="token punctuation">&#125;</span>
-
-<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-	queryStr <span class="token operator">:=</span> <span class="token string">"?Action=TagResources&amp;RegionId=cn-hangzhou&amp;ResourceId.1=i-bp1j6qtvdm8w0z1o0&amp;ResourceId.2=i-bp1j6qtvdm8w0z1oP&amp;ResourceType=instance&amp;Tag.1.Key=TestKey&amp;Tag.1.Value=TestValue&amp;Tag.2.Key=TestKey&amp;Tag.2.Value=TestValue"</span>
-
-	req <span class="token operator">:=</span> TagRequest<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
-	err <span class="token operator">:=</span> <span class="token function">Unmarshal</span><span class="token punctuation">(</span>strings<span class="token punctuation">.</span><span class="token function">TrimLeft</span><span class="token punctuation">(</span>queryStr<span class="token punctuation">,</span> <span class="token string">"?"</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>req<span class="token punctuation">)</span>
-	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
-		fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Error:"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
-		<span class="token keyword">return</span>
-	<span class="token punctuation">&#125;</span>
-
-	jsonOutput<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">MarshalIndent</span><span class="token punctuation">(</span>req<span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"  "</span><span class="token punctuation">)</span>
-	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Unmarshaled output:"</span><span class="token punctuation">,</span> <span class="token function">string</span><span class="token punctuation">(</span>jsonOutput<span class="token punctuation">)</span><span class="token punctuation">)</span>
-<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>测试一下：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">% go run main.go
-Unmarshaled output: <span class="token punctuation">&#123;</span>
-  <span class="token string">"Action"</span><span class="token builtin class-name">:</span> <span class="token string">"TagResources"</span>,
-  <span class="token string">"RegionID"</span><span class="token builtin class-name">:</span> <span class="token string">"cn-hangzhou"</span>,
-  <span class="token string">"ResourceIds"</span><span class="token builtin class-name">:</span> <span class="token punctuation">[</span>
-    <span class="token string">"i-bp1j6qtvdm8w0z1o0"</span>,
-    <span class="token string">"i-bp1j6qtvdm8w0z1oP"</span>
-  <span class="token punctuation">]</span>,
-  <span class="token string">"ResourceType"</span><span class="token builtin class-name">:</span> <span class="token string">"instance"</span>,
-  <span class="token string">"Tags"</span><span class="token builtin class-name">:</span> <span class="token punctuation">[</span>
-    <span class="token punctuation">&#123;</span>
-      <span class="token string">"Key"</span><span class="token builtin class-name">:</span> <span class="token string">"TestKey"</span>,
-      <span class="token string">"Value"</span><span class="token builtin class-name">:</span> <span class="token string">"TestValue"</span>
-    <span class="token punctuation">&#125;</span>,
-    <span class="token punctuation">&#123;</span>
-      <span class="token string">"Key"</span><span class="token builtin class-name">:</span> <span class="token string">"TestKey"</span>,
-      <span class="token string">"Value"</span><span class="token builtin class-name">:</span> <span class="token string">"TestValue"</span>
-    <span class="token punctuation">&#125;</span>
-  <span class="token punctuation">]</span>
-<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>嗯，ChatGPT牛逼！为了方便大家使用，我创建了一个项目<a href="https://github.com/C0reFast/aws-querystring">c0refast&#x2F;aws-querystring</a>，可以方便地作为库使用：</p>
-<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">package</span> main
-
-<span class="token keyword">import</span> <span class="token punctuation">(</span>
-	<span class="token string">"encoding/json"</span>
-	<span class="token string">"fmt"</span>
-	<span class="token string">"net/url"</span>
-
-	<span class="token string">"github.com/c0refast/aws-querystring/query"</span>
-<span class="token punctuation">)</span>
-
-<span class="token keyword">type</span> TagRequest <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
-	Action       <span class="token builtin">string</span>   <span class="token string">`query:"Action"`</span>
-	RegionID     <span class="token builtin">string</span>   <span class="token string">`query:"RegionId"`</span>
-	ResourceIds  <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span> <span class="token string">`query:"ResourceId"`</span>
-	ResourceType <span class="token builtin">string</span>   <span class="token string">`query:"ResourceType"`</span>
-	Tags         <span class="token punctuation">[</span><span class="token punctuation">]</span>Tag    <span class="token string">`query:"Tag"`</span>
-<span class="token punctuation">&#125;</span>
-
-<span class="token keyword">type</span> Tag <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
-	Key   <span class="token builtin">string</span> <span class="token string">`query:"Key"`</span>
-	Value <span class="token builtin">string</span> <span class="token string">`query:"Value"`</span>
-<span class="token punctuation">&#125;</span>
-
-<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-	queryStr <span class="token operator">:=</span> <span class="token string">"Action=TagResources&amp;RegionId=cn-hangzhou&amp;ResourceId.1=i-bp1j6qtvdm8w0z1o0&amp;ResourceId.2=i-bp1j6qtvdm8w0z1oP&amp;ResourceType=instance&amp;Tag.1.Key=TestKey&amp;Tag.1.Value=TestValue&amp;Tag.2.Key=TestKey&amp;Tag.2.Value=TestValue"</span>
-	urlValues<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> url<span class="token punctuation">.</span><span class="token function">ParseQuery</span><span class="token punctuation">(</span>queryStr<span class="token punctuation">)</span>
-	req <span class="token operator">:=</span> TagRequest<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
-	err <span class="token operator">:=</span> query<span class="token punctuation">.</span><span class="token function">BindQuery</span><span class="token punctuation">(</span>urlValues<span class="token punctuation">,</span> <span class="token operator">&amp;</span>req<span class="token punctuation">)</span>
-	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
-		fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Error:"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
-		<span class="token keyword">return</span>
-	<span class="token punctuation">&#125;</span>
-
-	jsonOutput<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> json<span class="token punctuation">.</span><span class="token function">MarshalIndent</span><span class="token punctuation">(</span>req<span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"  "</span><span class="token punctuation">)</span>
-	fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"Unmarshaled output:"</span><span class="token punctuation">,</span> <span class="token function">string</span><span class="token punctuation">(</span>jsonOutput<span class="token punctuation">)</span><span class="token punctuation">)</span>
-<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>]]></content>
+<p>然后就可以通过<code>perf script flamegraph -a -F 99 sleep 60</code>命令抓取整个系统的火焰图了，其中<code>-a</code>参数表示需要记录整个系统的性能数据，<code>-F</code>参数指定每秒的收集频率，<code>sleep 60</code>表示收集60S的数据。</p>
+<p>60秒后，命令自动退出并会在当前目录生成一个<code>flamegraph.html</code>文件，用任意浏览器打开这个文件，即可看到火焰图。</p>
+<p>当然，如果要收集某个进程的火焰图，可以使用<code>perf script flamegraph -a -F 99 -p PID1,PID2 sleep 60</code>命令。</p>
+]]></content>
       <categories>
-        <category>日常折腾</category>
+        <category>Linux</category>
       </categories>
       <tags>
-        <tag>Golang</tag>
-        <tag>AWS</tag>
-        <tag>Aliyun</tag>
-        <tag>ChatGPT</tag>
+        <tag>火焰图</tag>
+        <tag>perf</tag>
       </tags>
   </entry>
 </search>
