@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.0.0">
 
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
@@ -19,12 +19,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
 
-    <meta name="description" content="转自The complete guide to Go net&#x2F;http timeouts。 服务端超时对于http.Server服务端有两个超时可以设置：ReadTimeout和WriteTimeout srv :&#x3D; &amp;http.Server&amp;#123;     ReadTimeout: 5 * time.Second,     WriteTimeout: 10 * time.S">
+    <meta name="description" content="转自The complete guide to Go net&#x2F;http timeouts。 服务端超时对于http.Server服务端有两个超时可以设置：ReadTimeout和WriteTimeout srv :&#x3D; &amp;http.Server&#123;     ReadTimeout: 5 * time.Second,     WriteTimeout: 10 * time.S">
 <meta property="og:type" content="article">
 <meta property="og:title" content="两张图解释Golang http的超时机制">
 <meta property="og:url" content="https://www.ichenfu.com/2018/03/19/go-http-timeouts/index.html">
 <meta property="og:site_name" content="C0reFast记事本">
-<meta property="og:description" content="转自The complete guide to Go net&#x2F;http timeouts。 服务端超时对于http.Server服务端有两个超时可以设置：ReadTimeout和WriteTimeout srv :&#x3D; &amp;http.Server&amp;#123;     ReadTimeout: 5 * time.Second,     WriteTimeout: 10 * time.S">
+<meta property="og:description" content="转自The complete guide to Go net&#x2F;http timeouts。 服务端超时对于http.Server服务端有两个超时可以设置：ReadTimeout和WriteTimeout srv :&#x3D; &amp;http.Server&#123;     ReadTimeout: 5 * time.Second,     WriteTimeout: 10 * time.S">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://www.ichenfu.com/images/go_http_timeout_server.png">
 <meta property="og:image" content="https://www.ichenfu.com/images/go_http_timeout_client.png">
@@ -161,7 +161,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">99</span>
+          <span class="site-state-item-count">100</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -172,7 +172,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-count">220</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -345,7 +345,7 @@ log<span class="token punctuation">.</span><span class="token function">Println<
 
   <div class="copyright">
     &copy; 
-    <span itemprop="copyrightYear">2023</span>
+    <span itemprop="copyrightYear">2024</span>
     <span class="with-love">
       <i class="fa fa-heart"></i>
     </span>

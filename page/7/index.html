@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.0.0">
 
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
@@ -151,7 +151,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">99</span>
+          <span class="site-state-item-count">100</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -162,7 +162,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">217</span>
+        <span class="site-state-item-count">220</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -197,6 +197,201 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/01/23/cni-bridge-host-local/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Fu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2018/01/23/cni-bridge-host-local/" class="post-title-link" itemprop="url">CNI Plugin Bridge代码解析</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018年1月23日 10:52 10:52:30" itemprop="dateCreated datePublished" datetime="2018-01-23T10:52:30+08:00">2018年1月23日 10:52</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>在CNI所以默认提供的Plugin中，<code>bridge</code>应该算是最简单的插件了，针对IPAM Plugin，最简单的应该是<code>host-local</code>，这两个插件也是Kubernetes网络<code>kubenet</code>需要的两个插件。所以这里看一下这两个插件的代码。</p>
+<p>所有官方维护的代码，都开源在<a target="_blank" rel="noopener" href="https://github.com/containernetworking/plugins">containernetworking&#x2F;plugins</a>项目中了。</p>
+<p>其中<code>bridge</code>的代码在<code>plugins/main/bridge</code>目录，最重要的是<code>cmdAdd</code>和<code>cmdDel</code>两个函数，对应CNI SPEC中的ADD和DEL两个主要操作。主要来看一下<code>cmdAdd</code>的实现，精简（删除一些错误处理）后的代码如下：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">cmdAdd</span><span class="token punctuation">(</span>args <span class="token operator">*</span>skel<span class="token punctuation">.</span>CmdArgs<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	n<span class="token punctuation">,</span> cniVersion<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">loadNetConf</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>StdinData<span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> n<span class="token punctuation">.</span>IsDefaultGW <span class="token punctuation">&#123;</span>
+		n<span class="token punctuation">.</span>IsGW <span class="token operator">=</span> <span class="token boolean">true</span>
+	<span class="token punctuation">&#125;</span>
+
+	br<span class="token punctuation">,</span> brInterface<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">setupBridge</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	netns<span class="token punctuation">,</span> err <span class="token operator">:=</span> ns<span class="token punctuation">.</span><span class="token function">GetNS</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>Netns<span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> netns<span class="token punctuation">.</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	hostInterface<span class="token punctuation">,</span> containerInterface<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">setupVeth</span><span class="token punctuation">(</span>netns<span class="token punctuation">,</span> br<span class="token punctuation">,</span> args<span class="token punctuation">.</span>IfName<span class="token punctuation">,</span> n<span class="token punctuation">.</span>MTU<span class="token punctuation">,</span> n<span class="token punctuation">.</span>HairpinMode<span class="token punctuation">)</span>
+
+	r<span class="token punctuation">,</span> err <span class="token operator">:=</span> ipam<span class="token punctuation">.</span><span class="token function">ExecAdd</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>IPAM<span class="token punctuation">.</span>Type<span class="token punctuation">,</span> args<span class="token punctuation">.</span>StdinData<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	result<span class="token punctuation">,</span> err <span class="token operator">:=</span> current<span class="token punctuation">.</span><span class="token function">NewResultFromResult</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span>
+
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>IPs<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> errors<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token string">"IPAM plugin returned missing IP config"</span><span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+
+	result<span class="token punctuation">.</span>Interfaces <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>current<span class="token punctuation">.</span>Interface<span class="token punctuation">&#123;</span>brInterface<span class="token punctuation">,</span> hostInterface<span class="token punctuation">,</span> containerInterface<span class="token punctuation">&#125;</span>
+
+	gwsV4<span class="token punctuation">,</span> gwsV6<span class="token punctuation">,</span> err <span class="token operator">:=</span> <span class="token function">calcGateways</span><span class="token punctuation">(</span>result<span class="token punctuation">,</span> n<span class="token punctuation">)</span>
+	<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> netns<span class="token punctuation">.</span><span class="token function">Do</span><span class="token punctuation">(</span><span class="token keyword">func</span><span class="token punctuation">(</span><span class="token boolean">_</span> ns<span class="token punctuation">.</span>NetNS<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+		contVeth<span class="token punctuation">,</span> err <span class="token operator">:=</span> net<span class="token punctuation">.</span><span class="token function">InterfaceByName</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>IfName<span class="token punctuation">)</span>
+
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> ipc <span class="token operator">:=</span> <span class="token keyword">range</span> result<span class="token punctuation">.</span>IPs <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> ipc<span class="token punctuation">.</span>Version <span class="token operator">==</span> <span class="token string">"6"</span> <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span>n<span class="token punctuation">.</span>HairpinMode <span class="token operator">||</span> n<span class="token punctuation">.</span>PromiscMode<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">if</span> err <span class="token operator">:=</span> <span class="token function">disableIPV6DAD</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>IfName<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					<span class="token keyword">return</span> err
+				<span class="token punctuation">&#125;</span>
+				<span class="token keyword">break</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> ipam<span class="token punctuation">.</span><span class="token function">ConfigureIface</span><span class="token punctuation">(</span>args<span class="token punctuation">.</span>IfName<span class="token punctuation">,</span> result<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> err
+		<span class="token punctuation">&#125;</span>
+
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> ipc <span class="token operator">:=</span> <span class="token keyword">range</span> result<span class="token punctuation">.</span>IPs <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> ipc<span class="token punctuation">.</span>Version <span class="token operator">==</span> <span class="token string">"4"</span> <span class="token punctuation">&#123;</span>
+				<span class="token boolean">_</span> <span class="token operator">=</span> arping<span class="token punctuation">.</span><span class="token function">GratuitousArpOverIface</span><span class="token punctuation">(</span>ipc<span class="token punctuation">.</span>Address<span class="token punctuation">.</span>IP<span class="token punctuation">,</span> <span class="token operator">*</span>contVeth<span class="token punctuation">)</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> n<span class="token punctuation">.</span>IsGW <span class="token punctuation">&#123;</span>
+		<span class="token keyword">var</span> firstV4Addr net<span class="token punctuation">.</span>IP
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> gws <span class="token operator">:=</span> <span class="token keyword">range</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>gwInfo<span class="token punctuation">&#123;</span>gwsV4<span class="token punctuation">,</span> gwsV6<span class="token punctuation">&#125;</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> gw <span class="token operator">:=</span> <span class="token keyword">range</span> gws<span class="token punctuation">.</span>gws <span class="token punctuation">&#123;</span>
+				<span class="token keyword">if</span> gw<span class="token punctuation">.</span>IP<span class="token punctuation">.</span><span class="token function">To4</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> firstV4Addr <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					firstV4Addr <span class="token operator">=</span> gw<span class="token punctuation">.</span>IP
+				<span class="token punctuation">&#125;</span>
+
+				err <span class="token operator">=</span> <span class="token function">ensureBridgeAddr</span><span class="token punctuation">(</span>br<span class="token punctuation">,</span> gws<span class="token punctuation">.</span>family<span class="token punctuation">,</span> <span class="token operator">&amp;</span>gw<span class="token punctuation">,</span> n<span class="token punctuation">.</span>ForceAddress<span class="token punctuation">)</span>
+				<span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"failed to set bridge addr: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token punctuation">&#125;</span>
+
+			<span class="token keyword">if</span> gws<span class="token punctuation">.</span>gws <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">if</span> err <span class="token operator">=</span> <span class="token function">enableIPForward</span><span class="token punctuation">(</span>gws<span class="token punctuation">.</span>family<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+					<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"failed to enable forwarding: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> n<span class="token punctuation">.</span>IPMasq <span class="token punctuation">&#123;</span>
+		chain <span class="token operator">:=</span> utils<span class="token punctuation">.</span><span class="token function">FormatChainName</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> args<span class="token punctuation">.</span>ContainerID<span class="token punctuation">)</span>
+		comment <span class="token operator">:=</span> utils<span class="token punctuation">.</span><span class="token function">FormatComment</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> args<span class="token punctuation">.</span>ContainerID<span class="token punctuation">)</span>
+		<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> ipc <span class="token operator">:=</span> <span class="token keyword">range</span> result<span class="token punctuation">.</span>IPs <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> err <span class="token operator">=</span> ip<span class="token punctuation">.</span><span class="token function">SetupIPMasq</span><span class="token punctuation">(</span>ip<span class="token punctuation">.</span><span class="token function">Network</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>ipc<span class="token punctuation">.</span>Address<span class="token punctuation">)</span><span class="token punctuation">,</span> chain<span class="token punctuation">,</span> comment<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">return</span> err
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	br<span class="token punctuation">,</span> err <span class="token operator">=</span> <span class="token function">bridgeByName</span><span class="token punctuation">(</span>n<span class="token punctuation">.</span>BrName<span class="token punctuation">)</span>
+
+	brInterface<span class="token punctuation">.</span>Mac <span class="token operator">=</span> br<span class="token punctuation">.</span><span class="token function">Attrs</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>HardwareAddr<span class="token punctuation">.</span><span class="token function">String</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+	result<span class="token punctuation">.</span>DNS <span class="token operator">=</span> n<span class="token punctuation">.</span>DNS
+
+	<span class="token keyword">return</span> types<span class="token punctuation">.</span><span class="token function">PrintResult</span><span class="token punctuation">(</span>result<span class="token punctuation">,</span> cniVersion<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2018/01/23/cni-bridge-host-local/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1518,120 +1713,6 @@ Upload: <span class="token number">48.73</span> Mbit/s
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/04/25/cgroups-pids-controller/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chen Fu">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2017/04/25/cgroups-pids-controller/" class="post-title-link" itemprop="url">利用Cgroups的pids子系统限制进程(线程)数量</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2017年4月25日 18:13 18:13:39" itemprop="dateCreated datePublished" datetime="2017-04-25T18:13:39+08:00">2017年4月25日 18:13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在Linux Kernel 4.3中，引入了一个新的cgroups子系统<code>pids</code>，通过这个子系统，可以实现对某个控制组中进程和线程的总数进行限制。<br>使用前，首先需要挂载该子系统（对于很多的发行版，默认是会挂载的）：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p /sys/fs/cgroup/pids</span>
-<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># mount -t cgroup -o pids none /sys/fs/cgroup/pids</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<p>首先创建一个新的控制组<code>test_max_proc</code>:</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># mkdir /sys/fs/cgroup/pids/test_max_proc</span>
-<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># ls -l /sys/fs/cgroup/pids/test_max_proc/</span>
-total <span class="token number">0</span>
--rw-r--r-- <span class="token number">1</span> root root <span class="token number">0</span> Apr <span class="token number">26</span> 09:11 cgroup.clone_children
--rw-r--r-- <span class="token number">1</span> root root <span class="token number">0</span> Apr <span class="token number">26</span> 09:11 cgroup.procs
--rw-r--r-- <span class="token number">1</span> root root <span class="token number">0</span> Apr <span class="token number">26</span> 09:11 notify_on_release
--r--r--r-- <span class="token number">1</span> root root <span class="token number">0</span> Apr <span class="token number">26</span> 09:11 pids.current
--r--r--r-- <span class="token number">1</span> root root <span class="token number">0</span> Apr <span class="token number">26</span> 09:11 pids.events
--rw-r--r-- <span class="token number">1</span> root root <span class="token number">0</span> Apr <span class="token number">26</span> 09:11 pids.max
--rw-r--r-- <span class="token number">1</span> root root <span class="token number">0</span> Apr <span class="token number">26</span> 09:11 tasks<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>其中，<code>pids.max</code>控制该组中最多可以拥有的进程数，其中线程也包含在其中。<code>pids.current</code>存储了当前控制组的进程(线程)总数。<code>cgroup.procs</code>是需要限制的进程pid。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># echo 2 > /sys/fs/cgroup/pids/test_max_proc/pids.max</span>
-<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># echo $$ > /sys/fs/cgroup/pids/test_max_proc/cgroup.procs</span>
-<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># cat /sys/fs/cgroup/pids/parent/pids.current</span>
-<span class="token number">2</span>
-<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># /bin/echo "Here's some processes for you." | cat</span>
-bash: fork: retry: Resource temporarily unavailable
-bash: fork: retry: Resource temporarily unavailable
-bash: fork: retry: Resource temporarily unavailable<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>可以看到限制生效了。由于Linux的线程也是类似进程的实现，因此，当程序有多个线程时，进程和线程的总数也不能超过设定的值</p>
-<p>参考：</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="http://man7.org/linux/man-pages/man7/cgroups.7.html">http://man7.org/linux/man-pages/man7/cgroups.7.html</a></li>
-<li><a target="_blank" rel="noopener" href="https://www.kernel.org/doc/Documentation/cgroup-v1/pids.txt">https://www.kernel.org/doc/Documentation/cgroup-v1/pids.txt</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
     <a class="extend prev" rel="prev" title="上一页" aria-label="上一页" href="/page/6/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/">10</a><a class="extend next" rel="next" title="下一页" aria-label="下一页" href="/page/8/"><i class="fa fa-angle-right"></i></a>
   </nav>
@@ -1644,7 +1725,7 @@ bash: fork: retry: Resource temporarily unavailable<span aria-hidden="true" clas
 
   <div class="copyright">
     &copy; 
-    <span itemprop="copyrightYear">2023</span>
+    <span itemprop="copyrightYear">2024</span>
     <span class="with-love">
       <i class="fa fa-heart"></i>
     </span>

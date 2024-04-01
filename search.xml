@@ -11642,4 +11642,289 @@ Filesystem              Blocks      Quota      Limit  Warn/Time      Mounted on
         <tag>Project Quota</tag>
       </tags>
   </entry>
+  <entry>
+    <title>一个UFO引发的惨案</title>
+    <url>/2024/04/01/ufo-feature-caused-network-failure/</url>
+    <content><![CDATA[<p>首先需要解释一下标题，原谅我当了一回标题党，此UFO不是<code>Unidentified flying object</code>，而是在网络中的一个Oflload卸载技术<code>UDP fragmentation offload</code>。事情的起因是这样的，我们最近尝试将线上的虚拟机，从基于网卡SR-IOV+直通的方案，切换到基于DPDK+vhost-user的方案，以换取热迁移的效率提升。</p>
+<p>从之前的模拟压测和线上灰度效果来看，新的DPDK方案的性能和稳定性都处于很好的水平，在我们的场景下可以很好的满足需求。<br>知道灰度到某个业务的适合，发生了一些问题，导致了虚拟机的网络中断。<span id="more"></span></p>
+<p>我们通过热拔插方式进行网络切换，首先，会把当前直通的网卡从虚拟机中热拔出来，然后，再把一个vhost-user网卡热插到虚拟机中，从而实现网卡的切换。在切换过程中，大致会有3-5s左右的网络中断，但根据和业务的沟通，在单线程的操作情况下，这样的中断是没有问题的，不会影响业务。</p>
+<p>为了保证业务的稳定，我们在网卡切换后，会持续ping 10s对应的虚拟机，确保网络正常后才会进行下一台的操作。</p>
+<p>然后问题就发生了，在某些虚拟机切换网卡之后，大约5分钟内，网络是正常的，但是超过5分钟之后，突然网络就不通了，这个问题也是随机的，而对于网络不通的机器，通过重启DPDK进程的方式，网络又可以恢复几分钟，然后继续不通。这些现象确实在之前的测试中没有遇到过。从日志看，有少量的DPDK进程打印了这两条日志：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">VHOST_DATA: <span class="token punctuation">(</span>/tmp/ens8f0-2.sock<span class="token punctuation">)</span> failed to allocate memory <span class="token keyword">for</span> mbuf.
+VHOST_DATA: <span class="token punctuation">(</span>/tmp/ens8f0-2.sock<span class="token punctuation">)</span> failed to copy desc to mbuf.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>从日志看，应该是给DPDK分配的内存不够了，导致DPDK从内存池里分配mbuf时无内存可用，但是DPDK使用的内存，是经过精确计算的呀？看看内存分配数量相关的代码：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">DEFAULT_IP_MTU</span>	  <span class="token expression"><span class="token punctuation">(</span><span class="token number">1500</span><span class="token punctuation">)</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">L2_OVERHEAD</span>		  <span class="token expression"><span class="token punctuation">(</span><span class="token number">14</span> <span class="token operator">+</span> <span class="token number">4</span> <span class="token operator">+</span> <span class="token number">4</span><span class="token punctuation">)</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">VF_RX_OFFSET</span>	  <span class="token expression"><span class="token punctuation">(</span><span class="token number">32</span><span class="token punctuation">)</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">DEFAULT_MBUF_SIZE</span> <span class="token expression"><span class="token punctuation">(</span>DEFAULT_IP_MTU <span class="token operator">+</span> L2_OVERHEAD <span class="token operator">+</span> RTE_PKTMBUF_HEADROOM <span class="token operator">+</span> VF_RX_OFFSET<span class="token punctuation">)</span></span></span>
+
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">MAX_VHOST_QUEUE_PAIRS</span> <span class="token expression"><span class="token number">16</span></span></span>
+
+<span class="token comment">/* rxq/txq descriptors numbers */</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">RXQ_TXQ_DESC_1K</span> <span class="token expression"><span class="token number">1024</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">RXQ_TXQ_DESC_8K</span> <span class="token expression"><span class="token number">8192</span></span></span>
+
+<span class="token comment">/* relay mempool config */</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">DEFAULT_NR_RX_QUEUE</span> <span class="token expression">MAX_VHOST_QUEUE_PAIRS</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">DEFAULT_NR_TX_QUEUE</span> <span class="token expression">MAX_VHOST_QUEUE_PAIRS</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">DEFAULT_NR_RX_DESC</span>	<span class="token expression">RXQ_TXQ_DESC_8K</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">DEFAULT_NR_TX_DESC</span>	<span class="token expression">RXQ_TXQ_DESC_1K</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">NUM_PKTMBUF_POOL</span>	<span class="token expression"><span class="token punctuation">(</span>DEFAULT_NR_RX_DESC <span class="token operator">*</span> DEFAULT_NR_RX_QUEUE <span class="token operator">+</span> DEFAULT_NR_TX_DESC <span class="token operator">*</span> DEFAULT_NR_TX_QUEUE <span class="token operator">+</span> <span class="token number">4096</span><span class="token punctuation">)</span></span></span>
+
+<span class="token comment">// ...</span>
+mpool <span class="token operator">=</span> <span class="token function">rte_pktmbuf_pool_create</span><span class="token punctuation">(</span>mp_name<span class="token punctuation">,</span> n_mbufs<span class="token punctuation">,</span> RTE_MEMPOOL_CACHE_MAX_SIZE<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> DEFAULT_MBUF_SIZE<span class="token punctuation">,</span> request_socket_id<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们给每个VM分配了最多16个队列，MTU为1500，网卡侧同样支持16个发送队列+16个接收队列，其中每个接收队列设置ring buffer大小为8192，发送队列ring buffer大小1024，经过一系列的计算<code>NUM_PKTMBUF_POOL</code>这个值应该在所有场景都能满足需求，那为什么会出现内存不够的情况呢？我们再深入看一下DPDK相关的代码：</p>
+<p>首先这个日志，在DPDK中有两个地方会打印，一个是在<code>virtio_dev_tx_split</code>函数中，另一个函数是<code>vhost_dequeue_single_packed</code>，这俩函数的功能是一致的，只是一个是用来处理老的<code>virtio split ring</code>的场景，另一个是处理<code>packed ring</code>的场景，而我们目前用的还是老的<code>split ring</code>，于是着重看下相关的代码：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">__rte_always_inline
+<span class="token keyword">static</span> <span class="token class-name">uint16_t</span>
+<span class="token function">virtio_dev_tx_split</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">virtio_net</span> <span class="token operator">*</span>dev<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">vhost_virtqueue</span> <span class="token operator">*</span>vq<span class="token punctuation">,</span>
+	<span class="token keyword">struct</span> <span class="token class-name">rte_mempool</span> <span class="token operator">*</span>mbuf_pool<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">rte_mbuf</span> <span class="token operator">*</span><span class="token operator">*</span>pkts<span class="token punctuation">,</span> <span class="token class-name">uint16_t</span> count<span class="token punctuation">,</span>
+	bool legacy_ol_flags<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">// ...省略</span>
+
+    <span class="token comment">// 一次循环，最多取32个数据</span>
+	count <span class="token operator">=</span> <span class="token function">RTE_MIN</span><span class="token punctuation">(</span>count<span class="token punctuation">,</span> MAX_PKT_BURST<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	count <span class="token operator">=</span> <span class="token function">RTE_MIN</span><span class="token punctuation">(</span>count<span class="token punctuation">,</span> avail_entries<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token function">VHOST_LOG_DATA</span><span class="token punctuation">(</span>dev<span class="token operator">-></span>ifname<span class="token punctuation">,</span> DEBUG<span class="token punctuation">,</span> <span class="token string">"about to dequeue %u buffers\n"</span><span class="token punctuation">,</span> count<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">rte_pktmbuf_alloc_bulk</span><span class="token punctuation">(</span>mbuf_pool<span class="token punctuation">,</span> pkts<span class="token punctuation">,</span> count<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">for</span> <span class="token punctuation">(</span>i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> count<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// ...省略</span>
+
+        <span class="token comment">// 拷贝Guest中的网络包到pkts(rte_mbuf)中</span>
+		err <span class="token operator">=</span> <span class="token function">desc_to_mbuf</span><span class="token punctuation">(</span>dev<span class="token punctuation">,</span> vq<span class="token punctuation">,</span> buf_vec<span class="token punctuation">,</span> nr_vec<span class="token punctuation">,</span> pkts<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span>
+				   mbuf_pool<span class="token punctuation">,</span> legacy_ol_flags<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> false<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">unlikely</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>allocerr_warned<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token comment">// 拷贝失败了，打印了第二条日志，第一条日志在desc_to_mbuf打印了</span>
+				<span class="token function">VHOST_LOG_DATA</span><span class="token punctuation">(</span>dev<span class="token operator">-></span>ifname<span class="token punctuation">,</span> ERR<span class="token punctuation">,</span> <span class="token string">"failed to copy desc to mbuf.\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+				allocerr_warned <span class="token operator">=</span> true<span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+			dropped <span class="token operator">+=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+			i<span class="token operator">++</span><span class="token punctuation">;</span>
+			<span class="token keyword">break</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+
+	<span class="token punctuation">&#125;</span>
+    <span class="token comment">// ...省略</span>
+
+	<span class="token keyword">return</span> <span class="token punctuation">(</span>i <span class="token operator">-</span> dropped<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">static</span> __rte_always_inline <span class="token keyword">int</span>
+<span class="token function">desc_to_mbuf</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">virtio_net</span> <span class="token operator">*</span>dev<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">vhost_virtqueue</span> <span class="token operator">*</span>vq<span class="token punctuation">,</span>
+		  <span class="token keyword">struct</span> <span class="token class-name">buf_vector</span> <span class="token operator">*</span>buf_vec<span class="token punctuation">,</span> <span class="token class-name">uint16_t</span> nr_vec<span class="token punctuation">,</span>
+		  <span class="token keyword">struct</span> <span class="token class-name">rte_mbuf</span> <span class="token operator">*</span>m<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">rte_mempool</span> <span class="token operator">*</span>mbuf_pool<span class="token punctuation">,</span>
+		  bool legacy_ol_flags<span class="token punctuation">,</span> <span class="token class-name">uint16_t</span> slot_idx<span class="token punctuation">,</span> bool is_async<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+
+    <span class="token comment">// ...省略</span>
+
+	buf_addr <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_addr<span class="token punctuation">;</span>
+	buf_iova <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_iova<span class="token punctuation">;</span>
+	buf_len <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_len<span class="token punctuation">;</span>
+	buf_offset <span class="token operator">=</span> hdr_remain<span class="token punctuation">;</span>
+	buf_avail <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_len <span class="token operator">-</span> hdr_remain<span class="token punctuation">;</span>
+
+	<span class="token function">PRINT_PACKET</span><span class="token punctuation">(</span>dev<span class="token punctuation">,</span>
+			<span class="token punctuation">(</span><span class="token class-name">uintptr_t</span><span class="token punctuation">)</span><span class="token punctuation">(</span>buf_addr <span class="token operator">+</span> buf_offset<span class="token punctuation">)</span><span class="token punctuation">,</span>
+			<span class="token punctuation">(</span><span class="token class-name">uint32_t</span><span class="token punctuation">)</span>buf_avail<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	mbuf_offset <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	mbuf_avail  <span class="token operator">=</span> m<span class="token operator">-></span>buf_len <span class="token operator">-</span> RTE_PKTMBUF_HEADROOM<span class="token punctuation">;</span>
+
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>is_async<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		pkts_info <span class="token operator">=</span> async<span class="token operator">-></span>pkts_info<span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">async_iter_initialize</span><span class="token punctuation">(</span>dev<span class="token punctuation">,</span> async<span class="token punctuation">)</span><span class="token punctuation">)</span>
+			<span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// buf_avail是Guest中网络包的剩余长度，mbuf_avail是当前mbuf中剩余的容量</span>
+        <span class="token comment">// 本次拷贝数据量是这两者的小值</span>
+		cpy_len <span class="token operator">=</span> <span class="token function">RTE_MIN</span><span class="token punctuation">(</span>buf_avail<span class="token punctuation">,</span> mbuf_avail<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 拷贝数据</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>is_async<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">async_fill_seg</span><span class="token punctuation">(</span>dev<span class="token punctuation">,</span> vq<span class="token punctuation">,</span> cur<span class="token punctuation">,</span> mbuf_offset<span class="token punctuation">,</span>
+					   buf_iova <span class="token operator">+</span> buf_offset<span class="token punctuation">,</span> cpy_len<span class="token punctuation">,</span> false<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+				<span class="token keyword">goto</span> error<span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">likely</span><span class="token punctuation">(</span>hdr <span class="token operator">&amp;&amp;</span> cur <span class="token operator">==</span> m<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">rte_memcpy</span><span class="token punctuation">(</span><span class="token function">rte_pktmbuf_mtod_offset</span><span class="token punctuation">(</span>cur<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">,</span> mbuf_offset<span class="token punctuation">)</span><span class="token punctuation">,</span>
+				<span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token class-name">uintptr_t</span><span class="token punctuation">)</span><span class="token punctuation">(</span>buf_addr <span class="token operator">+</span> buf_offset<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+				cpy_len<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">sync_fill_seg</span><span class="token punctuation">(</span>dev<span class="token punctuation">,</span> vq<span class="token punctuation">,</span> cur<span class="token punctuation">,</span> mbuf_offset<span class="token punctuation">,</span>
+				      buf_addr <span class="token operator">+</span> buf_offset<span class="token punctuation">,</span>
+				      buf_iova <span class="token operator">+</span> buf_offset<span class="token punctuation">,</span> cpy_len<span class="token punctuation">,</span> false<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+
+        <span class="token comment">// 计算拷贝后的结果</span>
+		mbuf_avail  <span class="token operator">-=</span> cpy_len<span class="token punctuation">;</span>
+		mbuf_offset <span class="token operator">+=</span> cpy_len<span class="token punctuation">;</span>
+		buf_avail <span class="token operator">-=</span> cpy_len<span class="token punctuation">;</span>
+		buf_offset <span class="token operator">+=</span> cpy_len<span class="token punctuation">;</span>
+
+		<span class="token comment">/* This buf reaches to its end, get the next one */</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>buf_avail <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// 如果Guest里的数据都拷贝完了，直接break循环</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">++</span>vec_idx <span class="token operator">>=</span> nr_vec<span class="token punctuation">)</span>
+				<span class="token keyword">break</span><span class="token punctuation">;</span>
+
+			buf_addr <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_addr<span class="token punctuation">;</span>
+			buf_iova <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_iova<span class="token punctuation">;</span>
+			buf_len <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_len<span class="token punctuation">;</span>
+
+			buf_offset <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+			buf_avail  <span class="token operator">=</span> buf_len<span class="token punctuation">;</span>
+
+			<span class="token function">PRINT_PACKET</span><span class="token punctuation">(</span>dev<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token class-name">uintptr_t</span><span class="token punctuation">)</span>buf_addr<span class="token punctuation">,</span>
+					<span class="token punctuation">(</span><span class="token class-name">uint32_t</span><span class="token punctuation">)</span>buf_avail<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+
+		<span class="token comment">/*
+		 * This mbuf reaches to its end, get a new one
+		 * to hold more data.
+		 */</span>
+        <span class="token comment">// 拷贝未结束，但是mbuf空间用完了，需要重新申请一个新的mbuf</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>mbuf_avail <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			cur <span class="token operator">=</span> <span class="token function">rte_pktmbuf_alloc</span><span class="token punctuation">(</span>mbuf_pool<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 申请新的mbuf失败了，打印第一条日志，跳到error退出</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">unlikely</span><span class="token punctuation">(</span>cur <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token function">VHOST_LOG_DATA</span><span class="token punctuation">(</span>dev<span class="token operator">-></span>ifname<span class="token punctuation">,</span> ERR<span class="token punctuation">,</span>
+					<span class="token string">"failed to allocate memory for mbuf.\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+				<span class="token keyword">goto</span> error<span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+
+			prev<span class="token operator">-></span>next <span class="token operator">=</span> cur<span class="token punctuation">;</span>
+			prev<span class="token operator">-></span>data_len <span class="token operator">=</span> mbuf_offset<span class="token punctuation">;</span>
+			m<span class="token operator">-></span>nb_segs <span class="token operator">+=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+			m<span class="token operator">-></span>pkt_len <span class="token operator">+=</span> mbuf_offset<span class="token punctuation">;</span>
+			prev <span class="token operator">=</span> cur<span class="token punctuation">;</span>
+
+			mbuf_offset <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+			mbuf_avail  <span class="token operator">=</span> cur<span class="token operator">-></span>buf_len <span class="token operator">-</span> RTE_PKTMBUF_HEADROOM<span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+    <span class="token comment">// ...省略</span>
+error<span class="token operator">:</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>is_async<span class="token punctuation">)</span>
+		<span class="token function">async_iter_cancel</span><span class="token punctuation">(</span>async<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>从代码里可以看到确实是内存池不够用了，但是只有在Guest里数据包很大，超过我们预设的MTU的时候才会出现，什么时候Guest会发送超过MTU大小的包到网卡呢？很容易想到的一个点就是各种的Offload，特别是和网卡相关的分包Offload。于是就找了一台业务机器的现场看了一下网卡的特性开启情况：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># ethtool -k eth0</span>
+Features <span class="token keyword">for</span> eth0:
+rx-checksumming: on <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+tx-checksumming: on
+        tx-checksum-ipv4: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-checksum-ip-generic: on
+        tx-checksum-ipv6: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-checksum-fcoe-crc: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-checksum-sctp: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+scatter-gather: on
+        tx-scatter-gather: on
+        tx-scatter-gather-fraglist: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+tcp-segmentation-offload: off
+        tx-tcp-segmentation: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-tcp-ecn-segmentation: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-tcp6-segmentation: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+udp-fragmentation-offload: on
+generic-segmentation-offload: on
+generic-receive-offload: on
+<span class="token comment"># ...省略</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>再找一台没有问题的机器：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># ethtool -k eth0</span>
+Features <span class="token keyword">for</span> eth0:
+rx-checksumming: on <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+tx-checksumming: on
+        tx-checksum-ipv4: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-checksum-ip-generic: on
+        tx-checksum-ipv6: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-checksum-fcoe-crc: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-checksum-sctp: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+scatter-gather: on
+        tx-scatter-gather: on
+        tx-scatter-gather-fraglist: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+tcp-segmentation-offload: off
+        tx-tcp-segmentation: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-tcp-ecn-segmentation: off <span class="token punctuation">[</span>requested on<span class="token punctuation">]</span>
+        tx-tcp-mangleid-segmentation: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-tcp6-segmentation: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+generic-segmentation-offload: on
+<span class="token comment"># ...省略</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>发现像TSO这种常用的Offload特性都关了，但是出问题的机器，比没出问题的机器，多了一个特性<code>udp-fragmentation-offload: on</code>，这个特性就是<code>UFO</code>，和TSO类似，TSO是TCP的offload，而UFO是UDP的offload，既然这里有不同，那是不是出问题里有应用会发送大的UDP包呢？再尝试抓包看下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># tcpdump -i eth0 udp</span>
+tcpdump: verbose output suppressed, use <span class="token parameter variable">-v</span> or <span class="token parameter variable">-vv</span> <span class="token keyword">for</span> full protocol decode
+listening on eth0, link-type EN10MB <span class="token punctuation">(</span>Ethernet<span class="token punctuation">)</span>, capture size <span class="token number">65535</span> bytes
+<span class="token number">17</span>:55:43.880517 IP localhost.29784 <span class="token operator">></span> <span class="token number">192.168</span>.100.111.8333: UDP, length <span class="token number">9082</span>
+<span class="token number">17</span>:55:43.880526 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.880528 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.880539 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.880541 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.880542 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.880543 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.881681 IP localhost.29784 <span class="token operator">></span> <span class="token number">192.168</span>.100.111.8333: UDP, length <span class="token number">9076</span>
+<span class="token number">17</span>:55:43.881684 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.881686 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.881687 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.881689 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.881690 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.881692 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.882214 IP localhost.17670 <span class="token operator">></span> <span class="token number">192.168</span>.100.1.domain: <span class="token number">4442</span>+ PTR? <span class="token number">192.168</span>.100.1.in-addr.arpa. <span class="token punctuation">(</span><span class="token number">42</span><span class="token punctuation">)</span>
+<span class="token number">17</span>:55:43.882341 IP <span class="token number">192.168</span>.100.1.domain <span class="token operator">></span> localhost.17670: <span class="token number">4442</span> NXDomain <span class="token number">0</span>/1/0 <span class="token punctuation">(</span><span class="token number">119</span><span class="token punctuation">)</span>
+<span class="token number">17</span>:55:43.882828 IP localhost.29784 <span class="token operator">></span> <span class="token number">192.168</span>.100.111.8333: UDP, length <span class="token number">9046</span>
+<span class="token number">17</span>:55:43.882835 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.882837 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.882850 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.882852 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.882853 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.882854 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>没错，除了DNS的请求之外，业务还会发送一些超过9000长度的UDP包，这些UDP包会占用预期外的mbuf资源，知道了这个问题，那就尝试把ufo特性关闭一下看看效果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># ethtoo -K eth0 ufo off</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>关闭UFO之后，观察一段时间，虚拟机的网络恢复正常了。随后我们在测试环境也通过iperf复现了问题，便于后续的验证。</p>
+<p>关闭UFO临时解决问题之余，又抛出来一个新的问题，为啥之前之前灰度的机器为什么没有出现同样的问题？为什么没有问题的机器里<code>udp-fragmentation-offload: on</code>这个特性直接消失了？</p>
+<p>通过一些搜索，找到了答案，来着内核的官方<a href="https://www.kernel.org/doc/html/latest/networking/segmentation-offloads.html">文档: Segmentation Offloads</a>：</p>
+<blockquote><p>UDP Fragmentation Offload<br>UDP fragmentation offload allows a device to fragment an oversized UDP datagram into multiple IPv4 fragments. Many of the requirements for UDP fragmentation offload are the same as TSO. However the IPv4 ID for fragments should not increment as a single IPv4 datagram is fragmented.</p>
+<p>UFO is deprecated: modern kernels will no longer generate UFO skbs, but can still receive them from tuntap and similar devices. Offload of UDP-based tunnel protocols is still supported.</p>
+</blockquote>
+
+<p>原来UFO已经被废弃了，现代内核不会再发送大的UFO skbs，但是仍然允许从tuntap等类似设备上接收这些包。再看一下这俩机器的内核版本：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment">#uname -r</span>
+<span class="token number">3.10</span>.0-514.el7.x86_64<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment">#uname -r</span>
+<span class="token number">5.14</span>.0-284.25.1.el9_2.x86_64<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>确实差了不少。</p>
+<p>最后呢，解决办法是将虚拟机的网卡配置调整了一下，修改成了：</p>
+<pre class="line-numbers language-markup" data-language="markup"><code class="language-markup"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>interface</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>vhostuser<span class="token punctuation">'</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>mac</span> <span class="token attr-name">address</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>&#123;&#123;.MACAddress&#125;&#125;<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>source</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>unix<span class="token punctuation">'</span></span> <span class="token attr-name">path</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>&#123;&#123;.VhostPath&#125;&#125;<span class="token punctuation">'</span></span> <span class="token attr-name">mode</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>server<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>model</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>virtio<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>driver</span> <span class="token attr-name">queues</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>16<span class="token punctuation">'</span></span> <span class="token attr-name">rx_queue_size</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>1024<span class="token punctuation">'</span></span> <span class="token attr-name">tx_queue_size</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>1024<span class="token punctuation">'</span></span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>host</span> <span class="token attr-name">tso4</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">tso6</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">ufo</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">ecn</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">mrg_rxbuf</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>guest</span> <span class="token attr-name">tso4</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">tso6</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">ufo</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">ecn</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>driver</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>interface</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其实TSO这个特性是在DPDK里关闭的，但是因为已经上线了不少业务，UFO在DPDK里关闭的话，会影响老虚拟机的热迁移，因此还是在qemu这侧关闭吧。</p>
+]]></content>
+      <categories>
+        <category>Linux Kernel</category>
+      </categories>
+      <tags>
+        <tag>DPDK</tag>
+        <tag>virtio</tag>
+        <tag>UFO</tag>
+      </tags>
+  </entry>
 </search>
