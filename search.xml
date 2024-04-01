@@ -5207,6 +5207,24 @@ log<span class="token punctuation">.</span><span class="token function">Println<
       </tags>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2014/11/20/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="http://hexo.io/">Hexo</a>! This is your very first post. Check <a href="http://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="http://hexo.io/docs/troubleshooting.html">trobuleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo new <span class="token string">"My New Post"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>More info: <a href="http://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo server<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>More info: <a href="http://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo generate<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>More info: <a href="http://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo deploy<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>More info: <a href="http://hexo.io/docs/deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>如何在一秒之内丢弃1000万个网络数据包？</title>
     <url>/2019/03/10/how-to-drop-10-million-packets-per-second/</url>
     <content><![CDATA[<p>偶然看到一篇cloudflare的博客<a href="https://blog.cloudflare.com/how-to-drop-10-million-packets/">How to drop 10 million packets per second</a>，如何实现单核情况下一秒钟丢弃1000万个数据包，原文循序渐进，从最简单的用户态丢弃到使用非常新的技术XDP，逐步将单核丢包性能提升到10mpps，很有意思，网上也没有看到原文的中文版本，所以这里顺便翻译一下，看看cloudflare是如何处理类似的情况的。<span id="more"></span></p>
@@ -5390,24 +5408,6 @@ filter parent ffff: protocol <span class="token function">ip</span> pref <span c
       </tags>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2014/11/20/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="http://hexo.io/">Hexo</a>! This is your very first post. Check <a href="http://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="http://hexo.io/docs/troubleshooting.html">trobuleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo new <span class="token string">"My New Post"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="http://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo server<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="http://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo generate<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="http://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo deploy<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="http://hexo.io/docs/deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>实现一个Kubernetes的身份认证代理服务</title>
     <url>/2022/03/20/implement-a-k8s-authenticating-proxy/</url>
     <content><![CDATA[<p>最近接到一个需求：把K8s的认证和授权体系，整合到我们内部的系统中，使得我们内部系统的用户，可以无缝的直接访问K8s集群，同时也需要限制好用户对应namespace的权限。</p>
@@ -5498,61 +5498,6 @@ filter parent ffff: protocol <span class="token function">ip</span> pref <span c
         <tag>authenticating-proxy</tag>
         <tag>kubectl token</tag>
         <tag>RBAC</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>lspci命令输出的一些解释</title>
-    <url>/2019/11/03/interpreting-the-output-of-lspci/</url>
-    <content><![CDATA[<p>最近一段时间在折腾虚拟化，想把SR-IOV硬件直通给用起来，所以免不了要利用<code>lspci</code>这个工具，用来查看当前系统连接的所有PCI&#x2F;PCIe设备。其实之前也有用到过，也有一些不理解的地方，只是当时无脑跟着文档设置，也就没多关心了，这次需要好好的理解一下相关的概念什么的。</p>
-<p>首先很简单，看看不加参数直接调用<code>lspci</code>命令的输出结果，下面的是我笔记本上的输出：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">00:00.0 Host bridge: Intel Corporation Broadwell-U Host Bridge <span class="token parameter variable">-OPI</span> <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
-00:02.0 VGA compatible controller: Intel Corporation HD Graphics <span class="token number">5500</span> <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
-00:03.0 Audio device: Intel Corporation Broadwell-U Audio Controller <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
-00:04.0 Signal processing controller: Intel Corporation Broadwell-U Processor Thermal Subsystem <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
-00:14.0 USB controller: Intel Corporation Wildcat Point-LP USB xHCI Controller <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
-00:16.0 Communication controller: Intel Corporation Wildcat Point-LP MEI Controller <span class="token comment">#1 (rev 03)</span>
-00:19.0 Ethernet controller: Intel Corporation Ethernet Connection <span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span> I218-LM <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
-00:1b.0 Audio device: Intel Corporation Wildcat Point-LP High Definition Audio Controller <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
-00:1c.0 PCI bridge: Intel Corporation Wildcat Point-LP PCI Express Root Port <span class="token comment">#1 (rev e3)</span>
-00:1c.3 PCI bridge: Intel Corporation Wildcat Point-LP PCI Express Root Port <span class="token comment">#4 (rev e3)</span>
-00:1c.4 PCI bridge: Intel Corporation Wildcat Point-LP PCI Express Root Port <span class="token comment">#5 (rev e3)</span>
-00:1d.0 USB controller: Intel Corporation Wildcat Point-LP USB EHCI Controller <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
-00:1f.0 ISA bridge: Intel Corporation Wildcat Point-LP LPC Controller <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
-00:1f.2 SATA controller: Intel Corporation Wildcat Point-LP SATA Controller <span class="token punctuation">[</span>AHCI Mode<span class="token punctuation">]</span> <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
-00:1f.3 SMBus: Intel Corporation Wildcat Point-LP SMBus Controller <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
-01:00.0 SD Host controller: O2 Micro, Inc. SD/MMC Card Reader Controller <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
-02:00.0 Network controller: Intel Corporation Wireless <span class="token number">7265</span> <span class="token punctuation">(</span>rev <span class="token number">59</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<span id="more"></span>
-<p>首先让人不好理解的地方就是最左边的一系列编号类似<code>00:19.0</code>这些，毕竟右边的设备名字供应商什么的还是很容易看懂的。那么最左边的这些编号代表什么意思呢？</p>
-<p>在PCI或者说PCIe里，每个设备有三个编号：总线编号(Bus Number)、设备编号（Device Number）和功能编号（Function Number），那么对应上面的<code>00:19.0</code>来说：这个设备的BusNumber是<code>00</code>，DeviceNumber是<code>19</code>，FunctionNumber是<code>0</code>，需要说明的是这三个都是16进制表示，有些配置里需要填十进制数的，需要做下转换。</p>
-<p>其实呢，在linux里还有一个编号，叫做DomainNumber，不过上面的输出中没有，因为都是0，所以就忽略了，理论上，一个Segment可以有256个Bus，每个Bus可以有32个Device，每个Device可以有8个Function，在一些场景下，比如设备特别多，是会有多个Domain的，在硬件层面对应多个PCI Segment，在这种情况下，或者使用<code>lspci -D</code>命令，输出就会带上DomainNumber，比如我们一台服务器的输出:</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">0002:e8:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
-0004:48:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
-0004:49:00.0 Serial Attached SCSI controller: LSI Logic / Symbios Logic SAS3008 PCI-Express Fusion-MPT SAS-3 <span class="token punctuation">(</span>rev 02<span class="token punctuation">)</span>
-0005:00:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
-0006:08:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
-0007:40:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
-0007:41:00.0 VGA compatible controller: ----- Co., Ltd. <span class="token punctuation">[</span>iBMC Intelligent Management system chip w/VGA support<span class="token punctuation">]</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
-000a:10:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
-000c:20:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
-000d:30:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>在前面多了一列，多出来的就是DomainNumber了。</p>
-<p>明白了前面的编号之后，还有一个疑问，就是<code>lspci</code>命令是怎么能知道<code>00:19.0</code>这个设备就是个<code>Ethernet controller</code>，并且是<code>Intel Corporation Ethernet Connection (3) I218-LM (rev 03)</code>的呢？<br>这时可以使用<code>lspci -nn</code>命令，附加上原始的信息：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">..</span>.
-00:19.0 Ethernet controller <span class="token punctuation">[</span>0200<span class="token punctuation">]</span>: Intel Corporation Ethernet Connection <span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span> I218-LM <span class="token punctuation">[</span><span class="token number">8086</span>:15a2<span class="token punctuation">]</span> <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
-<span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-<p>这里只用我笔记本的网卡举例了，可以看到和上面不同的是多了两个方括号括起来的编号，其中前面的<code>[0200]</code>表示了当前设备的DeviceClass，也就是设备类型，而后面的<code>[8086:15a2]</code>代表的就是设备的VendorID和DeviceID，<code>lspci</code>命令会默认尝试读取<code>/usr/share/hwdata/pci.ids.gz</code>和<code>/usr/share/hwdata/pci.ids</code>文件，利用DeviceClass、VendorID:DeviceID去匹配相应的设备，这个设备清单是由<a href="https://pci-ids.ucw.cz/">https://pci-ids.ucw.cz/</a>维护的，我们也可以直接去网站上去查询。</p>
-<p>直接登录网站，可以查询到DeviceClass前两位<code>02</code>是一个<code>Network controller</code>，而后两位<code>00</code>表示这个设备是一个<code>Ethernet controller</code>，而<code>8086</code>这个VendorID，代码供应商是<code>Intel Corporation</code>（话说还真是应景啊，作为8086的创始者用8086这个ID），而DeviceID为<code>15a2</code>的设备为<code>Ethernet Connection (3) I218-LM</code>，组合一下，就和lspci的输出一致了。</p>
-<p>具体到如何读取DeviceClass和VendorID:DeviceID，这里就不说了，可以参考一下后面的链接，简单来说，PCI总线上每个设备，都会对应一段内存地址，这个地址可以根据设备的编号直接计算出来，加上偏移量，就可以读到这些数据了。</p>
-<p>参考：</p>
-<ol>
-<li>Interpreting the output of lspci: <a href="https://diego.assencio.com/?index=649b7a71b35fc7ad41e03b6d0e825f07">https://diego.assencio.com/?index=649b7a71b35fc7ad41e03b6d0e825f07</a></li>
-<li>深入PCI与PCIe之一：硬件篇: <a href="https://zhuanlan.zhihu.com/p/26172972">https://zhuanlan.zhihu.com/p/26172972</a></li>
-<li>深入PCI与PCIe之二：软件篇: <a href="https://zhuanlan.zhihu.com/p/26244141">https://zhuanlan.zhihu.com/p/26244141</a></li>
-</ol>
-]]></content>
-      <tags>
-        <tag>LSPCI</tag>
       </tags>
   </entry>
   <entry>
@@ -5651,6 +5596,165 @@ Interface:    eth0, via: LLDP, RID: <span class="token number">1</span>, Time: <
         <tag>X722</tag>
         <tag>i40e</tag>
         <tag>LLDP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>lspci命令输出的一些解释</title>
+    <url>/2019/11/03/interpreting-the-output-of-lspci/</url>
+    <content><![CDATA[<p>最近一段时间在折腾虚拟化，想把SR-IOV硬件直通给用起来，所以免不了要利用<code>lspci</code>这个工具，用来查看当前系统连接的所有PCI&#x2F;PCIe设备。其实之前也有用到过，也有一些不理解的地方，只是当时无脑跟着文档设置，也就没多关心了，这次需要好好的理解一下相关的概念什么的。</p>
+<p>首先很简单，看看不加参数直接调用<code>lspci</code>命令的输出结果，下面的是我笔记本上的输出：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">00:00.0 Host bridge: Intel Corporation Broadwell-U Host Bridge <span class="token parameter variable">-OPI</span> <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
+00:02.0 VGA compatible controller: Intel Corporation HD Graphics <span class="token number">5500</span> <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
+00:03.0 Audio device: Intel Corporation Broadwell-U Audio Controller <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
+00:04.0 Signal processing controller: Intel Corporation Broadwell-U Processor Thermal Subsystem <span class="token punctuation">(</span>rev 09<span class="token punctuation">)</span>
+00:14.0 USB controller: Intel Corporation Wildcat Point-LP USB xHCI Controller <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
+00:16.0 Communication controller: Intel Corporation Wildcat Point-LP MEI Controller <span class="token comment">#1 (rev 03)</span>
+00:19.0 Ethernet controller: Intel Corporation Ethernet Connection <span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span> I218-LM <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
+00:1b.0 Audio device: Intel Corporation Wildcat Point-LP High Definition Audio Controller <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
+00:1c.0 PCI bridge: Intel Corporation Wildcat Point-LP PCI Express Root Port <span class="token comment">#1 (rev e3)</span>
+00:1c.3 PCI bridge: Intel Corporation Wildcat Point-LP PCI Express Root Port <span class="token comment">#4 (rev e3)</span>
+00:1c.4 PCI bridge: Intel Corporation Wildcat Point-LP PCI Express Root Port <span class="token comment">#5 (rev e3)</span>
+00:1d.0 USB controller: Intel Corporation Wildcat Point-LP USB EHCI Controller <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
+00:1f.0 ISA bridge: Intel Corporation Wildcat Point-LP LPC Controller <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
+00:1f.2 SATA controller: Intel Corporation Wildcat Point-LP SATA Controller <span class="token punctuation">[</span>AHCI Mode<span class="token punctuation">]</span> <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
+00:1f.3 SMBus: Intel Corporation Wildcat Point-LP SMBus Controller <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
+01:00.0 SD Host controller: O2 Micro, Inc. SD/MMC Card Reader Controller <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
+02:00.0 Network controller: Intel Corporation Wireless <span class="token number">7265</span> <span class="token punctuation">(</span>rev <span class="token number">59</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span id="more"></span>
+<p>首先让人不好理解的地方就是最左边的一系列编号类似<code>00:19.0</code>这些，毕竟右边的设备名字供应商什么的还是很容易看懂的。那么最左边的这些编号代表什么意思呢？</p>
+<p>在PCI或者说PCIe里，每个设备有三个编号：总线编号(Bus Number)、设备编号（Device Number）和功能编号（Function Number），那么对应上面的<code>00:19.0</code>来说：这个设备的BusNumber是<code>00</code>，DeviceNumber是<code>19</code>，FunctionNumber是<code>0</code>，需要说明的是这三个都是16进制表示，有些配置里需要填十进制数的，需要做下转换。</p>
+<p>其实呢，在linux里还有一个编号，叫做DomainNumber，不过上面的输出中没有，因为都是0，所以就忽略了，理论上，一个Segment可以有256个Bus，每个Bus可以有32个Device，每个Device可以有8个Function，在一些场景下，比如设备特别多，是会有多个Domain的，在硬件层面对应多个PCI Segment，在这种情况下，或者使用<code>lspci -D</code>命令，输出就会带上DomainNumber，比如我们一台服务器的输出:</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">0002:e8:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
+0004:48:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
+0004:49:00.0 Serial Attached SCSI controller: LSI Logic / Symbios Logic SAS3008 PCI-Express Fusion-MPT SAS-3 <span class="token punctuation">(</span>rev 02<span class="token punctuation">)</span>
+0005:00:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
+0006:08:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
+0007:40:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
+0007:41:00.0 VGA compatible controller: ----- Co., Ltd. <span class="token punctuation">[</span>iBMC Intelligent Management system chip w/VGA support<span class="token punctuation">]</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
+000a:10:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
+000c:20:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span>
+000d:30:00.0 PCI bridge: ----- Co., Ltd. Device <span class="token number">1610</span> <span class="token punctuation">(</span>rev 01<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在前面多了一列，多出来的就是DomainNumber了。</p>
+<p>明白了前面的编号之后，还有一个疑问，就是<code>lspci</code>命令是怎么能知道<code>00:19.0</code>这个设备就是个<code>Ethernet controller</code>，并且是<code>Intel Corporation Ethernet Connection (3) I218-LM (rev 03)</code>的呢？<br>这时可以使用<code>lspci -nn</code>命令，附加上原始的信息：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">..</span>.
+00:19.0 Ethernet controller <span class="token punctuation">[</span>0200<span class="token punctuation">]</span>: Intel Corporation Ethernet Connection <span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span> I218-LM <span class="token punctuation">[</span><span class="token number">8086</span>:15a2<span class="token punctuation">]</span> <span class="token punctuation">(</span>rev 03<span class="token punctuation">)</span>
+<span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>这里只用我笔记本的网卡举例了，可以看到和上面不同的是多了两个方括号括起来的编号，其中前面的<code>[0200]</code>表示了当前设备的DeviceClass，也就是设备类型，而后面的<code>[8086:15a2]</code>代表的就是设备的VendorID和DeviceID，<code>lspci</code>命令会默认尝试读取<code>/usr/share/hwdata/pci.ids.gz</code>和<code>/usr/share/hwdata/pci.ids</code>文件，利用DeviceClass、VendorID:DeviceID去匹配相应的设备，这个设备清单是由<a href="https://pci-ids.ucw.cz/">https://pci-ids.ucw.cz/</a>维护的，我们也可以直接去网站上去查询。</p>
+<p>直接登录网站，可以查询到DeviceClass前两位<code>02</code>是一个<code>Network controller</code>，而后两位<code>00</code>表示这个设备是一个<code>Ethernet controller</code>，而<code>8086</code>这个VendorID，代码供应商是<code>Intel Corporation</code>（话说还真是应景啊，作为8086的创始者用8086这个ID），而DeviceID为<code>15a2</code>的设备为<code>Ethernet Connection (3) I218-LM</code>，组合一下，就和lspci的输出一致了。</p>
+<p>具体到如何读取DeviceClass和VendorID:DeviceID，这里就不说了，可以参考一下后面的链接，简单来说，PCI总线上每个设备，都会对应一段内存地址，这个地址可以根据设备的编号直接计算出来，加上偏移量，就可以读到这些数据了。</p>
+<p>参考：</p>
+<ol>
+<li>Interpreting the output of lspci: <a href="https://diego.assencio.com/?index=649b7a71b35fc7ad41e03b6d0e825f07">https://diego.assencio.com/?index=649b7a71b35fc7ad41e03b6d0e825f07</a></li>
+<li>深入PCI与PCIe之一：硬件篇: <a href="https://zhuanlan.zhihu.com/p/26172972">https://zhuanlan.zhihu.com/p/26172972</a></li>
+<li>深入PCI与PCIe之二：软件篇: <a href="https://zhuanlan.zhihu.com/p/26244141">https://zhuanlan.zhihu.com/p/26244141</a></li>
+</ol>
+]]></content>
+      <tags>
+        <tag>LSPCI</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>京东云主机试用</title>
+    <url>/2017/01/03/jd-vm/</url>
+    <content><![CDATA[<p>前几天拿到了京东云的代金券，87块钱，刚好能用一台1核1G的虚拟机一个月，外加1M的外网带宽。于是就随便试用了一下，感觉还行，说说感受吧。</p>
+<p>首先是镜像，目前镜像不是很多，主要集中在CentOS、Ubuntu、Windows。CentOS还是比较全的，从5.8到7.3都有，Ubuntu只用12.04和14.04两个LTS版本，Windows还是有一些的，不过没怎么关注。除了官方的镜像，还有安全镜像，不过我不敢选。不知道里面加了些啥～<br>我是直接选了一个CentOS 7.3的镜像。</p>
+<p>然后是硬盘，87块钱的代金券只能用系统盘了，30G，数据盘不够加了，也没加。</p>
+<p>目前网络只有非BGP可选，创建好了之后我是分配了一个电信的IP，地域是华北，不知道会不会有其他运营商可以选择了。带宽也只能选择1M，不然钱不够了～</p>
+<p>创建的过程还是挺简单的，我是绑了SSH key，可以直接ssh登录了。</p>
+<p>进去了主机看了一下系统信息：</p>
+<span id="more"></span>
+
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@c0refast ~<span class="token punctuation">]</span><span class="token comment"># cat /proc/cpuinfo </span>
+processor	<span class="token builtin class-name">:</span> <span class="token number">0</span>
+vendor_id	<span class="token builtin class-name">:</span> GenuineIntel
+cpu family	<span class="token builtin class-name">:</span> <span class="token number">6</span>
+model		<span class="token builtin class-name">:</span> <span class="token number">60</span>
+model name	<span class="token builtin class-name">:</span> Intel Core Processor <span class="token punctuation">(</span>Haswell<span class="token punctuation">)</span>
+stepping	<span class="token builtin class-name">:</span> <span class="token number">1</span>
+microcode	<span class="token builtin class-name">:</span> 0x1
+cpu MHz		<span class="token builtin class-name">:</span> <span class="token number">2299.998</span>
+cache size	<span class="token builtin class-name">:</span> <span class="token number">4096</span> KB
+physical <span class="token function">id</span>	<span class="token builtin class-name">:</span> <span class="token number">0</span>
+siblings	<span class="token builtin class-name">:</span> <span class="token number">1</span>
+core <span class="token function">id</span>		<span class="token builtin class-name">:</span> <span class="token number">0</span>
+cpu cores	<span class="token builtin class-name">:</span> <span class="token number">1</span>
+apicid		<span class="token builtin class-name">:</span> <span class="token number">0</span>
+initial apicid	<span class="token builtin class-name">:</span> <span class="token number">0</span>
+fpu		<span class="token builtin class-name">:</span> <span class="token function">yes</span>
+fpu_exception	<span class="token builtin class-name">:</span> <span class="token function">yes</span>
+cpuid level	<span class="token builtin class-name">:</span> <span class="token number">13</span>
+wp		<span class="token builtin class-name">:</span> <span class="token function">yes</span>
+flags		<span class="token builtin class-name">:</span> fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl eagerfpu pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm fsgsbase bmi1 avx2 smep bmi2 erms invpcid xsaveopt
+bogomips	<span class="token builtin class-name">:</span> <span class="token number">4599.99</span>
+clflush size	<span class="token builtin class-name">:</span> <span class="token number">64</span>
+cache_alignment	<span class="token builtin class-name">:</span> <span class="token number">64</span>
+address sizes	<span class="token builtin class-name">:</span> <span class="token number">46</span> bits physical, <span class="token number">48</span> bits virtual
+power management:
+
+<span class="token punctuation">[</span>root@c0refast ~<span class="token punctuation">]</span><span class="token comment"># dmidecode </span>
+<span class="token comment"># dmidecode 3.0</span>
+Scanning /dev/mem <span class="token keyword">for</span> entry point.
+SMBIOS <span class="token number">2.4</span> present.
+<span class="token number">10</span> structures occupying <span class="token number">349</span> bytes.
+Table at 0x000F1E90.
+
+Handle 0x0000, DMI <span class="token builtin class-name">type</span> <span class="token number">0</span>, <span class="token number">24</span> bytes
+BIOS Information
+	Vendor: Seabios
+	Version: <span class="token number">0.5</span>.1
+	Release Date: 01/01/2011
+	Address: 0xE8000
+	Runtime Size: <span class="token number">96</span> kB
+	ROM Size: <span class="token number">64</span> kB
+	Characteristics:
+		BIOS characteristics not supported
+		Targeted content distribution is supported
+	BIOS Revision: <span class="token number">1.0</span>
+
+Handle 0x0100, DMI <span class="token builtin class-name">type</span> <span class="token number">1</span>, <span class="token number">27</span> bytes
+System Information
+	Manufacturer: Fedora Project
+	Product Name: OpenStack Nova
+	Version: <span class="token number">12.0</span>.0-1.el7
+	Serial Number: a05e03d4-2fd7-486c-915e-79fba898f4b7
+	UUID: 0025BF92-D0B0-4332-A200-180461344084
+	Wake-up Type: Power Switch
+	SKU Number: Not Specified
+	Family: Virtual Machine
+<span class="token punctuation">..</span>.
+<span class="token punctuation">[</span>root@c0refast ~<span class="token punctuation">]</span><span class="token comment"># virt-what </span>
+kvm<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>恩，看起来用的是OpenStack，主机CPU是Haswell，但是我也不知道是具体的哪个CPU了。</p>
+<p>然后就是跟着文档搭了个LNMP，然后在网站根目录dd了个大点的文件，测试一下网络怎么样了。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@c0refast ~<span class="token punctuation">]</span><span class="token comment"># dd if=/dev/zero of=test10G bs=1M count=10240</span>
+<span class="token number">10240</span>+0 records <span class="token keyword">in</span>
+<span class="token number">10240</span>+0 records out
+<span class="token number">10737418240</span> bytes <span class="token punctuation">(</span><span class="token number">11</span> GB<span class="token punctuation">)</span> copied, <span class="token number">26.8709</span> s, <span class="token number">400</span> MB/s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>磁盘的速度还是挺快的，不过dd顺序写一般raid也确实很快。也没有测试随机I&#x2F;O的性能了。</p>
+<p>在本地wget，发现1M的带宽，刚开始能跑到2,3M左右的速度，然后逐渐回落，最终在1M附近摆动，类似允许突发流量的效果，不知道京东的网络架构是什么样的，也不好猜后面是怎么实现的了。其实这样对于小文件来说，还是有优势的。后来又用了一个cli版本的speedtest脚本，是speedtest.net的python实现，跑了一下。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@c0refast ~<span class="token punctuation">]</span><span class="token comment"># ./speedtest-cli </span>
+Retrieving speedtest.net configuration<span class="token punctuation">..</span>.
+Testing from China Telecom <span class="token punctuation">(</span><span class="token number">36.110</span>.131.99<span class="token punctuation">)</span><span class="token punctuation">..</span>.
+Retrieving speedtest.net server list<span class="token punctuation">..</span>.
+Selecting best server based on ping<span class="token punctuation">..</span>.
+Hosted by Beijing Telecom <span class="token punctuation">(</span>Beijing<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token number">1.69</span> km<span class="token punctuation">]</span>: <span class="token number">51.8</span> ms
+Testing download speed<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>
+Download: <span class="token number">91.46</span> Mbit/s
+Testing upload speed<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>
+Upload: <span class="token number">1.70</span> Mbit/s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>下载差不多是100M带宽，基本算是没有限制吧。上传也算是1M带宽，没啥问题～</p>
+<p>技术上的说完了，说说产品吧～产品上感觉还是挺‘OpenStack’的，主机，网络，防火墙等等，和大多OpenStack产品差不多～<br>另外就是镜像有点少了，Linux只有Ubuntu和CentOS可选，感觉应该有更多选择，虽然大多数情况下这两个也足够了。<br>还有一些产品，云硬盘，数据库这些，也都没有测试，希望能有多点代金券，也好多测试一下。</p>
+<p>总体上，也许是因为京东云刚刚发展的原因吧，感觉整体还是比较‘原始’的，不过随着时间的推移，应该会越来越好吧～</p>
+]]></content>
+      <categories>
+        <category>日常折腾</category>
+      </categories>
+      <tags>
+        <tag>CentOS</tag>
+        <tag>京东云</tag>
+        <tag>虚拟机</tag>
+        <tag>LNMP</tag>
       </tags>
   </entry>
   <entry>
@@ -5774,110 +5878,6 @@ static int get_org_dstaddr(int sockfd, struct sockaddr_storage *orig_dst)&#123;
         <tag>SO_ORIGINAL_DST</tag>
         <tag>TPROXY</tag>
         <tag>IP_TRANSPARENT</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>京东云主机试用</title>
-    <url>/2017/01/03/jd-vm/</url>
-    <content><![CDATA[<p>前几天拿到了京东云的代金券，87块钱，刚好能用一台1核1G的虚拟机一个月，外加1M的外网带宽。于是就随便试用了一下，感觉还行，说说感受吧。</p>
-<p>首先是镜像，目前镜像不是很多，主要集中在CentOS、Ubuntu、Windows。CentOS还是比较全的，从5.8到7.3都有，Ubuntu只用12.04和14.04两个LTS版本，Windows还是有一些的，不过没怎么关注。除了官方的镜像，还有安全镜像，不过我不敢选。不知道里面加了些啥～<br>我是直接选了一个CentOS 7.3的镜像。</p>
-<p>然后是硬盘，87块钱的代金券只能用系统盘了，30G，数据盘不够加了，也没加。</p>
-<p>目前网络只有非BGP可选，创建好了之后我是分配了一个电信的IP，地域是华北，不知道会不会有其他运营商可以选择了。带宽也只能选择1M，不然钱不够了～</p>
-<p>创建的过程还是挺简单的，我是绑了SSH key，可以直接ssh登录了。</p>
-<p>进去了主机看了一下系统信息：</p>
-<span id="more"></span>
-
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@c0refast ~<span class="token punctuation">]</span><span class="token comment"># cat /proc/cpuinfo </span>
-processor	<span class="token builtin class-name">:</span> <span class="token number">0</span>
-vendor_id	<span class="token builtin class-name">:</span> GenuineIntel
-cpu family	<span class="token builtin class-name">:</span> <span class="token number">6</span>
-model		<span class="token builtin class-name">:</span> <span class="token number">60</span>
-model name	<span class="token builtin class-name">:</span> Intel Core Processor <span class="token punctuation">(</span>Haswell<span class="token punctuation">)</span>
-stepping	<span class="token builtin class-name">:</span> <span class="token number">1</span>
-microcode	<span class="token builtin class-name">:</span> 0x1
-cpu MHz		<span class="token builtin class-name">:</span> <span class="token number">2299.998</span>
-cache size	<span class="token builtin class-name">:</span> <span class="token number">4096</span> KB
-physical <span class="token function">id</span>	<span class="token builtin class-name">:</span> <span class="token number">0</span>
-siblings	<span class="token builtin class-name">:</span> <span class="token number">1</span>
-core <span class="token function">id</span>		<span class="token builtin class-name">:</span> <span class="token number">0</span>
-cpu cores	<span class="token builtin class-name">:</span> <span class="token number">1</span>
-apicid		<span class="token builtin class-name">:</span> <span class="token number">0</span>
-initial apicid	<span class="token builtin class-name">:</span> <span class="token number">0</span>
-fpu		<span class="token builtin class-name">:</span> <span class="token function">yes</span>
-fpu_exception	<span class="token builtin class-name">:</span> <span class="token function">yes</span>
-cpuid level	<span class="token builtin class-name">:</span> <span class="token number">13</span>
-wp		<span class="token builtin class-name">:</span> <span class="token function">yes</span>
-flags		<span class="token builtin class-name">:</span> fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl eagerfpu pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm fsgsbase bmi1 avx2 smep bmi2 erms invpcid xsaveopt
-bogomips	<span class="token builtin class-name">:</span> <span class="token number">4599.99</span>
-clflush size	<span class="token builtin class-name">:</span> <span class="token number">64</span>
-cache_alignment	<span class="token builtin class-name">:</span> <span class="token number">64</span>
-address sizes	<span class="token builtin class-name">:</span> <span class="token number">46</span> bits physical, <span class="token number">48</span> bits virtual
-power management:
-
-<span class="token punctuation">[</span>root@c0refast ~<span class="token punctuation">]</span><span class="token comment"># dmidecode </span>
-<span class="token comment"># dmidecode 3.0</span>
-Scanning /dev/mem <span class="token keyword">for</span> entry point.
-SMBIOS <span class="token number">2.4</span> present.
-<span class="token number">10</span> structures occupying <span class="token number">349</span> bytes.
-Table at 0x000F1E90.
-
-Handle 0x0000, DMI <span class="token builtin class-name">type</span> <span class="token number">0</span>, <span class="token number">24</span> bytes
-BIOS Information
-	Vendor: Seabios
-	Version: <span class="token number">0.5</span>.1
-	Release Date: 01/01/2011
-	Address: 0xE8000
-	Runtime Size: <span class="token number">96</span> kB
-	ROM Size: <span class="token number">64</span> kB
-	Characteristics:
-		BIOS characteristics not supported
-		Targeted content distribution is supported
-	BIOS Revision: <span class="token number">1.0</span>
-
-Handle 0x0100, DMI <span class="token builtin class-name">type</span> <span class="token number">1</span>, <span class="token number">27</span> bytes
-System Information
-	Manufacturer: Fedora Project
-	Product Name: OpenStack Nova
-	Version: <span class="token number">12.0</span>.0-1.el7
-	Serial Number: a05e03d4-2fd7-486c-915e-79fba898f4b7
-	UUID: 0025BF92-D0B0-4332-A200-180461344084
-	Wake-up Type: Power Switch
-	SKU Number: Not Specified
-	Family: Virtual Machine
-<span class="token punctuation">..</span>.
-<span class="token punctuation">[</span>root@c0refast ~<span class="token punctuation">]</span><span class="token comment"># virt-what </span>
-kvm<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>恩，看起来用的是OpenStack，主机CPU是Haswell，但是我也不知道是具体的哪个CPU了。</p>
-<p>然后就是跟着文档搭了个LNMP，然后在网站根目录dd了个大点的文件，测试一下网络怎么样了。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@c0refast ~<span class="token punctuation">]</span><span class="token comment"># dd if=/dev/zero of=test10G bs=1M count=10240</span>
-<span class="token number">10240</span>+0 records <span class="token keyword">in</span>
-<span class="token number">10240</span>+0 records out
-<span class="token number">10737418240</span> bytes <span class="token punctuation">(</span><span class="token number">11</span> GB<span class="token punctuation">)</span> copied, <span class="token number">26.8709</span> s, <span class="token number">400</span> MB/s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<p>磁盘的速度还是挺快的，不过dd顺序写一般raid也确实很快。也没有测试随机I&#x2F;O的性能了。</p>
-<p>在本地wget，发现1M的带宽，刚开始能跑到2,3M左右的速度，然后逐渐回落，最终在1M附近摆动，类似允许突发流量的效果，不知道京东的网络架构是什么样的，也不好猜后面是怎么实现的了。其实这样对于小文件来说，还是有优势的。后来又用了一个cli版本的speedtest脚本，是speedtest.net的python实现，跑了一下。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@c0refast ~<span class="token punctuation">]</span><span class="token comment"># ./speedtest-cli </span>
-Retrieving speedtest.net configuration<span class="token punctuation">..</span>.
-Testing from China Telecom <span class="token punctuation">(</span><span class="token number">36.110</span>.131.99<span class="token punctuation">)</span><span class="token punctuation">..</span>.
-Retrieving speedtest.net server list<span class="token punctuation">..</span>.
-Selecting best server based on ping<span class="token punctuation">..</span>.
-Hosted by Beijing Telecom <span class="token punctuation">(</span>Beijing<span class="token punctuation">)</span> <span class="token punctuation">[</span><span class="token number">1.69</span> km<span class="token punctuation">]</span>: <span class="token number">51.8</span> ms
-Testing download speed<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>
-Download: <span class="token number">91.46</span> Mbit/s
-Testing upload speed<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>
-Upload: <span class="token number">1.70</span> Mbit/s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>下载差不多是100M带宽，基本算是没有限制吧。上传也算是1M带宽，没啥问题～</p>
-<p>技术上的说完了，说说产品吧～产品上感觉还是挺‘OpenStack’的，主机，网络，防火墙等等，和大多OpenStack产品差不多～<br>另外就是镜像有点少了，Linux只有Ubuntu和CentOS可选，感觉应该有更多选择，虽然大多数情况下这两个也足够了。<br>还有一些产品，云硬盘，数据库这些，也都没有测试，希望能有多点代金券，也好多测试一下。</p>
-<p>总体上，也许是因为京东云刚刚发展的原因吧，感觉整体还是比较‘原始’的，不过随着时间的推移，应该会越来越好吧～</p>
-]]></content>
-      <categories>
-        <category>日常折腾</category>
-      </categories>
-      <tags>
-        <tag>CentOS</tag>
-        <tag>京东云</tag>
-        <tag>虚拟机</tag>
-        <tag>LNMP</tag>
       </tags>
   </entry>
   <entry>
@@ -6942,6 +6942,31 @@ Nov <span class="token number">29</span> <span class="token number">23</span>:32
       </tags>
   </entry>
   <entry>
+    <title>Libvirt domain的几种状态及转换关系</title>
+    <url>/2019/07/31/libvirt-vm-lifecycle/</url>
+    <content><![CDATA[<p>在Libvirt里，一个Domain是一个运行在虚拟机器上的操作系统的实例，它可以指一个运行着的虚拟机，或者用于启动虚拟机的配置。<br>那么，对于一个Domain而言，主要有哪些状态呢？，他们的转换关系是什么？可以参考文档<a href="https://wiki.libvirt.org/page/VM_lifecycle">VM lifecycle</a>。其中，状态主要包括以下：</p>
+<span id="more"></span>
+
+<p>Domain有以下状态:</p>
+<ol>
+<li>Undefined(未定义) - 基线状态。Libvirt不知道任何关于domain的信息，因为它还没有被创建。</li>
+<li>Defined or Stopped(已定义&#x2F;停止) - Domain已经被定义，但是不在运行状态，也被成为停止状态，只有持久性domain有这个状态，当非持久domain停止或者关机了，则它就不存在了。</li>
+<li>Running(运行中) - Domain已经被定义并且且启动了，无论是持久性domain还是非持久domain，任何处于该状态的 domain 都已经在主机的 hypervisor 中被执行了。</li>
+<li>Paused(暂停) - 在hypervisor上的该domain被挂起了，它的状态被暂存，直到被唤醒。对于domain自身而言，是无法知道自己处于该状态的，如果熟悉操作系统里的进程挂起状态的话，这个很类似。</li>
+<li>Saved(已保存) - 和暂停状态很像，只不过domain的状态被存储在持久存储中，而不是内存中，同样domain可以被恢复，并且并不知道自己处于这个状态。</li>
+</ol>
+<p>这些状态之间的转换关系，可以参考图：<br><img src="/images/Vm_lifecycle_graph.png"></p>
+<p>参考：</p>
+<ol>
+<li><a href="https://wiki.libvirt.org/page/VM_lifecycle">https://wiki.libvirt.org/page/VM_lifecycle</a></li>
+</ol>
+]]></content>
+      <tags>
+        <tag>libvirt</tag>
+        <tag>VM lifecycle</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Linux中的主设备号</title>
     <url>/2014/12/28/linux-devices/</url>
     <content><![CDATA[<p>由于工作中某个需求，需要使用Cgroups对某个进程的IO进行限制。所以，需要在Cgroup的blkio子系统中进行配置，我们限制的是读取磁盘的iops，所以，需要在blkio.throttle.write_iops_device中写入该限制。</p>
@@ -7015,31 +7040,6 @@ Block devices:
         <tag>Linux</tag>
         <tag>/dev/</tag>
         <tag>/proc/devices/</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Libvirt domain的几种状态及转换关系</title>
-    <url>/2019/07/31/libvirt-vm-lifecycle/</url>
-    <content><![CDATA[<p>在Libvirt里，一个Domain是一个运行在虚拟机器上的操作系统的实例，它可以指一个运行着的虚拟机，或者用于启动虚拟机的配置。<br>那么，对于一个Domain而言，主要有哪些状态呢？，他们的转换关系是什么？可以参考文档<a href="https://wiki.libvirt.org/page/VM_lifecycle">VM lifecycle</a>。其中，状态主要包括以下：</p>
-<span id="more"></span>
-
-<p>Domain有以下状态:</p>
-<ol>
-<li>Undefined(未定义) - 基线状态。Libvirt不知道任何关于domain的信息，因为它还没有被创建。</li>
-<li>Defined or Stopped(已定义&#x2F;停止) - Domain已经被定义，但是不在运行状态，也被成为停止状态，只有持久性domain有这个状态，当非持久domain停止或者关机了，则它就不存在了。</li>
-<li>Running(运行中) - Domain已经被定义并且且启动了，无论是持久性domain还是非持久domain，任何处于该状态的 domain 都已经在主机的 hypervisor 中被执行了。</li>
-<li>Paused(暂停) - 在hypervisor上的该domain被挂起了，它的状态被暂存，直到被唤醒。对于domain自身而言，是无法知道自己处于该状态的，如果熟悉操作系统里的进程挂起状态的话，这个很类似。</li>
-<li>Saved(已保存) - 和暂停状态很像，只不过domain的状态被存储在持久存储中，而不是内存中，同样domain可以被恢复，并且并不知道自己处于这个状态。</li>
-</ol>
-<p>这些状态之间的转换关系，可以参考图：<br><img src="/images/Vm_lifecycle_graph.png"></p>
-<p>参考：</p>
-<ol>
-<li><a href="https://wiki.libvirt.org/page/VM_lifecycle">https://wiki.libvirt.org/page/VM_lifecycle</a></li>
-</ol>
-]]></content>
-      <tags>
-        <tag>libvirt</tag>
-        <tag>VM lifecycle</tag>
       </tags>
   </entry>
   <entry>
@@ -11388,261 +11388,6 @@ Transfer rate:          1737.32 [Kbytes&#x2F;sec] received<span aria-hidden="tru
       </tags>
   </entry>
   <entry>
-    <title>Harbor折腾升级记</title>
-    <url>/2018/08/07/upgrade-harbor/</url>
-    <content><![CDATA[<p>Harbor是vmware中国开发的一款企业级的DockerRegistry服务器，我们内部也是有搭建了一个Harbor，但是版本是0.5，对于当前最新的release版本1.5.2而言已经太老了，确实也有一些问题，比如不支持多级的镜像名称，某些情况下会触发bug导致panic。</p>
-<p>所以需要升级一下，既然考虑升级了，就干脆升级到最新的版本1.5.2了。首先说一下目前的Harbor，官方提供的离线安装包里，默认是本地启动一个MySQL，将Harbor需要的一些数据存储在本地的MySQL中的，这个是不能接受的，所以在之前的部署中，是使用了外部的一个MySQL，同样，registry的存储在线上也是使用了共享存储，保证可用性。</p>
-<p>不过Harbor的1.5.2版本对于0.5版本变化还是比较大的，首先是增加了adminserver这个角色，将所有的配置都拿到adminserver中存储，ui组件通过http请求定期向adminserver请求当前最新的配置信息，其次是数据库结构，新版本和旧版本相比数据库结构发生了很大的变化。</p>
-<p>对于升级操作，官方也提供了解决方案，可以参考<a href="https://github.com/vmware/harbor/blob/d1f2b2311f98e1d3bb00203af01e87ce7f0087de/docs/migration_guide.md">migration_guide</a>进行升级，升级工具的镜像官方也是提供了，但是这其中存在一个问题，就是升级工具依赖本地的MySQL，也就是说，这个工具只能工作在MySQL是Harbor离线安装包启动的情况下，如果使用了外部的MySQL，这个升级工具就无法直接使用了。</p>
-<p>所以呢，最终还是需要去看一下官方的升级工具是如何实现的，看能否通过其他办法手动升级，于是就花了点时间看了一下代码，找到了最后的实现方式，具体的代码在<a href="https://github.com/vmware/harbor/tree/d1f2b2311f98e1d3bb00203af01e87ce7f0087de/tools/migration/db/alembic/mysql">alembic&#x2F;mysql</a>这个目录下，原理也很简单，官方使用了一个Python的工具<code>alembic</code>实现了数据库结构的版本管理。</p>
-<p>手动运行数据库升级，首先需要安装<code>alembic</code>工具，可以通过<code>pip</code>安装，或者针对不同的发行版找对应的软件包。</p>
-<p>下面开始操作：</p>
-<span id="more"></span>
-<p>目录下有一个<code>alembic.tpl</code>文件，这个文件是alembic运行所需要配置文件的模板，我们可以通过<code>source alembic.tpl &gt; alembic.ini</code>实例化一个配置文件，然后打开配置文件，可以看到最关键的两个配置：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">script_location <span class="token operator">=</span> /harbor-migration/db/alembic/mysql/migration_harbor
-sqlalchemy.url <span class="token operator">=</span> mysql://:@localhost:3306/registry?unix_socket<span class="token operator">=</span>/var/run/mysqld/mysqld.sock<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<p>分别是脚本路径和连接MySQL的地址，默认的在工具镜像中脚本路径是放在<code>/harbor-migration/</code>这个目录下，这个需要根据机器上的情况修改到对应目录，然后<code>sqlalchemy.url</code>配置也很明显，需要修改为实际线上数据库的连接地址。</p>
-<p>修改完成后，就可以调用<code>alembic</code>工具升级数据库了:</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">export</span> <span class="token assign-left variable">PYTHONPATH</span><span class="token operator">=</span><span class="token variable"><span class="token variable">`</span><span class="token builtin class-name">pwd</span><span class="token variable">`</span></span>    <span class="token comment"># 添加PYTHONPATH</span>
-alembic <span class="token parameter variable">-c</span> alembic.ini current <span class="token comment"># 查看当前数据库版本</span>
-alembic <span class="token parameter variable">-c</span> alembic.ini upgrade <span class="token number">1.5</span>  <span class="token comment"># 升级到1.5版本</span>
-alembic <span class="token parameter variable">-c</span> alembic.ini current <span class="token comment"># 查看升级后数据库版本</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>脚本运行完成后，数据库结构就能升级成功了。需要提醒的是，建议先导出线上数据到单独的一个数据库中做一下测试，确认没有问题后再进行线上操作，另外，做好备份！</p>
-<p>数据库升级完成，该升级各个组建了，新版Harbor的配置也有比较大的变化，默认安装时会有个<code>harbor.cfg</code>，官方也提供了一个工具去做<code>harbor.cfg</code>的版本迁移，但是我们也不需要通过这个工具了，在安装时，<code>prepare</code>脚本会根据<code>harbor.cfg</code>文件生成对应组件所需要的配置和env文件，所以我们直接使用新版的默认<code>harbor.cfg</code>生成配置文件，再对比老的配置文件，然后直接修改最后的配置文件保持一致。</p>
-<p>需要注意的是，新版Harbor大部分的配置都集中在<code>common/config/adminserver/env</code>文件中，而adminserver是老版本没有的角色，老版本大部分配置都集中在<code>common/config/ui/app.conf</code>和<code>common/config/ui/env</code>中。<br>最终我们采取的办法是，先用默认配置生成一份实际的配置文件，特别是<code>common/config/adminserver/env</code>文件，再根据老版本的线上配置文件比对，直接修改生成后的配置文件而不是<code>harbor.cfg</code>，相当于新旧配置文件做一次merge。等配置文件准备完成，直接调用<code>docker-compose up -d</code>以新配置文件启动Harbor容器。</p>
-<p>总体来说，升级还是很顺利的，具体的步骤如下：<br>    1. 备份数据库<br>    2. 停止并删除老Harbor容器<br>    3. 通过alembic升级数据库版本<br>    4. 通过docker-compose up -d启动新版本Harbor容器</p>
-<p>升级过程很顺利，容器启动后工作正常，但是遇到一个小问题，就是Harbor管理平台里显示的日志的时间差了8个小时，这个其实是在容器化中很容易遇到的一个情况，容器中的时区和宿主机不一致，毕竟我们在中国嘛，还是应该用北京时间，虽然问题挺常见，但是在Harbor解决这个问题还是费了一些力气。<br>正常的思路，就是修改一下<code>docker-compose.yaml</code>将<code>/usr/share/zoneinfo/Asia/Shanghai</code>挂载到<code>/etc/localtime</code>，这样容器内部时区就正确了。测试了一下，确实如此，在容器中执行date命令已经可以正常返回正确的时间。<br>但是日志的时间并没有变化，这个确实令人费解，由于Harbor的镜像相关日志都是写到数据库中的，所以还是需要看一下具体插入日志的代码，看是否能够发现一些问题：</p>
-<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// 需要记录日志的地方调用dao.AddAccessLog插入日志，可以看到OpTime就是time.Now()。</span>
-<span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-	<span class="token keyword">if</span> err <span class="token operator">=</span> dao<span class="token punctuation">.</span><span class="token function">AddAccessLog</span><span class="token punctuation">(</span>
-		models<span class="token punctuation">.</span>AccessLog<span class="token punctuation">&#123;</span>
-			Username<span class="token punctuation">:</span>  p<span class="token punctuation">.</span>SecurityCtx<span class="token punctuation">.</span><span class="token function">GetUsername</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-			ProjectID<span class="token punctuation">:</span> projectID<span class="token punctuation">,</span>
-			RepoName<span class="token punctuation">:</span>  pro<span class="token punctuation">.</span>Name <span class="token operator">+</span> <span class="token string">"/"</span><span class="token punctuation">,</span>
-			RepoTag<span class="token punctuation">:</span>   <span class="token string">"N/A"</span><span class="token punctuation">,</span>
-			Operation<span class="token punctuation">:</span> <span class="token string">"create"</span><span class="token punctuation">,</span>
-			OpTime<span class="token punctuation">:</span>    time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-		<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
-		log<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"failed to add access log: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
-	<span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-
-<span class="token comment">// AddAccessLog具体实现</span>
-<span class="token comment">// AddAccessLog persists the access logs</span>
-<span class="token keyword">func</span> <span class="token function">AddAccessLog</span><span class="token punctuation">(</span>accessLog models<span class="token punctuation">.</span>AccessLog<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
-	<span class="token comment">// the max length of username in database is 255, replace the last</span>
-	<span class="token comment">// three charaters with "..." if the length is greater than 256</span>
-	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>accessLog<span class="token punctuation">.</span>Username<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">255</span> <span class="token punctuation">&#123;</span>
-		accessLog<span class="token punctuation">.</span>Username <span class="token operator">=</span> accessLog<span class="token punctuation">.</span>Username<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">252</span><span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token string">"..."</span>
-	<span class="token punctuation">&#125;</span>
-
-	o <span class="token operator">:=</span> <span class="token function">GetOrmer</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-	<span class="token boolean">_</span><span class="token punctuation">,</span> err <span class="token operator">:=</span> o<span class="token punctuation">.</span><span class="token function">Insert</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>accessLog<span class="token punctuation">)</span>
-	<span class="token keyword">return</span> err
-<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>看到这边，基本可以确定和ORM实现没有关系了，因为用的mysql驱动是<code>go-sql-driver/mysql</code>，而这个驱动可以单独设置时区，而且驱动默认的时区是<code>UTC</code>，所以需要修改，具体可以参考<a href="https://github.com/go-sql-driver/mysql#loc">mysql#loc</a>，于是问题就变成了如何将这个参数传到驱动了，继续看代码：</p>
-<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// NewMySQL returns an instance of mysql</span>
-<span class="token keyword">func</span> <span class="token function">NewMySQL</span><span class="token punctuation">(</span>host<span class="token punctuation">,</span> port<span class="token punctuation">,</span> usr<span class="token punctuation">,</span> pwd<span class="token punctuation">,</span> database <span class="token builtin">string</span><span class="token punctuation">)</span> Database <span class="token punctuation">&#123;</span>
-	<span class="token keyword">return</span> <span class="token operator">&amp;</span>mysql<span class="token punctuation">&#123;</span>
-		host<span class="token punctuation">:</span>     host<span class="token punctuation">,</span>
-		port<span class="token punctuation">:</span>     port<span class="token punctuation">,</span>
-		usr<span class="token punctuation">:</span>      usr<span class="token punctuation">,</span>
-		pwd<span class="token punctuation">:</span>      pwd<span class="token punctuation">,</span>
-		database<span class="token punctuation">:</span> database<span class="token punctuation">,</span>
-	<span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span>
-
-<span class="token comment">// Register registers MySQL as the underlying database used</span>
-<span class="token keyword">func</span> <span class="token punctuation">(</span>m <span class="token operator">*</span>mysql<span class="token punctuation">)</span> <span class="token function">Register</span><span class="token punctuation">(</span>alias <span class="token operator">...</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
-
-	<span class="token keyword">if</span> err <span class="token operator">:=</span> utils<span class="token punctuation">.</span><span class="token function">TestTCPConn</span><span class="token punctuation">(</span>m<span class="token punctuation">.</span>host<span class="token operator">+</span><span class="token string">":"</span><span class="token operator">+</span>m<span class="token punctuation">.</span>port<span class="token punctuation">,</span> <span class="token number">60</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
-		<span class="token keyword">return</span> err
-	<span class="token punctuation">&#125;</span>
-
-	<span class="token keyword">if</span> err <span class="token operator">:=</span> orm<span class="token punctuation">.</span><span class="token function">RegisterDriver</span><span class="token punctuation">(</span><span class="token string">"mysql"</span><span class="token punctuation">,</span> orm<span class="token punctuation">.</span>DRMySQL<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
-		<span class="token keyword">return</span> err
-	<span class="token punctuation">&#125;</span>
-
-	an <span class="token operator">:=</span> <span class="token string">"default"</span>
-	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>alias<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
-		an <span class="token operator">=</span> alias<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
-	<span class="token punctuation">&#125;</span>
-    <span class="token comment">// 关键代码！根据配置组合一个MySQL URI，初始化驱动。</span>
-	conn <span class="token operator">:=</span> fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"%s:%s@tcp(%s:%s)/%s"</span><span class="token punctuation">,</span> m<span class="token punctuation">.</span>usr<span class="token punctuation">,</span>
-		m<span class="token punctuation">.</span>pwd<span class="token punctuation">,</span> m<span class="token punctuation">.</span>host<span class="token punctuation">,</span> m<span class="token punctuation">.</span>port<span class="token punctuation">,</span> m<span class="token punctuation">.</span>database<span class="token punctuation">)</span>
-	<span class="token keyword">return</span> orm<span class="token punctuation">.</span><span class="token function">RegisterDataBase</span><span class="token punctuation">(</span>an<span class="token punctuation">,</span> <span class="token string">"mysql"</span><span class="token punctuation">,</span> conn<span class="token punctuation">)</span>
-<span class="token punctuation">&#125;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>也就是说，可以在database名字后面加上<code>?loc=Local</code>来让MySQL驱动使用本地的时区设置。于是就简单了，直接修改<code>common/config/adminserver/env</code>文件，将其中的<code>MYSQL_DATABASE=registry</code>改成<code>MYSQL_DATABASE=registry?loc=Local</code>就行了，虽然有点hack，但是，起码不用修改代码再编译打镜像了吧～<br>一波hack操作，重启对应组建，启动完成，果然时区也正常了～</p>
-<p>PS：Harbor 1.6为了保持和Clair数据库的一致性，将MySQL迁移到PostgreSQL了，所以上面的做法可能就不适用于1.6了，由于暂时内部还没有PostgreSQL的支持，也不需要Clair，所以短期内没有考虑升级1.6，等哪天需要升级了，再看相应的解决方案吧。</p>
-]]></content>
-      <categories>
-        <category>Kubernetes</category>
-      </categories>
-      <tags>
-        <tag>Harbor升级</tag>
-        <tag>Harbor Migration</tag>
-        <tag>alembic</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Unrecoverable Read Error Rate (URE)</title>
-    <url>/2016/12/04/ure/</url>
-    <content><![CDATA[<p>很久之前，对于磁盘的了解，就知道一个很关键的指标MTBF，即相邻两次故障之间的平均工作时间，也称为平均故障间隔，这个值越大越好，越大意味着硬盘更不容易坏。<br>对于RAID，也是很相信，觉得大多数情况下，使用RAID，就能保证数据的安全性，几乎不会有数据丢失的风险。</p>
-<p>突然的，读到一篇对于RAID 6的文章 <a href="http://www.zdnet.com/article/why-raid-6-stops-working-in-2019/">Why RAID 6 stops working in 2019</a>，这是一篇2010年的文章，很遗憾到目前才读到。<br>这篇文章里提到了一个指标，叫URE，也就是Unrecoverable Read Error Rate，不可恢复读取错误，一般普通的桌面级别硬盘，这个指标的值为1 × 10^-14，意味着每读取10^14bit的数据，就有可能产生1bit的错误。</p>
-<p>问题在于，这个错误是无法被检测和修复的。10^14bit，大约相当于12.5TB的数据，也就是说，每读取12.5TB的数据，就有可能产生一个错误的读取。而对于目前现在硬盘的容量越来越大，4TB，6TB硬盘的价格越来越低，这种现象会越来越严重。</p>
-<p>在RAID5中，当整个集群有一块硬盘出现损坏需要替换时，需要进行重建，重建时，需要读取其他硬盘的数据，计算出替换的那块硬盘的数据，在重建过程中，除了需要考虑重建的时间之外，还要考虑的就是URE的影响，如果集群的容量足够大，比如超过10TB，那么，其实是有很大的概率出现读取错误的，而一旦读取出错，则RAID的重建就会失败，基本也就意味着，数据能恢复的可能性变得相当低了。所以在使用RAID5时，就需要考虑重建的问题。</p>
-<p>不过对于企业级的硬盘，URE普遍能做到1×10^-15，就意味着大约能读取125TB的数据，容量有比较大的提升，对于SSD，这个值会更加优秀，有些SSD能达到1×10^-17甚至1×10^-18，能提供更好的数据安全性。</p>
-<p>所以，稳定点的话，还是RAID10吧。</p>
-]]></content>
-      <tags>
-        <tag>RAID</tag>
-        <tag>URE</tag>
-        <tag>MTBF</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>WSL2 Ubuntu 21.04原生Docker无法运行的问题</title>
-    <url>/2021/10/23/wsl2-ubuntu-dockerd-iptables-problem/</url>
-    <content><![CDATA[<p>最近为了用上更新一点的软件，把运行在WSL2里的Ubuntu 20.04 LTS版本升级了一下，升级到了Ubuntu 21.04，升级之后呢，大部分功能都正常（当然本身我用的功能也不会很多），但是确实也遇到了个小问题：Docker Daemon无法启动了。这个确实很影响工作，因为很多时候写完代码会本地打个镜像运行一下，简单测试一下代码是否有问题。但是升级之后，突然发现Docker用不了了。</p>
-<p>具体点呢，是会报一个<code>iptables</code>相关的错误：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>
-WARN<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:05.864210900+08:00<span class="token punctuation">]</span> Your kernel does not support cgroup blkio throttle.write_iops_device
-INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:05.864538700+08:00<span class="token punctuation">]</span> Loading containers: start.
-INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:06.135353300+08:00<span class="token punctuation">]</span> stopping event stream following graceful <span class="token function">shutdown</span>  <span class="token assign-left variable">error</span><span class="token operator">=</span><span class="token string">"context canceled"</span> <span class="token assign-left variable">module</span><span class="token operator">=</span>libcontainerd <span class="token assign-left variable">namespace</span><span class="token operator">=</span>moby
-INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:06.135542600+08:00<span class="token punctuation">]</span> stopping healthcheck following graceful <span class="token function">shutdown</span>  <span class="token assign-left variable">module</span><span class="token operator">=</span>libcontainerd
-INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:06.136083800+08:00<span class="token punctuation">]</span> stopping event stream following graceful <span class="token function">shutdown</span>  <span class="token assign-left variable">error</span><span class="token operator">=</span><span class="token string">"context canceled"</span> <span class="token assign-left variable">module</span><span class="token operator">=</span>libcontainerd <span class="token assign-left variable">namespace</span><span class="token operator">=</span>plugins.moby
-failed to start daemon: Error initializing network controller: error obtaining controller instance: unable to <span class="token function">add</span> <span class="token builtin class-name">return</span> rule <span class="token keyword">in</span> DOCKER-ISOLATION-STAGE-1 chain:  <span class="token punctuation">(</span>iptables failed: iptables <span class="token parameter variable">--wait</span> <span class="token parameter variable">-A</span> DOCKER-ISOLATION-STAGE-1 <span class="token parameter variable">-j</span> RETURN: iptables v1.8.7 <span class="token punctuation">(</span>nf_tables<span class="token punctuation">)</span>:  RULE_APPEND failed <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>: rule <span class="token keyword">in</span> chain DOCKER-ISOLATION-STAGE-1
- <span class="token punctuation">(</span>exit status <span class="token number">4</span><span class="token punctuation">))</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<span id="more"></span>
-<p>提示<code>iptables</code> <code>RULE_APPEND</code>也不知道是咋回事，不过想着估计和Docker的网络有点关系，还好一般情况下编译和打镜像也不需要网络隔离，所以前几天就临时在启动Docker Daemon时加上<code>--iptables=false</code>参数，不加载iptables规则，当然<code>docker builld</code>和<code>docker run</code>的时候也得加上<code>--network=host</code>使用不隔离的Host网络，勉强扛了几天。</p>
-<p>今天有时间就查了查资料，一开始查到的大部分都是让用<code>Docker Desktop for Windows</code>并且开启WSL2后端，然后在WSL2里直接用Windows的<code>docker.exe</code>命令。这个方案我没试过，不过说实话即使能用，也觉得有点太别扭了。想想还是放弃了。于是继续找资料。终于找到一篇<a href="https://patrickwu.space/2021/03/09/wsl-solution-to-native-docker-daemon-not-starting/">文章</a>，文章里贴了个Ubuntu的<a href="https://bugs.launchpad.net/ubuntu-wsl-integration/+bug/1908539">bug report</a>，大致意思是说：</p>
-<blockquote><p>Ubuntu从20.10开始，将默认的防火墙切换到了<code>nftables</code>实现，这个实现需要5.8版本及以上的内核，而微软在WSL2中提供的5.4版本的内核没有<code>nftables</code>，所以导致iptables功能出错了。</p>
-</blockquote>
-
-<p>解决方法也简单，直接把<code>iptables</code>实现切换回<code>iptables-legacy</code>就好了：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">~<span class="token punctuation">]</span><span class="token comment"># sudo update-alternatives --config iptables</span>
-There are <span class="token number">2</span> choices <span class="token keyword">for</span> the alternative iptables <span class="token punctuation">(</span>providing /usr/sbin/iptables<span class="token punctuation">)</span>.
-
-  Selection    Path                       Priority   Status
-------------------------------------------------------------
-* <span class="token number">0</span>            /usr/sbin/iptables-nft      <span class="token number">20</span>        auto mode
-  <span class="token number">1</span>            /usr/sbin/iptables-legacy   <span class="token number">10</span>        manual mode
-  <span class="token number">2</span>            /usr/sbin/iptables-nft      <span class="token number">20</span>        manual mode
-
-Press <span class="token operator">&lt;</span>enter<span class="token operator">></span> to keep the current choice<span class="token punctuation">[</span>*<span class="token punctuation">]</span>, or <span class="token builtin class-name">type</span> selection number: <span class="token number">1</span>
-update-alternatives: using /usr/sbin/iptables-legacy to provide /usr/sbin/iptables <span class="token punctuation">(</span>iptables<span class="token punctuation">)</span> <span class="token keyword">in</span> manual mode<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>切换回去之后，果然就好了，又可以开心的用原生docker了。</p>
-<p>最后我又看了眼现在跑的内核：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">~<span class="token punctuation">]</span><span class="token comment"># uname -r</span>
-<span class="token number">5.10</span>.60.1-microsoft-standard-WSL2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-<p>因为升级了Windows11，现在内核已经到了5.10了。按理不应该有问题才对。除非微软编译内核的时候没开相关的选项？</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">~<span class="token punctuation">]</span><span class="token comment"># zcat /proc/config.gz |grep NF_TABLES</span>
-<span class="token assign-left variable">CONFIG_NF_TABLES</span><span class="token operator">=</span>y
-<span class="token assign-left variable">CONFIG_NF_TABLES_INET</span><span class="token operator">=</span>y
-<span class="token comment"># CONFIG_NF_TABLES_NETDEV is not set</span>
-<span class="token assign-left variable">CONFIG_NF_TABLES_IPV4</span><span class="token operator">=</span>y
-<span class="token comment"># CONFIG_NF_TABLES_ARP is not set</span>
-<span class="token assign-left variable">CONFIG_NF_TABLES_IPV6</span><span class="token operator">=</span>y
-<span class="token comment"># CONFIG_NF_TABLES_BRIDGE is not set</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>确实有些选项没打开，而且WSL的github issue里似乎也有类似的讨论：<a href="https://github.com/microsoft/WSL/issues/6655">#6655</a>、<a href="https://github.com/microsoft/WSL/issues/6044">#6044</a>、<a href="https://github.com/microsoft/WSL/issues/4165">#4165</a>。不过微软似乎也没想着解决，不过问题不大啦，也没到要自己编译内核的地步。能用就行~</p>
-]]></content>
-      <categories>
-        <category>日常折腾</category>
-      </categories>
-      <tags>
-        <tag>iptables</tag>
-        <tag>WSL2</tag>
-        <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>在XFS文件系统上实现针对目录的配额限制</title>
-    <url>/2017/02/20/xfs-per-directory-quota/</url>
-    <content><![CDATA[<p>在Linux系统上支持对用户以及对用户组设置磁盘配额的文件系统很多，常见的Ext4文件系统对配额的支持就很好，但是如果要针对某个目录进行配额限制的话，就比较难办了。<br>至少在Ext4文件系统上并没有什么好的办法，有些比较hack的办法，比如使用 <code>fuse</code> 挂载一个目录，并在这个文件系统里实现目录级别的配额，虽然可以实现，但是问题就是 <code>fuse</code> 的性能要差很多。<br>然后调查了一下XFS，XFS文件系统支持 <code>Project Quota</code> 功能，通过该特性，可以支持目录级别的配额限制。<span id="more"></span></p>
-<p>要使用<code>Project Quota</code> 功能，需要在挂载时指定<code>-o prjquota</code>参数，并且这个参数还不能和<code>usrquota</code>、<code>grpquota</code>一起使用，也就是说，如果开启<code>Project Quota</code>就无法使用针对用户和用户组的配额限制。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># mount -o prjquota /dev/sdb1 /tmp/data0</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<p>这里把<code>/dev/sdb1</code>挂载到<code>/tmp/data0</code>。挂载之后，就可以使用<code>xfs_quota</code> 工具对该分区的quota进行操作了。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># xfs_quota -x -c report /tmp/data0</span>
-Project <span class="token function">quota</span> on /tmp/data0 <span class="token punctuation">(</span>/dev/sdb1<span class="token punctuation">)</span>
-                               Blocks
-Project ID       Used       Soft       Hard    Warn/Grace
----------- --------------------------------------------------
-<span class="token comment">#0                  4          0          0     00 [--------]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>使用<code>-x</code>开启专家模式，<code>-c report</code>执行report命令，后面跟上挂载点，这样可以列出所有的Project ID以及对应的配额使用情况。</p>
-<p>如果要限制某个目录的配额，首先需要保证该目录存在，然后调用<code>project</code>命令创建一个project，再调用<code>limit</code>命令设置配额。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># mkdir /tmp/data0/100MB   # 创建对应文件夹</span>
-<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># xfs_quota -x -c 'project -s -p /tmp/data0/100MB 1'   # 为文件夹分配ProjectID 1</span>
-Setting up project <span class="token number">1</span> <span class="token punctuation">(</span>path /tmp/data0/100MB<span class="token punctuation">)</span><span class="token punctuation">..</span>.
-Processed <span class="token number">1</span> <span class="token punctuation">(</span>/etc/projects and cmdline<span class="token punctuation">)</span> paths <span class="token keyword">for</span> project <span class="token number">1</span> with recursion depth infinite <span class="token punctuation">(</span>-1<span class="token punctuation">)</span>.
-<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># xfs_quota -x -c 'limit -p bhard=100m 1' /tmp/data0/  # 限制Project 1的配额为100MB</span>
-<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># xfs_quota -x -c report /tmp/data0</span>
-Project <span class="token function">quota</span> on /tmp/data0 <span class="token punctuation">(</span>/dev/sdb1<span class="token punctuation">)</span>
-                               Blocks
-Project ID       Used       Soft       Hard    Warn/Grace
----------- --------------------------------------------------
-<span class="token comment">#0                  4          0          0     00 [--------]</span>
-<span class="token comment">#1                  0          0     102400     00 [--------]</span>
-
-<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># dd if=/dev/zero of=/tmp/data0/100MB/test bs=1M count=101</span>
-dd: error writing <span class="token string">'/tmp/data0/100MB/test'</span><span class="token builtin class-name">:</span> No space left on device  <span class="token comment"># 配额生效</span>
-<span class="token number">101</span>+0 records <span class="token keyword">in</span>
-<span class="token number">100</span>+0 records out
-<span class="token number">104857600</span> bytes <span class="token punctuation">(</span><span class="token number">105</span> MB, <span class="token number">100</span> MiB<span class="token punctuation">)</span> copied, <span class="token number">1.01324</span> s, <span class="token number">103</span> MB/s
-
-<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># xfs_quota -x -c report /tmp/data0                       </span>
-Project <span class="token function">quota</span> on /tmp/data0 <span class="token punctuation">(</span>/dev/sdb1<span class="token punctuation">)</span>
-                               Blocks                     
-Project ID       Used       Soft       Hard    Warn/Grace     
----------- -------------------------------------------------- 
-<span class="token comment">#0                  4          0          0     00 [--------]</span>
-<span class="token comment">#1             102400          0     102400     00 [--------]</span>
-
-<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># xfs_quota -c 'quota -p 1' /tmp/data0     #查询某个project的配额使用情况</span>
-Disk quotas <span class="token keyword">for</span> Project <span class="token comment">#1 (1)</span>
-Filesystem              Blocks      Quota      Limit  Warn/Time      Mounted on
-/dev/loop0              <span class="token number">102400</span>          <span class="token number">0</span>     <span class="token number">102400</span>   00 <span class="token punctuation">[</span>--------<span class="token punctuation">]</span> /tmp/data0
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>看到已经设置好对应的配额。并能正常工作。其中需要注意的。使用 <code>-c quota</code> 查询某个project的配额使用情况时，只有当使用的空间超过0才会被正常显示，否则是无法通过该方式查询的。</p>
-<p>上面的测试是在本地的机器上做测试的，所有的功能都能正常工作，但是在线上机器上做测试的时候，发现可以正常设置quota，并且quota也能正常生效，但是在调用 <code>report</code> 命令的时候，线上机器永远只会显示Project ID为0的<br>配额情况，而不会显示其他Project的配额，需要说明的是本地的系统是ArchLinx，使用4.9版本内核，线上系统使用CentOS 7，使用3.10的内核。因为内核版本不一样，不排除是内核版本导致的问题，但是也不能确定就是内核问题。</p>
-<p>于是决定看一下<code>xfs_quota</code>这个工具的代码，看一下 <code>report</code> 这个命令是如何实现的。<code>xfs_quota</code>这个工具属于<code>xfsprogs</code>这个包，所以在<code>https://www.kernel.org/pub/linux/utils/fs/xfs/xfsprogs/xfsprogs-4.9.0.tar.xz</code>下载了4.9版本的源代码。<br>发现在 <code>quota/report.c</code> 文件中，<code>report_mount</code>函数有这样一段代码：</p>
-<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
-	<span class="token keyword">if</span> <span class="token punctuation">(</span>flags <span class="token operator">&amp;</span> GETNEXTQUOTA_FLAG<span class="token punctuation">)</span>
-		cmd <span class="token operator">=</span> XFS_GETNEXTQUOTA<span class="token punctuation">;</span>
-	<span class="token keyword">else</span>
-		cmd <span class="token operator">=</span> XFS_GETQUOTA<span class="token punctuation">;</span>
-
-	<span class="token comment">/* Fall back silently if XFS_GETNEXTQUOTA fails, warn on XFS_GETQUOTA*/</span>
-	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">xfsquotactl</span><span class="token punctuation">(</span>cmd<span class="token punctuation">,</span> dev<span class="token punctuation">,</span> type<span class="token punctuation">,</span> id<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>d<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-		<span class="token keyword">if</span> <span class="token punctuation">(</span>errno <span class="token operator">!=</span> ENOENT <span class="token operator">&amp;&amp;</span> errno <span class="token operator">!=</span> ENOSYS <span class="token operator">&amp;&amp;</span> errno <span class="token operator">!=</span> ESRCH <span class="token operator">&amp;&amp;</span>
-		    cmd <span class="token operator">==</span> XFS_GETQUOTA<span class="token punctuation">)</span>
-			<span class="token function">perror</span><span class="token punctuation">(</span><span class="token string">"XFS_GETQUOTA"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-		<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
-	<span class="token punctuation">&#125;</span>
-<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>看到注释，尝试使用<code>XFS_GETNEXTQUOTA</code>操作失败后，自动fall back到<code>XFS_GETQUOTA</code>，会不会是这个问题？尝试一下，如果<code>XFS_GETNEXTQUOTA</code>失败，直接打印错误信息。<br>将代码修改成：</p>
-<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">xfsquotactl</span><span class="token punctuation">(</span>cmd<span class="token punctuation">,</span> dev<span class="token punctuation">,</span> type<span class="token punctuation">,</span> id<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>d<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-       <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"not support XFS_GETNEXTQUOTA\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token keyword">if</span> <span class="token punctuation">(</span>errno <span class="token operator">!=</span> ENOENT <span class="token operator">&amp;&amp;</span> errno <span class="token operator">!=</span> ENOSYS <span class="token operator">&amp;&amp;</span> errno <span class="token operator">!=</span> ESRCH <span class="token operator">&amp;&amp;</span>
-	    cmd <span class="token operator">==</span> XFS_GETQUOTA<span class="token punctuation">)</span>
-		<span class="token function">perror</span><span class="token punctuation">(</span><span class="token string">"XFS_GETQUOTA"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>编译后运行一下，果然在线上机器上打印出<code>not support XFS_GETNEXTQUOTA</code>，说明CentOS 7的3.10内核不支持<code>XFS_GETNEXTQUOTA</code>这个操作。</p>
-<p>然后就去翻了一下内核代码，发现了这个提交 <a href="https://git.kernel.org/cgit/linux/kernel/git/dgc/linux-xfs.git/commit/?id=296c24e26ee3af2dbfecb482e6bc9560bd34c455">wire up Q_XGETNEXTQUOTA &#x2F; get_nextdqblk</a>，这个操作应该是在Linux 4.6版本引入的，所以CentOS 7的3.10内核就不支持该操作了。<br>不过没有这个特性，也不会影响实际的Quota功能，所以线上可以正常使用。</p>
-]]></content>
-      <tags>
-        <tag>XFS</tag>
-        <tag>Directory Quota</tag>
-        <tag>Project Quota</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>一个UFO引发的惨案</title>
     <url>/2024/04/01/ufo-feature-caused-network-failure/</url>
     <content><![CDATA[<p>首先需要解释一下标题，原谅我当了一回标题党，此UFO不是<code>Unidentified flying object</code>，而是在网络中的一个Oflload卸载技术<code>UDP fragmentation offload</code>。事情的起因是这样的，我们最近尝试将线上的虚拟机，从基于网卡SR-IOV+直通的方案，切换到基于DPDK+vhost-user的方案，以换取热迁移的效率提升。</p>
@@ -11925,6 +11670,261 @@ listening on eth0, link-type EN10MB <span class="token punctuation">(</span>Ethe
         <tag>DPDK</tag>
         <tag>virtio</tag>
         <tag>UFO</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Harbor折腾升级记</title>
+    <url>/2018/08/07/upgrade-harbor/</url>
+    <content><![CDATA[<p>Harbor是vmware中国开发的一款企业级的DockerRegistry服务器，我们内部也是有搭建了一个Harbor，但是版本是0.5，对于当前最新的release版本1.5.2而言已经太老了，确实也有一些问题，比如不支持多级的镜像名称，某些情况下会触发bug导致panic。</p>
+<p>所以需要升级一下，既然考虑升级了，就干脆升级到最新的版本1.5.2了。首先说一下目前的Harbor，官方提供的离线安装包里，默认是本地启动一个MySQL，将Harbor需要的一些数据存储在本地的MySQL中的，这个是不能接受的，所以在之前的部署中，是使用了外部的一个MySQL，同样，registry的存储在线上也是使用了共享存储，保证可用性。</p>
+<p>不过Harbor的1.5.2版本对于0.5版本变化还是比较大的，首先是增加了adminserver这个角色，将所有的配置都拿到adminserver中存储，ui组件通过http请求定期向adminserver请求当前最新的配置信息，其次是数据库结构，新版本和旧版本相比数据库结构发生了很大的变化。</p>
+<p>对于升级操作，官方也提供了解决方案，可以参考<a href="https://github.com/vmware/harbor/blob/d1f2b2311f98e1d3bb00203af01e87ce7f0087de/docs/migration_guide.md">migration_guide</a>进行升级，升级工具的镜像官方也是提供了，但是这其中存在一个问题，就是升级工具依赖本地的MySQL，也就是说，这个工具只能工作在MySQL是Harbor离线安装包启动的情况下，如果使用了外部的MySQL，这个升级工具就无法直接使用了。</p>
+<p>所以呢，最终还是需要去看一下官方的升级工具是如何实现的，看能否通过其他办法手动升级，于是就花了点时间看了一下代码，找到了最后的实现方式，具体的代码在<a href="https://github.com/vmware/harbor/tree/d1f2b2311f98e1d3bb00203af01e87ce7f0087de/tools/migration/db/alembic/mysql">alembic&#x2F;mysql</a>这个目录下，原理也很简单，官方使用了一个Python的工具<code>alembic</code>实现了数据库结构的版本管理。</p>
+<p>手动运行数据库升级，首先需要安装<code>alembic</code>工具，可以通过<code>pip</code>安装，或者针对不同的发行版找对应的软件包。</p>
+<p>下面开始操作：</p>
+<span id="more"></span>
+<p>目录下有一个<code>alembic.tpl</code>文件，这个文件是alembic运行所需要配置文件的模板，我们可以通过<code>source alembic.tpl &gt; alembic.ini</code>实例化一个配置文件，然后打开配置文件，可以看到最关键的两个配置：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">script_location <span class="token operator">=</span> /harbor-migration/db/alembic/mysql/migration_harbor
+sqlalchemy.url <span class="token operator">=</span> mysql://:@localhost:3306/registry?unix_socket<span class="token operator">=</span>/var/run/mysqld/mysqld.sock<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>分别是脚本路径和连接MySQL的地址，默认的在工具镜像中脚本路径是放在<code>/harbor-migration/</code>这个目录下，这个需要根据机器上的情况修改到对应目录，然后<code>sqlalchemy.url</code>配置也很明显，需要修改为实际线上数据库的连接地址。</p>
+<p>修改完成后，就可以调用<code>alembic</code>工具升级数据库了:</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">export</span> <span class="token assign-left variable">PYTHONPATH</span><span class="token operator">=</span><span class="token variable"><span class="token variable">`</span><span class="token builtin class-name">pwd</span><span class="token variable">`</span></span>    <span class="token comment"># 添加PYTHONPATH</span>
+alembic <span class="token parameter variable">-c</span> alembic.ini current <span class="token comment"># 查看当前数据库版本</span>
+alembic <span class="token parameter variable">-c</span> alembic.ini upgrade <span class="token number">1.5</span>  <span class="token comment"># 升级到1.5版本</span>
+alembic <span class="token parameter variable">-c</span> alembic.ini current <span class="token comment"># 查看升级后数据库版本</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>脚本运行完成后，数据库结构就能升级成功了。需要提醒的是，建议先导出线上数据到单独的一个数据库中做一下测试，确认没有问题后再进行线上操作，另外，做好备份！</p>
+<p>数据库升级完成，该升级各个组建了，新版Harbor的配置也有比较大的变化，默认安装时会有个<code>harbor.cfg</code>，官方也提供了一个工具去做<code>harbor.cfg</code>的版本迁移，但是我们也不需要通过这个工具了，在安装时，<code>prepare</code>脚本会根据<code>harbor.cfg</code>文件生成对应组件所需要的配置和env文件，所以我们直接使用新版的默认<code>harbor.cfg</code>生成配置文件，再对比老的配置文件，然后直接修改最后的配置文件保持一致。</p>
+<p>需要注意的是，新版Harbor大部分的配置都集中在<code>common/config/adminserver/env</code>文件中，而adminserver是老版本没有的角色，老版本大部分配置都集中在<code>common/config/ui/app.conf</code>和<code>common/config/ui/env</code>中。<br>最终我们采取的办法是，先用默认配置生成一份实际的配置文件，特别是<code>common/config/adminserver/env</code>文件，再根据老版本的线上配置文件比对，直接修改生成后的配置文件而不是<code>harbor.cfg</code>，相当于新旧配置文件做一次merge。等配置文件准备完成，直接调用<code>docker-compose up -d</code>以新配置文件启动Harbor容器。</p>
+<p>总体来说，升级还是很顺利的，具体的步骤如下：<br>    1. 备份数据库<br>    2. 停止并删除老Harbor容器<br>    3. 通过alembic升级数据库版本<br>    4. 通过docker-compose up -d启动新版本Harbor容器</p>
+<p>升级过程很顺利，容器启动后工作正常，但是遇到一个小问题，就是Harbor管理平台里显示的日志的时间差了8个小时，这个其实是在容器化中很容易遇到的一个情况，容器中的时区和宿主机不一致，毕竟我们在中国嘛，还是应该用北京时间，虽然问题挺常见，但是在Harbor解决这个问题还是费了一些力气。<br>正常的思路，就是修改一下<code>docker-compose.yaml</code>将<code>/usr/share/zoneinfo/Asia/Shanghai</code>挂载到<code>/etc/localtime</code>，这样容器内部时区就正确了。测试了一下，确实如此，在容器中执行date命令已经可以正常返回正确的时间。<br>但是日志的时间并没有变化，这个确实令人费解，由于Harbor的镜像相关日志都是写到数据库中的，所以还是需要看一下具体插入日志的代码，看是否能够发现一些问题：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// 需要记录日志的地方调用dao.AddAccessLog插入日志，可以看到OpTime就是time.Now()。</span>
+<span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> err <span class="token operator">=</span> dao<span class="token punctuation">.</span><span class="token function">AddAccessLog</span><span class="token punctuation">(</span>
+		models<span class="token punctuation">.</span>AccessLog<span class="token punctuation">&#123;</span>
+			Username<span class="token punctuation">:</span>  p<span class="token punctuation">.</span>SecurityCtx<span class="token punctuation">.</span><span class="token function">GetUsername</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+			ProjectID<span class="token punctuation">:</span> projectID<span class="token punctuation">,</span>
+			RepoName<span class="token punctuation">:</span>  pro<span class="token punctuation">.</span>Name <span class="token operator">+</span> <span class="token string">"/"</span><span class="token punctuation">,</span>
+			RepoTag<span class="token punctuation">:</span>   <span class="token string">"N/A"</span><span class="token punctuation">,</span>
+			Operation<span class="token punctuation">:</span> <span class="token string">"create"</span><span class="token punctuation">,</span>
+			OpTime<span class="token punctuation">:</span>    time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		log<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"failed to add access log: %v"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment">// AddAccessLog具体实现</span>
+<span class="token comment">// AddAccessLog persists the access logs</span>
+<span class="token keyword">func</span> <span class="token function">AddAccessLog</span><span class="token punctuation">(</span>accessLog models<span class="token punctuation">.</span>AccessLog<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+	<span class="token comment">// the max length of username in database is 255, replace the last</span>
+	<span class="token comment">// three charaters with "..." if the length is greater than 256</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>accessLog<span class="token punctuation">.</span>Username<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">255</span> <span class="token punctuation">&#123;</span>
+		accessLog<span class="token punctuation">.</span>Username <span class="token operator">=</span> accessLog<span class="token punctuation">.</span>Username<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">252</span><span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token string">"..."</span>
+	<span class="token punctuation">&#125;</span>
+
+	o <span class="token operator">:=</span> <span class="token function">GetOrmer</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token boolean">_</span><span class="token punctuation">,</span> err <span class="token operator">:=</span> o<span class="token punctuation">.</span><span class="token function">Insert</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>accessLog<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> err
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>看到这边，基本可以确定和ORM实现没有关系了，因为用的mysql驱动是<code>go-sql-driver/mysql</code>，而这个驱动可以单独设置时区，而且驱动默认的时区是<code>UTC</code>，所以需要修改，具体可以参考<a href="https://github.com/go-sql-driver/mysql#loc">mysql#loc</a>，于是问题就变成了如何将这个参数传到驱动了，继续看代码：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// NewMySQL returns an instance of mysql</span>
+<span class="token keyword">func</span> <span class="token function">NewMySQL</span><span class="token punctuation">(</span>host<span class="token punctuation">,</span> port<span class="token punctuation">,</span> usr<span class="token punctuation">,</span> pwd<span class="token punctuation">,</span> database <span class="token builtin">string</span><span class="token punctuation">)</span> Database <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> <span class="token operator">&amp;</span>mysql<span class="token punctuation">&#123;</span>
+		host<span class="token punctuation">:</span>     host<span class="token punctuation">,</span>
+		port<span class="token punctuation">:</span>     port<span class="token punctuation">,</span>
+		usr<span class="token punctuation">:</span>      usr<span class="token punctuation">,</span>
+		pwd<span class="token punctuation">:</span>      pwd<span class="token punctuation">,</span>
+		database<span class="token punctuation">:</span> database<span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">// Register registers MySQL as the underlying database used</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>m <span class="token operator">*</span>mysql<span class="token punctuation">)</span> <span class="token function">Register</span><span class="token punctuation">(</span>alias <span class="token operator">...</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">&#123;</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> utils<span class="token punctuation">.</span><span class="token function">TestTCPConn</span><span class="token punctuation">(</span>m<span class="token punctuation">.</span>host<span class="token operator">+</span><span class="token string">":"</span><span class="token operator">+</span>m<span class="token punctuation">.</span>port<span class="token punctuation">,</span> <span class="token number">60</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> err <span class="token operator">:=</span> orm<span class="token punctuation">.</span><span class="token function">RegisterDriver</span><span class="token punctuation">(</span><span class="token string">"mysql"</span><span class="token punctuation">,</span> orm<span class="token punctuation">.</span>DRMySQL<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">return</span> err
+	<span class="token punctuation">&#125;</span>
+
+	an <span class="token operator">:=</span> <span class="token string">"default"</span>
+	<span class="token keyword">if</span> <span class="token function">len</span><span class="token punctuation">(</span>alias<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">&#123;</span>
+		an <span class="token operator">=</span> alias<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+	<span class="token punctuation">&#125;</span>
+    <span class="token comment">// 关键代码！根据配置组合一个MySQL URI，初始化驱动。</span>
+	conn <span class="token operator">:=</span> fmt<span class="token punctuation">.</span><span class="token function">Sprintf</span><span class="token punctuation">(</span><span class="token string">"%s:%s@tcp(%s:%s)/%s"</span><span class="token punctuation">,</span> m<span class="token punctuation">.</span>usr<span class="token punctuation">,</span>
+		m<span class="token punctuation">.</span>pwd<span class="token punctuation">,</span> m<span class="token punctuation">.</span>host<span class="token punctuation">,</span> m<span class="token punctuation">.</span>port<span class="token punctuation">,</span> m<span class="token punctuation">.</span>database<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> orm<span class="token punctuation">.</span><span class="token function">RegisterDataBase</span><span class="token punctuation">(</span>an<span class="token punctuation">,</span> <span class="token string">"mysql"</span><span class="token punctuation">,</span> conn<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>也就是说，可以在database名字后面加上<code>?loc=Local</code>来让MySQL驱动使用本地的时区设置。于是就简单了，直接修改<code>common/config/adminserver/env</code>文件，将其中的<code>MYSQL_DATABASE=registry</code>改成<code>MYSQL_DATABASE=registry?loc=Local</code>就行了，虽然有点hack，但是，起码不用修改代码再编译打镜像了吧～<br>一波hack操作，重启对应组建，启动完成，果然时区也正常了～</p>
+<p>PS：Harbor 1.6为了保持和Clair数据库的一致性，将MySQL迁移到PostgreSQL了，所以上面的做法可能就不适用于1.6了，由于暂时内部还没有PostgreSQL的支持，也不需要Clair，所以短期内没有考虑升级1.6，等哪天需要升级了，再看相应的解决方案吧。</p>
+]]></content>
+      <categories>
+        <category>Kubernetes</category>
+      </categories>
+      <tags>
+        <tag>Harbor升级</tag>
+        <tag>Harbor Migration</tag>
+        <tag>alembic</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Unrecoverable Read Error Rate (URE)</title>
+    <url>/2016/12/04/ure/</url>
+    <content><![CDATA[<p>很久之前，对于磁盘的了解，就知道一个很关键的指标MTBF，即相邻两次故障之间的平均工作时间，也称为平均故障间隔，这个值越大越好，越大意味着硬盘更不容易坏。<br>对于RAID，也是很相信，觉得大多数情况下，使用RAID，就能保证数据的安全性，几乎不会有数据丢失的风险。</p>
+<p>突然的，读到一篇对于RAID 6的文章 <a href="http://www.zdnet.com/article/why-raid-6-stops-working-in-2019/">Why RAID 6 stops working in 2019</a>，这是一篇2010年的文章，很遗憾到目前才读到。<br>这篇文章里提到了一个指标，叫URE，也就是Unrecoverable Read Error Rate，不可恢复读取错误，一般普通的桌面级别硬盘，这个指标的值为1 × 10^-14，意味着每读取10^14bit的数据，就有可能产生1bit的错误。</p>
+<p>问题在于，这个错误是无法被检测和修复的。10^14bit，大约相当于12.5TB的数据，也就是说，每读取12.5TB的数据，就有可能产生一个错误的读取。而对于目前现在硬盘的容量越来越大，4TB，6TB硬盘的价格越来越低，这种现象会越来越严重。</p>
+<p>在RAID5中，当整个集群有一块硬盘出现损坏需要替换时，需要进行重建，重建时，需要读取其他硬盘的数据，计算出替换的那块硬盘的数据，在重建过程中，除了需要考虑重建的时间之外，还要考虑的就是URE的影响，如果集群的容量足够大，比如超过10TB，那么，其实是有很大的概率出现读取错误的，而一旦读取出错，则RAID的重建就会失败，基本也就意味着，数据能恢复的可能性变得相当低了。所以在使用RAID5时，就需要考虑重建的问题。</p>
+<p>不过对于企业级的硬盘，URE普遍能做到1×10^-15，就意味着大约能读取125TB的数据，容量有比较大的提升，对于SSD，这个值会更加优秀，有些SSD能达到1×10^-17甚至1×10^-18，能提供更好的数据安全性。</p>
+<p>所以，稳定点的话，还是RAID10吧。</p>
+]]></content>
+      <tags>
+        <tag>RAID</tag>
+        <tag>URE</tag>
+        <tag>MTBF</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WSL2 Ubuntu 21.04原生Docker无法运行的问题</title>
+    <url>/2021/10/23/wsl2-ubuntu-dockerd-iptables-problem/</url>
+    <content><![CDATA[<p>最近为了用上更新一点的软件，把运行在WSL2里的Ubuntu 20.04 LTS版本升级了一下，升级到了Ubuntu 21.04，升级之后呢，大部分功能都正常（当然本身我用的功能也不会很多），但是确实也遇到了个小问题：Docker Daemon无法启动了。这个确实很影响工作，因为很多时候写完代码会本地打个镜像运行一下，简单测试一下代码是否有问题。但是升级之后，突然发现Docker用不了了。</p>
+<p>具体点呢，是会报一个<code>iptables</code>相关的错误：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>
+WARN<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:05.864210900+08:00<span class="token punctuation">]</span> Your kernel does not support cgroup blkio throttle.write_iops_device
+INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:05.864538700+08:00<span class="token punctuation">]</span> Loading containers: start.
+INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:06.135353300+08:00<span class="token punctuation">]</span> stopping event stream following graceful <span class="token function">shutdown</span>  <span class="token assign-left variable">error</span><span class="token operator">=</span><span class="token string">"context canceled"</span> <span class="token assign-left variable">module</span><span class="token operator">=</span>libcontainerd <span class="token assign-left variable">namespace</span><span class="token operator">=</span>moby
+INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:06.135542600+08:00<span class="token punctuation">]</span> stopping healthcheck following graceful <span class="token function">shutdown</span>  <span class="token assign-left variable">module</span><span class="token operator">=</span>libcontainerd
+INFO<span class="token punctuation">[</span><span class="token number">2021</span>-10-23T11:30:06.136083800+08:00<span class="token punctuation">]</span> stopping event stream following graceful <span class="token function">shutdown</span>  <span class="token assign-left variable">error</span><span class="token operator">=</span><span class="token string">"context canceled"</span> <span class="token assign-left variable">module</span><span class="token operator">=</span>libcontainerd <span class="token assign-left variable">namespace</span><span class="token operator">=</span>plugins.moby
+failed to start daemon: Error initializing network controller: error obtaining controller instance: unable to <span class="token function">add</span> <span class="token builtin class-name">return</span> rule <span class="token keyword">in</span> DOCKER-ISOLATION-STAGE-1 chain:  <span class="token punctuation">(</span>iptables failed: iptables <span class="token parameter variable">--wait</span> <span class="token parameter variable">-A</span> DOCKER-ISOLATION-STAGE-1 <span class="token parameter variable">-j</span> RETURN: iptables v1.8.7 <span class="token punctuation">(</span>nf_tables<span class="token punctuation">)</span>:  RULE_APPEND failed <span class="token punctuation">(</span>No such <span class="token function">file</span> or directory<span class="token punctuation">)</span>: rule <span class="token keyword">in</span> chain DOCKER-ISOLATION-STAGE-1
+ <span class="token punctuation">(</span>exit status <span class="token number">4</span><span class="token punctuation">))</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span id="more"></span>
+<p>提示<code>iptables</code> <code>RULE_APPEND</code>也不知道是咋回事，不过想着估计和Docker的网络有点关系，还好一般情况下编译和打镜像也不需要网络隔离，所以前几天就临时在启动Docker Daemon时加上<code>--iptables=false</code>参数，不加载iptables规则，当然<code>docker builld</code>和<code>docker run</code>的时候也得加上<code>--network=host</code>使用不隔离的Host网络，勉强扛了几天。</p>
+<p>今天有时间就查了查资料，一开始查到的大部分都是让用<code>Docker Desktop for Windows</code>并且开启WSL2后端，然后在WSL2里直接用Windows的<code>docker.exe</code>命令。这个方案我没试过，不过说实话即使能用，也觉得有点太别扭了。想想还是放弃了。于是继续找资料。终于找到一篇<a href="https://patrickwu.space/2021/03/09/wsl-solution-to-native-docker-daemon-not-starting/">文章</a>，文章里贴了个Ubuntu的<a href="https://bugs.launchpad.net/ubuntu-wsl-integration/+bug/1908539">bug report</a>，大致意思是说：</p>
+<blockquote><p>Ubuntu从20.10开始，将默认的防火墙切换到了<code>nftables</code>实现，这个实现需要5.8版本及以上的内核，而微软在WSL2中提供的5.4版本的内核没有<code>nftables</code>，所以导致iptables功能出错了。</p>
+</blockquote>
+
+<p>解决方法也简单，直接把<code>iptables</code>实现切换回<code>iptables-legacy</code>就好了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">~<span class="token punctuation">]</span><span class="token comment"># sudo update-alternatives --config iptables</span>
+There are <span class="token number">2</span> choices <span class="token keyword">for</span> the alternative iptables <span class="token punctuation">(</span>providing /usr/sbin/iptables<span class="token punctuation">)</span>.
+
+  Selection    Path                       Priority   Status
+------------------------------------------------------------
+* <span class="token number">0</span>            /usr/sbin/iptables-nft      <span class="token number">20</span>        auto mode
+  <span class="token number">1</span>            /usr/sbin/iptables-legacy   <span class="token number">10</span>        manual mode
+  <span class="token number">2</span>            /usr/sbin/iptables-nft      <span class="token number">20</span>        manual mode
+
+Press <span class="token operator">&lt;</span>enter<span class="token operator">></span> to keep the current choice<span class="token punctuation">[</span>*<span class="token punctuation">]</span>, or <span class="token builtin class-name">type</span> selection number: <span class="token number">1</span>
+update-alternatives: using /usr/sbin/iptables-legacy to provide /usr/sbin/iptables <span class="token punctuation">(</span>iptables<span class="token punctuation">)</span> <span class="token keyword">in</span> manual mode<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>切换回去之后，果然就好了，又可以开心的用原生docker了。</p>
+<p>最后我又看了眼现在跑的内核：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">~<span class="token punctuation">]</span><span class="token comment"># uname -r</span>
+<span class="token number">5.10</span>.60.1-microsoft-standard-WSL2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>因为升级了Windows11，现在内核已经到了5.10了。按理不应该有问题才对。除非微软编译内核的时候没开相关的选项？</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">~<span class="token punctuation">]</span><span class="token comment"># zcat /proc/config.gz |grep NF_TABLES</span>
+<span class="token assign-left variable">CONFIG_NF_TABLES</span><span class="token operator">=</span>y
+<span class="token assign-left variable">CONFIG_NF_TABLES_INET</span><span class="token operator">=</span>y
+<span class="token comment"># CONFIG_NF_TABLES_NETDEV is not set</span>
+<span class="token assign-left variable">CONFIG_NF_TABLES_IPV4</span><span class="token operator">=</span>y
+<span class="token comment"># CONFIG_NF_TABLES_ARP is not set</span>
+<span class="token assign-left variable">CONFIG_NF_TABLES_IPV6</span><span class="token operator">=</span>y
+<span class="token comment"># CONFIG_NF_TABLES_BRIDGE is not set</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>确实有些选项没打开，而且WSL的github issue里似乎也有类似的讨论：<a href="https://github.com/microsoft/WSL/issues/6655">#6655</a>、<a href="https://github.com/microsoft/WSL/issues/6044">#6044</a>、<a href="https://github.com/microsoft/WSL/issues/4165">#4165</a>。不过微软似乎也没想着解决，不过问题不大啦，也没到要自己编译内核的地步。能用就行~</p>
+]]></content>
+      <categories>
+        <category>日常折腾</category>
+      </categories>
+      <tags>
+        <tag>iptables</tag>
+        <tag>WSL2</tag>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在XFS文件系统上实现针对目录的配额限制</title>
+    <url>/2017/02/20/xfs-per-directory-quota/</url>
+    <content><![CDATA[<p>在Linux系统上支持对用户以及对用户组设置磁盘配额的文件系统很多，常见的Ext4文件系统对配额的支持就很好，但是如果要针对某个目录进行配额限制的话，就比较难办了。<br>至少在Ext4文件系统上并没有什么好的办法，有些比较hack的办法，比如使用 <code>fuse</code> 挂载一个目录，并在这个文件系统里实现目录级别的配额，虽然可以实现，但是问题就是 <code>fuse</code> 的性能要差很多。<br>然后调查了一下XFS，XFS文件系统支持 <code>Project Quota</code> 功能，通过该特性，可以支持目录级别的配额限制。<span id="more"></span></p>
+<p>要使用<code>Project Quota</code> 功能，需要在挂载时指定<code>-o prjquota</code>参数，并且这个参数还不能和<code>usrquota</code>、<code>grpquota</code>一起使用，也就是说，如果开启<code>Project Quota</code>就无法使用针对用户和用户组的配额限制。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># mount -o prjquota /dev/sdb1 /tmp/data0</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>这里把<code>/dev/sdb1</code>挂载到<code>/tmp/data0</code>。挂载之后，就可以使用<code>xfs_quota</code> 工具对该分区的quota进行操作了。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># xfs_quota -x -c report /tmp/data0</span>
+Project <span class="token function">quota</span> on /tmp/data0 <span class="token punctuation">(</span>/dev/sdb1<span class="token punctuation">)</span>
+                               Blocks
+Project ID       Used       Soft       Hard    Warn/Grace
+---------- --------------------------------------------------
+<span class="token comment">#0                  4          0          0     00 [--------]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>使用<code>-x</code>开启专家模式，<code>-c report</code>执行report命令，后面跟上挂载点，这样可以列出所有的Project ID以及对应的配额使用情况。</p>
+<p>如果要限制某个目录的配额，首先需要保证该目录存在，然后调用<code>project</code>命令创建一个project，再调用<code>limit</code>命令设置配额。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># mkdir /tmp/data0/100MB   # 创建对应文件夹</span>
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># xfs_quota -x -c 'project -s -p /tmp/data0/100MB 1'   # 为文件夹分配ProjectID 1</span>
+Setting up project <span class="token number">1</span> <span class="token punctuation">(</span>path /tmp/data0/100MB<span class="token punctuation">)</span><span class="token punctuation">..</span>.
+Processed <span class="token number">1</span> <span class="token punctuation">(</span>/etc/projects and cmdline<span class="token punctuation">)</span> paths <span class="token keyword">for</span> project <span class="token number">1</span> with recursion depth infinite <span class="token punctuation">(</span>-1<span class="token punctuation">)</span>.
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># xfs_quota -x -c 'limit -p bhard=100m 1' /tmp/data0/  # 限制Project 1的配额为100MB</span>
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># xfs_quota -x -c report /tmp/data0</span>
+Project <span class="token function">quota</span> on /tmp/data0 <span class="token punctuation">(</span>/dev/sdb1<span class="token punctuation">)</span>
+                               Blocks
+Project ID       Used       Soft       Hard    Warn/Grace
+---------- --------------------------------------------------
+<span class="token comment">#0                  4          0          0     00 [--------]</span>
+<span class="token comment">#1                  0          0     102400     00 [--------]</span>
+
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># dd if=/dev/zero of=/tmp/data0/100MB/test bs=1M count=101</span>
+dd: error writing <span class="token string">'/tmp/data0/100MB/test'</span><span class="token builtin class-name">:</span> No space left on device  <span class="token comment"># 配额生效</span>
+<span class="token number">101</span>+0 records <span class="token keyword">in</span>
+<span class="token number">100</span>+0 records out
+<span class="token number">104857600</span> bytes <span class="token punctuation">(</span><span class="token number">105</span> MB, <span class="token number">100</span> MiB<span class="token punctuation">)</span> copied, <span class="token number">1.01324</span> s, <span class="token number">103</span> MB/s
+
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># xfs_quota -x -c report /tmp/data0                       </span>
+Project <span class="token function">quota</span> on /tmp/data0 <span class="token punctuation">(</span>/dev/sdb1<span class="token punctuation">)</span>
+                               Blocks                     
+Project ID       Used       Soft       Hard    Warn/Grace     
+---------- -------------------------------------------------- 
+<span class="token comment">#0                  4          0          0     00 [--------]</span>
+<span class="token comment">#1             102400          0     102400     00 [--------]</span>
+
+<span class="token punctuation">[</span>root@test ~<span class="token punctuation">]</span><span class="token comment"># xfs_quota -c 'quota -p 1' /tmp/data0     #查询某个project的配额使用情况</span>
+Disk quotas <span class="token keyword">for</span> Project <span class="token comment">#1 (1)</span>
+Filesystem              Blocks      Quota      Limit  Warn/Time      Mounted on
+/dev/loop0              <span class="token number">102400</span>          <span class="token number">0</span>     <span class="token number">102400</span>   00 <span class="token punctuation">[</span>--------<span class="token punctuation">]</span> /tmp/data0
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>看到已经设置好对应的配额。并能正常工作。其中需要注意的。使用 <code>-c quota</code> 查询某个project的配额使用情况时，只有当使用的空间超过0才会被正常显示，否则是无法通过该方式查询的。</p>
+<p>上面的测试是在本地的机器上做测试的，所有的功能都能正常工作，但是在线上机器上做测试的时候，发现可以正常设置quota，并且quota也能正常生效，但是在调用 <code>report</code> 命令的时候，线上机器永远只会显示Project ID为0的<br>配额情况，而不会显示其他Project的配额，需要说明的是本地的系统是ArchLinx，使用4.9版本内核，线上系统使用CentOS 7，使用3.10的内核。因为内核版本不一样，不排除是内核版本导致的问题，但是也不能确定就是内核问题。</p>
+<p>于是决定看一下<code>xfs_quota</code>这个工具的代码，看一下 <code>report</code> 这个命令是如何实现的。<code>xfs_quota</code>这个工具属于<code>xfsprogs</code>这个包，所以在<code>https://www.kernel.org/pub/linux/utils/fs/xfs/xfsprogs/xfsprogs-4.9.0.tar.xz</code>下载了4.9版本的源代码。<br>发现在 <code>quota/report.c</code> 文件中，<code>report_mount</code>函数有这样一段代码：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>flags <span class="token operator">&amp;</span> GETNEXTQUOTA_FLAG<span class="token punctuation">)</span>
+		cmd <span class="token operator">=</span> XFS_GETNEXTQUOTA<span class="token punctuation">;</span>
+	<span class="token keyword">else</span>
+		cmd <span class="token operator">=</span> XFS_GETQUOTA<span class="token punctuation">;</span>
+
+	<span class="token comment">/* Fall back silently if XFS_GETNEXTQUOTA fails, warn on XFS_GETQUOTA*/</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">xfsquotactl</span><span class="token punctuation">(</span>cmd<span class="token punctuation">,</span> dev<span class="token punctuation">,</span> type<span class="token punctuation">,</span> id<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>d<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>errno <span class="token operator">!=</span> ENOENT <span class="token operator">&amp;&amp;</span> errno <span class="token operator">!=</span> ENOSYS <span class="token operator">&amp;&amp;</span> errno <span class="token operator">!=</span> ESRCH <span class="token operator">&amp;&amp;</span>
+		    cmd <span class="token operator">==</span> XFS_GETQUOTA<span class="token punctuation">)</span>
+			<span class="token function">perror</span><span class="token punctuation">(</span><span class="token string">"XFS_GETQUOTA"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>看到注释，尝试使用<code>XFS_GETNEXTQUOTA</code>操作失败后，自动fall back到<code>XFS_GETQUOTA</code>，会不会是这个问题？尝试一下，如果<code>XFS_GETNEXTQUOTA</code>失败，直接打印错误信息。<br>将代码修改成：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">xfsquotactl</span><span class="token punctuation">(</span>cmd<span class="token punctuation">,</span> dev<span class="token punctuation">,</span> type<span class="token punctuation">,</span> id<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>d<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+       <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"not support XFS_GETNEXTQUOTA\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>errno <span class="token operator">!=</span> ENOENT <span class="token operator">&amp;&amp;</span> errno <span class="token operator">!=</span> ENOSYS <span class="token operator">&amp;&amp;</span> errno <span class="token operator">!=</span> ESRCH <span class="token operator">&amp;&amp;</span>
+	    cmd <span class="token operator">==</span> XFS_GETQUOTA<span class="token punctuation">)</span>
+		<span class="token function">perror</span><span class="token punctuation">(</span><span class="token string">"XFS_GETQUOTA"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>编译后运行一下，果然在线上机器上打印出<code>not support XFS_GETNEXTQUOTA</code>，说明CentOS 7的3.10内核不支持<code>XFS_GETNEXTQUOTA</code>这个操作。</p>
+<p>然后就去翻了一下内核代码，发现了这个提交 <a href="https://git.kernel.org/cgit/linux/kernel/git/dgc/linux-xfs.git/commit/?id=296c24e26ee3af2dbfecb482e6bc9560bd34c455">wire up Q_XGETNEXTQUOTA &#x2F; get_nextdqblk</a>，这个操作应该是在Linux 4.6版本引入的，所以CentOS 7的3.10内核就不支持该操作了。<br>不过没有这个特性，也不会影响实际的Quota功能，所以线上可以正常使用。</p>
+]]></content>
+      <tags>
+        <tag>XFS</tag>
+        <tag>Directory Quota</tag>
+        <tag>Project Quota</tag>
       </tags>
   </entry>
 </search>
