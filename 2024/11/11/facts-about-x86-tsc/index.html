@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/favicon-orgin.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/favicon/favicon-orgin.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css" integrity="sha256-5eIC48iZUHmSlSUz9XtjRyK2mzQkHScZY1WdMaoz74E=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.21.1","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="今天跟着Intel的开发手册，看看如何随着Intel对TSC不断的修改和增加新特性，让TSC从一个简单的性能计数器发展成当前Linux上x86平台最重要的时钟源之一。本文基本上可以看作是Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 3B: System Programming Guide, Part 2中1">
+<meta property="og:type" content="article">
+<meta property="og:title" content="x86平台的TSC（TIME-STAMP COUNTER）">
+<meta property="og:url" content="https://www.ichenfu.com/2024/11/11/facts-about-x86-tsc/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="今天跟着Intel的开发手册，看看如何随着Intel对TSC不断的修改和增加新特性，让TSC从一个简单的性能计数器发展成当前Linux上x86平台最重要的时钟源之一。本文基本上可以看作是Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 3B: System Programming Guide, Part 2中1">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-11-11T12:30:42.000Z">
+<meta property="article:modified_time" content="2024-11-12T03:03:49.483Z">
+<meta property="article:author" content="陈孚">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2024/11/11/facts-about-x86-tsc/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2024/11/11/facts-about-x86-tsc/","path":"2024/11/11/facts-about-x86-tsc/","title":"x86平台的TSC（TIME-STAMP COUNTER）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>x86平台的TSC（TIME-STAMP COUNTER） | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?50e2a95e85fdbe38e53b7aaba8c6cfe1"></script>
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#TIME-STAMP-COUNTER"><span class="nav-number">1.</span> <span class="nav-text">TIME-STAMP COUNTER</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Invariant-TSC"><span class="nav-number">1.1.</span> <span class="nav-text">Invariant TSC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IA32-TSC-AUX-Register-and-RDTSCP-Support"><span class="nav-number">1.2.</span> <span class="nav-text">IA32_TSC_AUX Register and RDTSCP Support</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Time-Stamp-Counter-Adjustment"><span class="nav-number">1.3.</span> <span class="nav-text">Time-Stamp Counter Adjustment</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">陈孚</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">101</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">220</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2024/11/11/facts-about-x86-tsc/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="x86平台的TSC（TIME-STAMP COUNTER） | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          x86平台的TSC（TIME-STAMP COUNTER）
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024年11月11日 20:30 20:30:42" itemprop="dateCreated datePublished" datetime="2024-11-11T20:30:42+08:00">2024年11月11日 20:30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2024年11月12日 11:03 11:03:49" itemprop="dateModified" datetime="2024-11-12T11:03:49+08:00">2024年11月12日 11:03</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>今天跟着Intel的开发手册，看看如何随着Intel对TSC不断的修改和增加新特性，让TSC从一个简单的性能计数器发展成当前Linux上x86平台最重要的时钟源之一。本文基本上可以看作是<a target="_blank" rel="noopener" href="https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-vol-3b-part-2-manual.pdf">Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 3B: System Programming Guide, Part 2</a>中<code>17.15 TIME-STAMP COUNTER</code>这章的翻译和总结。</p>
+<p>在x86平台上，Linux系统里最常用的一个时钟源就是<code>tsc</code>，具体的，可以通过命令查看当前的时钟源和系统里可用的时钟源：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/available_clocksource</span>
+tsc hpet acpi_pm
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+tsc<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>那么TSC是个什么东西呢？我们可以跟着手册看一看。</p>
+<span id="more"></span>
+
+<h2 id="TIME-STAMP-COUNTER"><a href="#TIME-STAMP-COUNTER" class="headerlink" title="TIME-STAMP COUNTER"></a>TIME-STAMP COUNTER</h2><p>从 Pentium 处理器开始，Intel 64 和 IA-32 架构定义了一种时间戳计数器机制（TSC），可以用于监控和识别处理器事件的相对时间。TSC包括以下组件：</p>
+<pre><code>- TSC flag：用于标识TSC是否可用，当`CPUID.1:EDX.TSC[bit 4] = 1`时，TSC可用
+- IA32_TIME_STAMP_COUNTER MSR：对应TSC值的寄存器
+- RDTSC指令：读取TSC寄存器值的指令
+- TSD flag： 用于开关TSC功能，`CR4.TSD[bit 2] = 1`时开启TSC
+</code></pre>
+<p>TSC从第一次在CPU中实现到如今很多年了，所以不同CPU上的一些表现还是有些区别的，但主要的特点是通用的，首先TSC是一个64bit大小的计数器，当CPU重置时，这个计数器也会被重置成0，重置后，即使CPU因为执行了HLT指令进入idle状态，这个寄存器也会持续的增加。</p>
+<p>但是TSC会按什么样的频率增加呢？这里不同的CPU差异就比较大了。在一些比较老的CPU上（大概是07-08年之前），TSC是跟着CPU的运行频率增加的，比如当前CPU跑在2.4GHz，那TSC就每秒增加24000000，但是针对这些老的CPU，超频、以及CPU自身的睿频都会对TSC的计数产生影响。这其实对用户是不太友好的，毕竟睿频是硬件层面的，这个计数器就不那么“稳定”了。</p>
+<p>所以后续的新CPU，Intel将这个行为修改成了以固定频率增加，只是这个频率具体是多少得看具体的配置，具体的TSC频率如何检测，手册里有专门的一章进行解释，这里我们不过多涉及。</p>
+<p>在新CPU里，TSC以固定频率增长，所以这其实是一个TSC的特性，叫做<code>Constant TSC</code>，有了这个特性之后，TSC频率相对就稳定了，不会随着CPU睿频而随意改变频率，所以他也就可以成为一个稳定的时钟源了。因此这个特性会一直在后续的CPU中提供。</p>
+<p>用户可以使用<code>RDTSC</code>这个CPU指令获取TSC的值，正常情况下（计数器没有溢出），Intel的CPU可以保证每次通过<code>RDTSC</code>读取的值都是单调递增的，同时可以保证在10年内计数器不会溢出。但是需要注意的是，这个指令它不是有序的（也就说他是有可能被CPU乱序执行的，所以可能需要加上memory barrier）。另外由于TSC是一个MSR，所以其实这个寄存器是可以通过<code>RDMSR</code>和<code>WRMSR</code>指令进行读写的，只是一些老CPU上只能写低32位（高32位此时会清0）。</p>
+<h3 id="Invariant-TSC"><a href="#Invariant-TSC" class="headerlink" title="Invariant TSC"></a>Invariant TSC</h3><p>前面提到TSC即使CPU处在halt状态，依然会持续的累加，但即使是这样，TSC依然不是100%可依赖最为一个时钟源的，为什么呢？因为halt状态只是CPU的C1状态，现代的CPU为了省电，引入了更多更深的C states，具体可以参考之前关于电源管理的内容<a href="/2020/07/17/cpu-idle-time-managment/">再谈CPU的电源管理（如何做到稳定全核睿频？）</a>，当CPU进入到比较深的C states，比如C6，此时整个CPU的Core基本都被关闭了，那TSC自然也有可能不工作了。</p>
+<p>为了解决这个问题呢，Intel又引入了一个新的特性增强，叫<code>Invariant TSC</code>，这个特性可以当<code>CPUID.80000007H:EDX[8] == 1</code>时，代表CPU支持这个特性。有这个特性的CPU，在任何的C states下，TSC都会持续运行，在Linux里，这个特性也会被称为<code>NONSTOP_TSC</code>（感觉这个更传神一些，不停止的TSC）。</p>
+<p>可以看到引入<code>Constant TSC</code>和<code>Invariant TSC</code>之后，CPU先后解决了P-States(CPU频率变化)和C-States(CPU电源状态)对TSC频率的影响，逐渐将TSC设计成符合时钟源要求的样子，这也算是软硬件协同发展，螺旋上升的正面例子吧。</p>
+<h3 id="IA32-TSC-AUX-Register-and-RDTSCP-Support"><a href="#IA32-TSC-AUX-Register-and-RDTSCP-Support" class="headerlink" title="IA32_TSC_AUX Register and RDTSCP Support"></a>IA32_TSC_AUX Register and RDTSCP Support</h3><p>看起来到这里已经万事大吉了？其实并没有，前面提到，<code>RDTSC</code>指令并不是有序的，意味着CPU硬件有可能对这个执行乱序执行，这可能并不是软件所预期的结果，举个例子，假如想通过基于类似<code>RDTSC;other insturctions;RDTSC</code>这样的指令顺序来计算<code>other insturctions</code>消耗的时间，在真正执行的时候，有可能就按<code>RDTSC;RDTSCother insturctions</code>的顺序了，这显然不是所期望的结果。</p>
+<p>所以Intel针对这个问题，又增加了一个新的指令<code>RDTSCP</code>，使得可以原子地读取TSC。当执行<code>RDTSCP</code>指令时，会同时读取TSC和IA32_TSC_AUX两个寄存器的值。并且这个操作是原子的，不会出现上下文切换的问题。不过需要注意的是，只有当<code>CPUID.80000001H:EDX[27] == 1</code>时，CPU才支持<code>RDTSCP</code>指令。</p>
+<p>针对这个乱序的问题，其实Linux内核里也是做了相应的处理的，我们可以从内核读取TSC的源码看出来，源码里的注释也是非常的详细：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> __always_inline <span class="token keyword">unsigned</span> <span class="token keyword">long</span> <span class="token keyword">long</span> <span class="token function">rdtsc_ordered</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token function">DECLARE_ARGS</span><span class="token punctuation">(</span>val<span class="token punctuation">,</span> low<span class="token punctuation">,</span> high<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token comment">/*
+	 * The RDTSC instruction is not ordered relative to memory
+	 * access.  The Intel SDM and the AMD APM are both vague on this
+	 * point, but empirically an RDTSC instruction can be
+	 * speculatively executed before prior loads.  An RDTSC
+	 * immediately after an appropriate barrier appears to be
+	 * ordered as a normal load, that is, it provides the same
+	 * ordering guarantees as reading from a global memory location
+	 * that some other imaginary CPU is updating continuously with a
+	 * time stamp.
+	 *
+	 * Thus, use the preferred barrier on the respective CPU, aiming for
+	 * RDTSCP as the default.
+	 */</span>
+     <span class="token comment">//优先使用rdtscp，如果不支持，先执行lfence再执行rdtsc</span>
+	<span class="token keyword">asm</span> <span class="token keyword">volatile</span><span class="token punctuation">(</span><span class="token function">ALTERNATIVE_2</span><span class="token punctuation">(</span><span class="token string">"rdtsc"</span><span class="token punctuation">,</span>
+				   <span class="token string">"lfence; rdtsc"</span><span class="token punctuation">,</span> X86_FEATURE_LFENCE_RDTSC<span class="token punctuation">,</span>
+				   <span class="token string">"rdtscp"</span><span class="token punctuation">,</span> X86_FEATURE_RDTSCP<span class="token punctuation">)</span>
+			<span class="token operator">:</span> <span class="token function">EAX_EDX_RET</span><span class="token punctuation">(</span>val<span class="token punctuation">,</span> low<span class="token punctuation">,</span> high<span class="token punctuation">)</span>
+			<span class="token comment">/* RDTSCP clobbers ECX with MSR_TSC_AUX. */</span>
+			<span class="token operator">::</span> <span class="token string">"ecx"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">return</span> <span class="token function">EAX_EDX_VAL</span><span class="token punctuation">(</span>val<span class="token punctuation">,</span> low<span class="token punctuation">,</span> high<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="Time-Stamp-Counter-Adjustment"><a href="#Time-Stamp-Counter-Adjustment" class="headerlink" title="Time-Stamp Counter Adjustment"></a>Time-Stamp Counter Adjustment</h3><p>最后的最后，还有一个问题需要解决，上面其实也提到了，TSC本质上是个MSR（IA32_TIME_STAMP_COUNTER MSR 地址10H），而这个MSR是可写的！这会存在一个问题，对于现代的多核系统，每个核都有自己的TSC MSR，如果某个核的MSR被修改了，这个修改怎么同步到其他核上去呢？很显然，不管是想计算出来被修改的核心的TSC的变化值，以及将这个值同步到其他的核上，都是不现实的。因为没办法在同一时刻在所有核上执行相同的指令。</p>
+<p>但是多核之间同步TSC需求又是客观存在的，怎么办呢？Intel提供了一个新的MSR：<code>IA32_TSC_ADJUST(地址3BH)</code>来解决这个问题。首先和TSC一样每个核都有自己独立的<code>IA32_TSC_ADJUST</code>，当处理器重置时，<code>IA32_TSC_ADJUST</code>也会被置为0，当对<code>IA32_TIME_STAMP_COUNTER</code>进行写入时，比如加上（或者）一个X的值，那么对应核的<code>IA32_TSC_ADJUST</code>也会有对应的X值被加上（或者减去）。因此有了这个MSR之后，想计算某个核TSC的变化值，直接读取<code>IA32_TSC_ADJUST</code>里的值就行了，如果要把这个值同步到其他的核，就只需要把这个值写入到其他核的<code>IA32_TSC_ADJUST</code>里就行了。这就直接解决了多核之间TSC同步的问题，不过这个特性也不是所有CPU都支持，只有当<code>CPUID.(EAX=07H, ECX=0H):EBX.TSC_ADJUST == 1</code>时才支持。</p>
+<p>到这里，TSC就变得真正可依赖了，首先有了<code>Constant TSC</code>，确保TSC按固定频率运行，然后有了<code>Invariant TSC</code>确保TSC一直运行，还有<code>IA32_TSC_ADJUST</code>确保当TSC被修改后依然能被同步回来。有了这些特性，TSC就可以成为系统中可信赖的时钟源。我们也可以通过Linux内核里的代码，看看内核是如何针对这种场景进行适配的：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> __init <span class="token function">check_system_tsc_reliable</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">// ...</span>
+	<span class="token comment">/*
+	 * Disable the clocksource watchdog when the system has:
+	 *  - TSC running at constant frequency
+	 *  - TSC which does not stop in C-States
+	 *  - the TSC_ADJUST register which allows to detect even minimal
+	 *    modifications
+	 *  - not more than two sockets. As the number of sockets cannot be
+	 *    evaluated at the early boot stage where this has to be
+	 *    invoked, check the number of online memory nodes as a
+	 *    fallback solution which is an reasonable estimate.
+	 */</span>
+    <span class="token comment">// 默认情况下Kernel假设TSC不稳定，所以会有个watchdog进行检测，当满足下面几个条件时，TSC足够稳定，watchdog也不需要运行了。</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">boot_cpu_has</span><span class="token punctuation">(</span>X86_FEATURE_CONSTANT_TSC<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+	    <span class="token function">boot_cpu_has</span><span class="token punctuation">(</span>X86_FEATURE_NONSTOP_TSC<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+	    <span class="token function">boot_cpu_has</span><span class="token punctuation">(</span>X86_FEATURE_TSC_ADJUST<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+	    nr_online_nodes <span class="token operator">&lt;=</span> <span class="token number">4</span><span class="token punctuation">)</span>
+		<span class="token function">tsc_disable_clocksource_watchdog</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>好了，跟着文档的节奏，其实也可以看到TSC的发展历程，硬件不断的做出一些变化从而满足软件层面的需求，确定经历了相当长的时间。其实除此之外，TSC还有一些其他相关的特性，主要是和虚拟化相关，也是硬件为了更好的实现虚拟化做出的适配，这里就暂时不说了，期望下次可以继续聊聊虚拟化场景下TSC的一些特性。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="陈孚 wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/04/01/ufo-feature-caused-network-failure/" rel="prev" title="一个UFO引发的惨案">
+                  <i class="fa fa-angle-left"></i> 一个UFO引发的惨案
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">陈孚</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/sidebar.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>
