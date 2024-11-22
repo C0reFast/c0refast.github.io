@@ -5259,6 +5259,14 @@ tsc<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span>
 
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>好了，跟着文档的节奏，其实也可以看到TSC的发展历程，硬件不断的做出一些变化从而满足软件层面的需求，确定经历了相当长的时间。其实除此之外，TSC还有一些其他相关的特性，主要是和虚拟化相关，也是硬件为了更好的实现虚拟化做出的适配，这里就暂时不说了，期望下次可以继续聊聊虚拟化场景下TSC的一些特性。</p>
 ]]></content>
+      <categories>
+        <category>Linux Kernel</category>
+      </categories>
+      <tags>
+        <tag>x86_64</tag>
+        <tag>TSC</tag>
+        <tag>时钟源</tag>
+      </tags>
   </entry>
   <entry>
     <title>Hello World</title>
