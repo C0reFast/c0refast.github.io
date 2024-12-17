@@ -152,18 +152,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">101</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">223</span>
+        <span class="site-state-item-count">225</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -198,6 +198,100 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2019/09/07/mount-cephfs-no-such-process/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2019/09/07/mount-cephfs-no-such-process/" class="post-title-link" itemprop="url">挂载CephFS时出现failed: No such process的问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019年9月7日 15:34 15:34:37" itemprop="dateCreated datePublished" datetime="2019-09-07T15:34:37+08:00">2019年9月7日 15:34</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>今天在我们的环境中遇到了一个比较诡异的问题，我们在一台虚拟机上想要挂载一个CephFS，但是出现了一个<code>failed: No such process</code>的诡异问题，具体表现如下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">]</span><span class="token comment"># mount -t ceph mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789:/ /tmp/data</span>
+mount: <span class="token function">mount</span> mon1.ichenfu.com:6789,mon2.ichenfu.com:6789,mon3.ichenfu.com:6789:/ on /tmp/data failed: No such process<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2019/09/07/mount-cephfs-no-such-process/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1178,100 +1272,6 @@ default via <span class="token number">169.254</span>.1.1 dev eth0
 <li><a target="_blank" rel="noopener" href="http://0pointer.de/blog/projects/ids.html">http://0pointer.de/blog/projects/ids.html</a></li>
 </ol>
 
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/12/24/centos-bonding-vlan-bridge/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2018/12/24/centos-bonding-vlan-bridge/" class="post-title-link" itemprop="url">CentOS系统Bonding+VLAN+Bridge配置</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2018年12月24日 9:35 9:35:52" itemprop="dateCreated datePublished" datetime="2018-12-24T09:35:52+08:00">2018年12月24日 9:35</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Linux%E9%83%A8%E7%BD%B2/" itemprop="url" rel="index"><span itemprop="name">Linux部署</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>由于业务的需要，需要在我们的一台虚拟化机器上，实现如下的配置：</p>
-<p>首先，需要将两块网卡设置Bonding并配置交换机对应端口trunk模式;在此基础上，添加宿主机的IP地址，并添加相应的VLAN，最后，还需要添加一个Bridge，用于桥接创建的虚拟机。</p>
-<p>由于本身这台机器就是Openstack的宿主机，所以当前的状况是除了所需要的一个Bridge，其他都已经配置完成了，并且由于Openstack的原因，已经有个Bridge virbr0被绑定到bond0上了。<br>但是呢，这个Bridge是给ovs用的，也就是说，桥接在virbr0上的网络需要自己带上VLAN的tag才能正常工作，而我们希望的是再有一个Bridge br0，桥接在br0上不需要管理VLAN，保持和宿主机相同就可以。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2018/12/24/centos-bonding-vlan-bridge/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
       
     </div>
 

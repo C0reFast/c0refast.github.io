@@ -12022,4 +12022,196 @@ Filesystem              Blocks      Quota      Limit  Warn/Time      Mounted on
         <tag>Project Quota</tag>
       </tags>
   </entry>
+  <entry>
+    <title>在KVM虚拟机中开启TSC作为时钟源</title>
+    <url>/2024/12/17/enable-tsc-virtualization-on-kvm/</url>
+    <content><![CDATA[<p>上一篇<a href="/2024/11/11/facts-about-x86-tsc/">x86平台的TSC（TIME-STAMP COUNTER）</a>中大概分析了一下TSC的一些相关的特性，以及TSC作为系统时钟源的一些基础条件。那么，在虚拟化的场景下，如何让Guest也用上TSC呢？这篇文章就来讨论一下TSC在KVM虚拟化中的使用。</p>
+<h2 id="基础分析"><a href="#基础分析" class="headerlink" title="基础分析"></a>基础分析</h2><p>默认情况下，KVM虚拟机首选的时钟源是<code>kvm-clock</code>，即使将VM的CPU Model设置为<code>host-passthrough</code>，也不会使用TSC作为时钟源。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># lscpu|grep Flags</span>
+Flags:                                fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq dtes64 vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves wbnoinvd arat vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq la57 rdpid fsrm md_clear flush_l1d arch_capabilities
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/available_clocksource</span>
+kvm-clock acpi_pm
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+kvm-clock<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span id="more"></span>
+<p>可以看到，即使CPU有大部分TSC相关的Flags，但是<code>available_clocksource</code>里并没有TSC，current_clocksource也是kvm-clock，原因可以从dmesg里看到：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># dmesg |grep -i tsc</span>
+<span class="token punctuation">[</span>    <span class="token number">0.000000</span><span class="token punctuation">]</span> tsc: Detected <span class="token number">2199.998</span> MHz processor
+<span class="token punctuation">[</span>    <span class="token number">0.001000</span><span class="token punctuation">]</span> clocksource: tsc-early: mask: 0xffffffffffffffff max_cycles: 0x1fb63109b96, max_idle_ns: <span class="token number">440795265316</span> ns
+<span class="token punctuation">[</span>    <span class="token number">0.001000</span><span class="token punctuation">]</span> TSC deadline timer enabled
+<span class="token punctuation">[</span>    <span class="token number">0.577230</span><span class="token punctuation">]</span> clocksource: tsc: mask: 0xffffffffffffffff max_cycles: 0x1fb63109b96, max_idle_ns: <span class="token number">440795265316</span> ns
+<span class="token punctuation">[</span>    <span class="token number">0.692265</span><span class="token punctuation">]</span> tsc: Marking TSC unstable due to TSC halts <span class="token keyword">in</span> idle states deeper than C2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>可以看到，在启动的时候，但是由于TSC在C2状态下会停止，所以被标记为不稳定。<br>当然，还有另外一种情况：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/available_clocksource</span>
+kvm-clock tsc acpi_pm
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+kvm-clock<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这种情况下，虽然TSC是可用的，但是还是没有被优先使用。虽然有两种可能性，但其实根因都是一个，那就是在Guest里，CPU缺少一个关键特性，那就是上篇文章提到的<code>Invariant TSC</code>。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># cpuid -1 -l 0x80000007</span>
+CPU:
+   RAS Capability <span class="token punctuation">(</span>0x80000007/ebx<span class="token punctuation">)</span>:
+      MCA overflow recovery support <span class="token operator">=</span> <span class="token boolean">false</span>
+      SUCCOR support                <span class="token operator">=</span> <span class="token boolean">false</span>
+      HWA: hardware assert support  <span class="token operator">=</span> <span class="token boolean">false</span>
+      scalable MCA support          <span class="token operator">=</span> <span class="token boolean">false</span>
+   Advanced Power Management Features <span class="token punctuation">(</span>0x80000007/ecx<span class="token punctuation">)</span>:
+      CmpUnitPwrSampleTimeRatio <span class="token operator">=</span> 0x0 <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+   Advanced Power Management Features <span class="token punctuation">(</span>0x80000007/edx<span class="token punctuation">)</span>:
+      TS: temperature sensing diode           <span class="token operator">=</span> <span class="token boolean">false</span>
+      FID: frequency ID control               <span class="token operator">=</span> <span class="token boolean">false</span>
+      VID: voltage ID control                 <span class="token operator">=</span> <span class="token boolean">false</span>
+      TTP: thermal trip                       <span class="token operator">=</span> <span class="token boolean">false</span>
+      TM: thermal monitor                     <span class="token operator">=</span> <span class="token boolean">false</span>
+      STC: software thermal control           <span class="token operator">=</span> <span class="token boolean">false</span>
+      <span class="token number">100</span> MHz multiplier control              <span class="token operator">=</span> <span class="token boolean">false</span>
+      hardware P-State control                <span class="token operator">=</span> <span class="token boolean">false</span>
+      TscInvariant                            <span class="token operator">=</span> <span class="token boolean">false</span>
+      CPB: core performance boost             <span class="token operator">=</span> <span class="token boolean">false</span>
+      read-only effective frequency interface <span class="token operator">=</span> <span class="token boolean">false</span>
+      processor feedback interface            <span class="token operator">=</span> <span class="token boolean">false</span>
+      APM power reporting                     <span class="token operator">=</span> <span class="token boolean">false</span>
+      connected standby                       <span class="token operator">=</span> <span class="token boolean">false</span>
+      RAPL: running average power limit       <span class="token operator">=</span> <span class="token boolean">false</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，关键的<code>TscInvariant</code>是false，在第一种情况下，<code>intel_idle</code>驱动正常加载，在<a href="https://github.com/torvalds/linux/blob/v6.12/drivers/idle/intel_idle.c#L2008">驱动代码中</a>：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> bool __init <span class="token function">intel_idle_verify_cstate</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">int</span> mwait_hint<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">int</span> mwait_cstate <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token function">MWAIT_HINT2CSTATE</span><span class="token punctuation">(</span>mwait_hint<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>
+					MWAIT_CSTATE_MASK<span class="token punctuation">;</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">int</span> num_substates <span class="token operator">=</span> <span class="token punctuation">(</span>mwait_substates <span class="token operator">>></span> mwait_cstate <span class="token operator">*</span> <span class="token number">4</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>
+					MWAIT_SUBSTATE_MASK<span class="token punctuation">;</span>
+
+	<span class="token comment">/* Ignore the C-state if there are NO sub-states in CPUID for it. */</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>num_substates <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> false<span class="token punctuation">;</span>
+
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>mwait_cstate <span class="token operator">></span> <span class="token number">2</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span><span class="token function">boot_cpu_has</span><span class="token punctuation">(</span>X86_FEATURE_NONSTOP_TSC<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token function">mark_tsc_unstable</span><span class="token punctuation">(</span><span class="token string">"TSC halts in idle states deeper than C2"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">return</span> true<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>会检测CPU是否有<code>X86_FEATURE_NONSTOP_TSC</code>也就是<code>TscInvariant</code>，如果没有，就会标记TSC为不稳定。那么在这种情况下，因为TSC被标记为不稳定了，所以tsc是不会出现在available_clocksource中的。</p>
+<p>那第二种情况呢，TSC没有被标记为不稳定，也出现在了<code>available_clocksource</code>中，但是为什么还是没有被优先使用呢？这是因为默认情况下，kvm-clock的优先级比TSC要高，可以看到在内核中的<a href="https://github.com/torvalds/linux/blob/v6.12/arch/x86/kernel/kvmclock.c">代码</a>：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">struct</span> <span class="token class-name">clocksource</span> kvm_clock <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+	<span class="token punctuation">.</span>name	<span class="token operator">=</span> <span class="token string">"kvm-clock"</span><span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>read	<span class="token operator">=</span> kvm_clock_get_cycles<span class="token punctuation">,</span>
+    <span class="token comment">// 默认情况下，kvm-clock的rating是400，这比TSC的rating 300要高，所以当两者同时存在时，系统会优先使用kvm-clock作为时钟源</span>
+	<span class="token punctuation">.</span>rating	<span class="token operator">=</span> <span class="token number">400</span><span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>mask	<span class="token operator">=</span> <span class="token function">CLOCKSOURCE_MASK</span><span class="token punctuation">(</span><span class="token number">64</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>flags	<span class="token operator">=</span> CLOCK_SOURCE_IS_CONTINUOUS<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>id     <span class="token operator">=</span> CSID_X86_KVM_CLK<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>enable	<span class="token operator">=</span> kvm_cs_enable<span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>但是在<code>kvm-clock</code>初始化的过程中，如果发现TSC满足条件的话，会主动降低自己的rating：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> __init <span class="token function">kvmclock_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">// ...</span>
+
+	<span class="token comment">/*
+	 * X86_FEATURE_NONSTOP_TSC is TSC runs at constant rate
+	 * with P/T states and does not stop in deep C-states.
+	 *
+	 * Invariant TSC exposed by host means kvmclock is not necessary:
+	 * can use TSC as clocksource.
+	 *
+	 */</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">boot_cpu_has</span><span class="token punctuation">(</span>X86_FEATURE_CONSTANT_TSC<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+	    <span class="token function">boot_cpu_has</span><span class="token punctuation">(</span>X86_FEATURE_NONSTOP_TSC<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+	    <span class="token operator">!</span><span class="token function">check_tsc_unstable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		kvm_clock<span class="token punctuation">.</span>rating <span class="token operator">=</span> <span class="token number">299</span><span class="token punctuation">;</span>
+
+	<span class="token function">clocksource_register_hz</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>kvm_clock<span class="token punctuation">,</span> NSEC_PER_SEC<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	pv_info<span class="token punctuation">.</span>name <span class="token operator">=</span> <span class="token string">"KVM"</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，只要CPU支持<code>TscInvariant</code>，那么kvm-clock的rating会主动降低自己的rating到299，那么在这种情况下，TSC将会成为rating更高的时钟源，从而被优先使用。但是由于Guest里CPU不支持<code>TscInvariant</code>，所以TSC并没有被优先使用。</p>
+<p>到这里可以看出，要想让Guest支持并默认使用TSC作为时钟源，<code>TscInvariant</code>这个特性是十分关键的。</p>
+<h2 id="开启TscInvariant特性"><a href="#开启TscInvariant特性" class="headerlink" title="开启TscInvariant特性"></a>开启TscInvariant特性</h2><p>Qemu最早在2.1版本中已经支持了<code>TscInvariant</code>，可以看到在这个版本的<a href="https://wiki.qemu.org/ChangeLog/2.1">Changelog</a>中：</p>
+<blockquote>
+<p>New “invtsc” (Invariant TSC) CPU feature. When enabled, this will block migration and savevm, so it is not enabled by default on any CPU model. To enable invtsc, the migratable&#x3D;no flag (supported only by -cpu host, by now) is required. So, invtsc is available only if using: -cpu host,migratable&#x3D;no,+invtsc.</p>
+</blockquote>
+<p>开启方法很简单，只需要在启动时加上参数<code>-cpu host,migratable=no,+invtsc</code>即可，或者等价的，在Libvirt的XML中：</p>
+<pre class="line-numbers language-markup" data-language="markup"><code class="language-markup"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>cpu</span> <span class="token attr-name">mode</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>host-passthrough<span class="token punctuation">'</span></span> <span class="token attr-name">migratable</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>feature</span> <span class="token attr-name">policy</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>require<span class="token punctuation">'</span></span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>invtsc<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>cpu</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>按文档启动一个虚拟机，然后查看对应的效果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># lscpu |grep Fla</span>
+Flags:                              fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves wbnoinvd arat vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq la57 rdpid fsrm md_clear arch_capabilities
+<span class="token comment"># dmesg |grep tsc</span>
+<span class="token punctuation">[</span>    <span class="token number">0.000005</span><span class="token punctuation">]</span> tsc: Detected <span class="token number">2199.998</span> MHz processor
+<span class="token punctuation">[</span>    <span class="token number">0.112544</span><span class="token punctuation">]</span> clocksource: tsc-early: mask: 0xffffffffffffffff max_cycles: 0x1fb63109b96, max_idle_ns: <span class="token number">440795265316</span> ns
+<span class="token punctuation">[</span>    <span class="token number">0.310799</span><span class="token punctuation">]</span> clocksource: tsc: mask: 0xffffffffffffffff max_cycles: 0x1fb63109b96, max_idle_ns: <span class="token number">440795265316</span> ns
+<span class="token punctuation">[</span>    <span class="token number">0.310905</span><span class="token punctuation">]</span> clocksource: Switched to clocksource tsc
+<span class="token comment"># cpuid -1 -l 0x80000007|grep TscInvariant</span>
+      TscInvariant                            <span class="token operator">=</span> <span class="token boolean">true</span>
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/available_clocksource</span>
+tsc kvm-clock acpi_pm
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+tsc<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，TSC已经成为可用并且是默认的时钟源了。</p>
+<h2 id="VM热迁移"><a href="#VM热迁移" class="headerlink" title="VM热迁移"></a>VM热迁移</h2><p>现在我们已经实现了Guest默认使用TSC作为时钟源，但是还有一个问题，从上面的changelog里其实也能看出来，那就是现在的配置，VM是没有迁移能力的，当前的配置下，如果尝试迁移VM，会出现如下错误：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">Requested operation is not valid: cannot migrate domain: State blocked by non-migratable CPU device <span class="token punctuation">(</span>invtsc flag<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>为什么有了<code>TscInvariant</code>之后就无法迁移了呢？我们可以简单想象一下，一开始VM运行在Host1上，并且使用了TSC作为时钟源，这时如果VM被迁移到Host2上，但是有个问题，Host2的TSC频率和Host1不一致，那很显然此时VM读取到的TSC频率就会发生变化，这很显然并不是我们想要的结果。<br>但是，KVM是支持用户自定义VM的TSC频率的，如果我们手动设置一个TSC频率，让迁移前后，Guest看到的TSC频率保持一致，自然也就不会导致问题了，因此在Qemu 2.9版本中，也是支持了这种情况，当用户指定了TSC的频率，即使在有invtsc的情况下，依然可以支持热迁移，具体的修改可以参考<a href="https://github.com/qemu/qemu/commit/d99569d">这个commit</a>。而我们需要做的，就是在启动参数里加上<code>-cpu host,migratable=on,+invtsc,tsc-freq=XXX</code>，或者等价的，使用libvirt xml：</p>
+<pre class="line-numbers language-markup" data-language="markup"><code class="language-markup"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>cpu</span> <span class="token attr-name">mode</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>host-passthrough<span class="token punctuation">'</span></span> <span class="token attr-name">migratable</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>on<span class="token punctuation">'</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>feature</span> <span class="token attr-name">policy</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>require<span class="token punctuation">'</span></span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>invtsc<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>cpu</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>clock</span> <span class="token attr-name">offset</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>utc<span class="token punctuation">'</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timer</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>tsc<span class="token punctuation">'</span></span> <span class="token attr-name">frequency</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>2200000000<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>clock</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="TSC虚拟化的硬件加速"><a href="#TSC虚拟化的硬件加速" class="headerlink" title="TSC虚拟化的硬件加速"></a>TSC虚拟化的硬件加速</h2><p>还剩下最后的一个问题，KVM是如何高效的实现固定Guest TSC频率的？当Guest TSC频率和Host TSC频率不一致时，这中间又是如何转换的？以及如何在迁移过程中确保TSC不会发生跳变？<br>在这种场景下，CPU支持的<code>TSC scaling</code>以及<code>TSC offseting</code>这两个特性就十分重要了，怎么理解呢，如果启用了<code>TSC offseting</code>，那么Guest在读取TSC的时候，硬件会在原始TSC值的基础上，加上一个设置的offset，这样在迁移过程中，源和目的宿主机的TSC base值不一样的情况下，只需要改一下这个offset值就好了，由于这个offset也只会在Guest读取时加上，因此也不会影响宿主机使用TSC。<br><code>TSC scaling</code>也是类似的机制，通过设置一个频率倍率，让Guest读取TSC时将CPU当前的TSC值乘以这个倍率之后返回给Geust，从而解决用户设置的TSC频率和CPU本身TSC频率不一致的问题。<br>具体的信息，可以参考一下Intel的<a href="https://cdrdv2.intel.com/v1/dl/getContent/671506">开发手册</a>：</p>
+<blockquote><h4 id="26-6-5-Time-Stamp-Counter-Offset-and-Multiplier"><a href="#26-6-5-Time-Stamp-Counter-Offset-and-Multiplier" class="headerlink" title="26.6.5 Time-Stamp Counter Offset and Multiplier"></a>26.6.5 Time-Stamp Counter Offset and Multiplier</h4><p> The VM-execution control fields include a 64-bit TSC-offset field. If the “RDTSC exiting” control is 0 and the “use TSC offsetting” control is 1, this field controls executions of the RDTSC and RDTSCP instructions. It also controls executions of the RDMSR instruction that read from the IA32_TIME_STAMP_COUNTER MSR. For all of these, the value of the TSC offset is added to the value of the time-stamp counter, and the sum is returned to guest software in EDX:EAX.<br> Processors that support the 1-setting of the “use TSC scaling” control also support a 64-bit TSC-multiplier field. If this control is 1 (and the “RDTSC exiting” control is 0 and the “use TSC offsetting” control is 1), this field also affects the executions of the RDTSC, RDTSCP, and RDMSR instructions identified above. Specifically, the contents of the time-stamp counter is first multiplied by the TSC multiplier before adding the TSC offset.<br> See Chapter 26 for a detailed treatment of the behavior of RDTSC, RDTSCP, and RDMSR in VMX non-root operation.</p>
+<h3 id="27-3-CHANGES-TO-INSTRUCTION-BEHAVIOR-IN-VMX-NON-ROOT-OPERATION"><a href="#27-3-CHANGES-TO-INSTRUCTION-BEHAVIOR-IN-VMX-NON-ROOT-OPERATION" class="headerlink" title="27.3 CHANGES TO INSTRUCTION BEHAVIOR IN VMX NON-ROOT OPERATION"></a>27.3 CHANGES TO INSTRUCTION BEHAVIOR IN VMX NON-ROOT OPERATION</h3><p>• RDTSC. Behavior of the RDTSC instruction is determined by the settings of the “RDTSC exiting” and “use TSC offsetting” VM-execution controls:<br>    — If both controls are 0, RDTSC operates normally.<br>    — If the “RDTSC exiting” VM-execution control is 0 and the “use TSC offsetting” VM-execution control is 1, the value returned is determined by the setting of the “use TSC scaling” VM-execution control:<br>        • If the control is 0, RDTSC loads EAX:EDX with the sum of the value of the IA32_TIME_STAMP_COUNTER MSR and the value of the TSC offset.<br>        • If the control is 1, RDTSC first computes the product of the value of the IA32_TIME_STAMP_COUNTER MSR and the value of the TSC multiplier. It then shifts the value of the product right 48 bits and loads EAX:EDX with the sum of that shifted value and the value of the TSC offset.<br>    — If the “RDTSC exiting” VM-execution control is 1, RDTSC causes a VM exit.</p>
+</blockquote>
+
+<p>可以看到在Intel平台，<code>TSC-offset</code>以及<code>TSC multiplier</code>是VMCS中的两个字段，通过修改这两个以及<code>RDTSC exiting</code>字段，可以很好的控制Guest中TSC的行为。</p>
+<p>当然，AMD的实现和Intel还有一些区别，具体的也可以参考<a href="https://www.amd.com/content/dam/amd/en/documents/processor-tech-docs/programmer-references/40332.pdf">AMD的文档</a></p>
+<blockquote><h3 id="15-30-5-TSC-Ratio-MSR-C000-0104h"><a href="#15-30-5-TSC-Ratio-MSR-C000-0104h" class="headerlink" title="15.30.5 TSC Ratio MSR (C000_0104h)"></a>15.30.5 TSC Ratio MSR (C000_0104h)</h3><p>Writing to the TSC Ratio MSR allows the hypervisor to control the guest’s view of the Time Stamp Counter. The contents of TSC Ratio MSR sets the value of the TSCRatio. This constant scales the timestamp value returned when the TSC is read by a guest via the RDTSC or RDTSCP instructions or when the TSC, MPERF, or MPerfReadOnly MSRs are read via the RDMSR instruction by a guest running under virtualization.</p>
+<p>This facility allows the hypervisor to provide a consistent TSC, MPERF, and MPerfReadOnly rate for a guest process when moving that process between cores that have a differing P0 rate. The TSCRatio does not affect the value read from the TSC, MPERF, and MPerfReadOnly MSRs when in host mode or when virtualization is disabled. System Management Mode (SMM) code sees unscaled TSC, MPERF and MPerfReadOnly values unless the SMM code is executed within a guest container. The TSCRatio value does not affect the rate of the underlying TSC, MPERF, and MPerfReadOnly counters, nor the value that gets written to the TSC, MPERF, and MPerfReadOnly MSRs counters on a write by either the host or the guest.</p>
+<p>The TSC Ratio MSR specifies the TSCRatio value as a fixed-point binary number in 8.32 format, which is composed of 8 bits of integer and 32 bits of fraction. This number is the ratio of the desired P0 frequency to be presented to the guest relative to the P0 frequency of the core (See Section 17.1, “PState Control,” on page 657). The reset value of the TSCRatio is 1.0, which sets the guest P0 frequency to match the core P0 frequency.</p>
+<p>Note that:<br>        <code>TSCFreq = Core P0 frequency * TSCRatio, so TSCRatio = (Desired TSCFreq) / Core P0 frequency.</code></p>
+<p>The TSC value read by the guest is computed using the TSC Ratio MSR along with the TSC_OFFSET field from the VMCB so that the actual value returned is:<br>        <code>TSC Value (in guest) = (P0 frequency * TSCRatio * t) + VMCB.TSC_OFFSET + (Last Value Written to TSC) * TSCRatio</code><br>            Where t is time since the TSC was last written via the TSC MSR (or since reset if not written)</p>
+</blockquote>
+
+<p>和Intel相比，AMD的TSC offset值是设置在VMCB中的，而TSC Scaling的倍率是基于MSR来实现的。实现的逻辑有区别并不重要，毕竟KVM会隔离掉不同平台的实现细节。重要的是，软硬件的协同配合，使得在虚拟化场景下，TSC可以作为一个高效的时钟源被VM使用。</p>
+<h2 id="性能测试"><a href="#性能测试" class="headerlink" title="性能测试"></a>性能测试</h2><p>最后来看看相比于<code>kvm-clock</code>时钟源，使用<code>tsc</code>作为时钟源能够带来多大的性能提升吧。从红帽找到了一个测试时钟性能的<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux_for_real_time/7/html/reference_guide/sect-posix_clocks">例子</a>：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;time.h></span></span>
+
+<span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">int</span> rc<span class="token punctuation">;</span>
+	<span class="token keyword">long</span> i<span class="token punctuation">;</span>
+	<span class="token keyword">struct</span> <span class="token class-name">timespec</span> ts<span class="token punctuation">;</span>
+
+	<span class="token keyword">for</span><span class="token punctuation">(</span>i<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span> i<span class="token operator">&lt;</span><span class="token number">500000000</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		rc <span class="token operator">=</span> <span class="token function">clock_gettime</span><span class="token punctuation">(</span>CLOCK_MONOTONIC<span class="token punctuation">,</span> <span class="token operator">&amp;</span>ts<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>编译运行：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+tsc
+<span class="token comment"># time taskset -c 6 ./clock_timing</span>
+
+real    0m10.858s
+user    0m10.821s
+sys     0m0.000s
+<span class="token comment"># echo kvm-clock |sudo tee /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+kvm-clock
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+kvm-clock
+<span class="token comment"># time taskset -c 6 ./clock_timing</span>
+
+real    0m13.530s
+user    0m13.482s
+sys     0m0.002s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>同样是获取<code>500000000</code>次时间，<code>tsc</code>需要<code>10.821s</code>，而<code>kvm-clock</code>需要<code>13.482s</code>，差不多提升了20%，算是相当大的提升幅度了。</p>
+]]></content>
+      <categories>
+        <category>虚拟化</category>
+      </categories>
+      <tags>
+        <tag>TSC Virtualization</tag>
+        <tag>TSC直通</tag>
+      </tags>
+  </entry>
 </search>

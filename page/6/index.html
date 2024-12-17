@@ -152,18 +152,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">101</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">223</span>
+        <span class="site-state-item-count">225</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -198,6 +198,100 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/12/24/centos-bonding-vlan-bridge/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2018/12/24/centos-bonding-vlan-bridge/" class="post-title-link" itemprop="url">CentOS系统Bonding+VLAN+Bridge配置</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018年12月24日 9:35 9:35:52" itemprop="dateCreated datePublished" datetime="2018-12-24T09:35:52+08:00">2018年12月24日 9:35</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux%E9%83%A8%E7%BD%B2/" itemprop="url" rel="index"><span itemprop="name">Linux部署</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>由于业务的需要，需要在我们的一台虚拟化机器上，实现如下的配置：</p>
+<p>首先，需要将两块网卡设置Bonding并配置交换机对应端口trunk模式;在此基础上，添加宿主机的IP地址，并添加相应的VLAN，最后，还需要添加一个Bridge，用于桥接创建的虚拟机。</p>
+<p>由于本身这台机器就是Openstack的宿主机，所以当前的状况是除了所需要的一个Bridge，其他都已经配置完成了，并且由于Openstack的原因，已经有个Bridge virbr0被绑定到bond0上了。<br>但是呢，这个Bridge是给ovs用的，也就是说，桥接在virbr0上的网络需要自己带上VLAN的tag才能正常工作，而我们希望的是再有一个Bridge br0，桥接在br0上不需要管理VLAN，保持和宿主机相同就可以。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2018/12/24/centos-bonding-vlan-bridge/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1087,98 +1181,6 @@ PG正在互联过程中。
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2018/05/10/k8s-cronjob-source-code/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/03/20/ddia-note-chapter-1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2018/03/20/ddia-note-chapter-1/" class="post-title-link" itemprop="url">《DDIA》读书笔记第一章</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2018年3月20日 19:46 19:46:17" itemprop="dateCreated datePublished" datetime="2018-03-20T19:46:17+08:00">2018年3月20日 19:46</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>之前一直听说Designing Data-Intensive Applications (DDIA) 这本书是神书，也决定读一下，顺便做些笔记，也算巩固一下学到的东西吧。</p>
-<p>书的第一部分，主要关注于一些基础的知识，第一章的标题<code>Reliable, Scalable, and Maintainable Applications</code>就讲了三个当前应用的最主要特点：可靠性，可扩展性和可维护性。</p>
-<h2 id="可靠性"><a href="#可靠性" class="headerlink" title="可靠性"></a>可靠性</h2><p>首先是<code>Reliability</code>也就是可靠性，主要包含下面的几个预期：</p>
-<ul>
-<li>应用可以按用户所期待的功能正常运行</li>
-<li>可以容忍用户犯的错误或者不正确的使用方式</li>
-<li>在对应的系统容量下性能能满足正常的使用要求</li>
-<li>能拒绝未授权或者滥用的情况</li>
-</ul>
-<p>如果能满足上面的需求，可以说一个软件是可靠的，但是并不是所有的东西都能满足预期，当一些意料之外的东西发生了，称之为<code>faults</code>，系统正确应对这些<code>faults</code>的能力则称作<code>fault-tolerant or resilient</code>（即容错能力或者弹性），虽然容错能力很重要，但也不是意味着可以实现一个能容忍任何错误的系统（比如地球爆炸了）。<br>需要注意的是，<code>fault</code>和<code>failure</code>是不一样的，前者一般指的是系统某个部分没有按照设计正常工作，而后者一般就意味着整个系统都无法正常提供服务了。当然，我们没有办法去降低<code>fault</code>发生的概率，特别是降低到0，能做的，就是当<code>fault</code>发生时，系统不会因为这些<code>faults</code>变成<code>failure</code>状态，这也是一个容错系统的设计目标。<br>针对一个系统，我们可以人为的提升<code>faults</code>的发生概率，来验证系统的可靠性，比如kill某个进程，或者断开网络等等。一般情况下，比较严重的bug都是因为对错误的处理不完善导致的。<br>当然尽管我们可以通过设计容忍很多错误，但是预防错误的发生，远远比发生后再去修复来的好，毕竟很多错误是没办法被修复的，比如数据库被黑客入侵，这个操作无法被修复到原始的样子（数据已经泄漏）。<br>常见的错误主要有三个：</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2018/03/20/ddia-note-chapter-1/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>

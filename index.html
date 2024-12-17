@@ -152,18 +152,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">101</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">223</span>
+        <span class="site-state-item-count">225</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -198,6 +198,105 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2024/12/17/enable-tsc-virtualization-on-kvm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2024/12/17/enable-tsc-virtualization-on-kvm/" class="post-title-link" itemprop="url">在KVM虚拟机中开启TSC作为时钟源</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024年12月17日 20:49 20:49:51" itemprop="dateCreated datePublished" datetime="2024-12-17T20:49:51+08:00">2024年12月17日 20:49</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2024年12月17日 18:33 18:33:53" itemprop="dateModified" datetime="2024-12-17T18:33:53+08:00">2024年12月17日 18:33</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%99%9A%E6%8B%9F%E5%8C%96/" itemprop="url" rel="index"><span itemprop="name">虚拟化</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>上一篇<a href="/2024/11/11/facts-about-x86-tsc/">x86平台的TSC（TIME-STAMP COUNTER）</a>中大概分析了一下TSC的一些相关的特性，以及TSC作为系统时钟源的一些基础条件。那么，在虚拟化的场景下，如何让Guest也用上TSC呢？这篇文章就来讨论一下TSC在KVM虚拟化中的使用。</p>
+<h2 id="基础分析"><a href="#基础分析" class="headerlink" title="基础分析"></a>基础分析</h2><p>默认情况下，KVM虚拟机首选的时钟源是<code>kvm-clock</code>，即使将VM的CPU Model设置为<code>host-passthrough</code>，也不会使用TSC作为时钟源。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># lscpu|grep Flags</span>
+Flags:                                fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq dtes64 vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves wbnoinvd arat vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq la57 rdpid fsrm md_clear flush_l1d arch_capabilities
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/available_clocksource</span>
+kvm-clock acpi_pm
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+kvm-clock<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/12/17/enable-tsc-virtualization-on-kvm/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1036,99 +1135,6 @@ tsc<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2022/03/20/implement-a-k8s-authenticating-proxy/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/03/05/build-a-ceph-rbd-http-api-with-go-ceph/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/03/05/build-a-ceph-rbd-http-api-with-go-ceph/" class="post-title-link" itemprop="url">使用Go-Ceph库编写一个更简单的RBD HTTP API</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2022年3月5日 22:27 22:27:13" itemprop="dateCreated datePublished" datetime="2022-03-05T22:27:13+08:00">2022年3月5日 22:27</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2022年3月14日 9:46 9:46:02" itemprop="dateModified" datetime="2022-03-14T09:46:02+08:00">2022年3月14日 9:46</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>很多人看到这个标题会很奇怪，Ceph不是有一个<a target="_blank" rel="noopener" href="https://docs.ceph.com/en/pacific/mgr/ceph_api/index.html">RESTful API</a>么，为什么又要造一遍轮子？</p>
-<p>的确，Ceph的官方组件Dashboard，内置了一些非常强大的RESTful API，功能也是比较的全面。为啥又要自己写一个呢？在我们的环境里，有一个自己实现的类似Openstack的虚拟机管理平台。而这个平台对接Ceph RBD时，就是使用的Dashboard模块提供的API。个人觉得啊，官方的API，虽然功能全，但确实对于对接的用户来说，真的不是那么友好。这里举几个简单的点：</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2022/03/05/build-a-ceph-rbd-http-api-with-go-ceph/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>

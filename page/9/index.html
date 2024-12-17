@@ -152,18 +152,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">101</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">223</span>
+        <span class="site-state-item-count">225</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -198,6 +198,103 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/02/15/apache-no-space-left-on-device-couldnt-create-accept-lock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2017/02/15/apache-no-space-left-on-device-couldnt-create-accept-lock/" class="post-title-link" itemprop="url">Apache: No space left on device: Couldn't create accept lock</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017年2月15日 14:40 14:40:48" itemprop="dateCreated datePublished" datetime="2017-02-15T14:40:48+08:00">2017年2月15日 14:40</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">源码分析</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>服务器的Apache进程突然无法启动了，在错误日志中，有如下信息:</p>
+<pre class="line-numbers language-none"><code class="language-none">[Mon Feb 13 14:54:10 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.8173) (5)
+[Mon Feb 13 14:55:02 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.8823) (5)
+[Mon Feb 13 14:56:01 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.9113) (5)
+[Mon Feb 13 14:57:01 2017] [emerg] (28)No space left on device: Couldn&#39;t create accept lock (&#x2F;var&#x2F;logs&#x2F;accept.lock.9765) (5)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>看了一下磁盘，空间并没有被占满，于是搜索了一下，找到了办法。
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2017/02/15/apache-no-space-left-on-device-couldnt-create-accept-lock/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1010,99 +1107,6 @@ xxxxxx
 <blockquote><p>If you don’t want a “– “ signature separator (the divider between the message body and the signature)<br>use the config editor to change mail.identity.default.suppress_signature_separator from false to true.<br>This requires Thunderbird 5.0 or later. If you are using Windows go to Tools → Options → Advanced → General<br>and press the Config Editor button. Enter suppress_signature_separator in the Filter: field and press return.<br>Find mail.identity.default.suppress_signature_separator in the results and double click on false in its Value column<br>to toggle it to true, then close the config editor and press the OK button. </p>
 </blockquote>
 
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2016/09/27/sinacloud-php7-migrate/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2016/09/27/sinacloud-php7-migrate/" class="post-title-link" itemprop="url">新浪云换7指南</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2016年9月27日 11:27 11:27:25" itemprop="dateCreated datePublished" datetime="2016-09-27T11:27:25+08:00">2016年9月27日 11:27</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2021年6月9日 15:06 15:06:19" itemprop="dateModified" datetime="2021-06-09T15:06:19+08:00">2021年6月9日 15:06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>新浪云的PHP 7版本运行环境上线了，相对于PHP 5,PHP 7的性能，在官方宣传和实际应用测试中，都有极好的性能表现，大多数的主流应用和框架都有超过1倍的性能提升。</p>
-<p>随着新浪云支持PHP 7运行环境，将应用切换到PHP 7版本运行无疑是更好的选择，但是，由于PHP 7的修改十分巨大，因此，有极少部分的代码是不兼容的，需要针对性的进行修改，想比较巨大的性能提升，这些小的修改就变得微不足道了～
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2016/09/27/sinacloud-php7-migrate/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
       
     </div>
 

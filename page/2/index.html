@@ -152,18 +152,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">101</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">223</span>
+        <span class="site-state-item-count">225</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -198,6 +198,99 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/03/05/build-a-ceph-rbd-http-api-with-go-ceph/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/03/05/build-a-ceph-rbd-http-api-with-go-ceph/" class="post-title-link" itemprop="url">使用Go-Ceph库编写一个更简单的RBD HTTP API</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022年3月5日 22:27 22:27:13" itemprop="dateCreated datePublished" datetime="2022-03-05T22:27:13+08:00">2022年3月5日 22:27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022年3月14日 9:46 9:46:02" itemprop="dateModified" datetime="2022-03-14T09:46:02+08:00">2022年3月14日 9:46</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>很多人看到这个标题会很奇怪，Ceph不是有一个<a target="_blank" rel="noopener" href="https://docs.ceph.com/en/pacific/mgr/ceph_api/index.html">RESTful API</a>么，为什么又要造一遍轮子？</p>
+<p>的确，Ceph的官方组件Dashboard，内置了一些非常强大的RESTful API，功能也是比较的全面。为啥又要自己写一个呢？在我们的环境里，有一个自己实现的类似Openstack的虚拟机管理平台。而这个平台对接Ceph RBD时，就是使用的Dashboard模块提供的API。个人觉得啊，官方的API，虽然功能全，但确实对于对接的用户来说，真的不是那么友好。这里举几个简单的点：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/03/05/build-a-ceph-rbd-http-api-with-go-ceph/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1042,100 +1135,6 @@ failed to start daemon: Error initializing network controller: error obtaining c
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/03/18/ceph-osd-mark-down/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/03/16/ceph-osd-heartbeat/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/03/16/ceph-osd-heartbeat/" class="post-title-link" itemprop="url">Ceph OSD的心跳机制分析</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2021年3月16日 19:44 19:44:31" itemprop="dateCreated datePublished" datetime="2021-03-16T19:44:31+08:00">2021年3月16日 19:44</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2021年3月16日 18:03 18:03:12" itemprop="dateModified" datetime="2021-03-16T18:03:12+08:00">2021年3月16日 18:03</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>心跳机制在Ceph中承担非常重要的角色，所有OSD之间都需要通过心跳来确认各个OSD的状态，并且在OSD出现失联，Crash等情况下能及时的被发现，从而进行故障OSD摘除，触发数据重平衡等，保证数据的安全性。</p>
-<p>所以弄明白当前Ceph的心跳机制，理顺OSD从故障到被集群踢出的流程是十分必要的。</p>
-<h3 id="心跳初始化-心跳发送"><a href="#心跳初始化-心跳发送" class="headerlink" title="心跳初始化 &amp; 心跳发送"></a>心跳初始化 &amp; 心跳发送</h3><p>首先我们从Ceph OSD进程的启动main函数开始，代码在<code>src/ceph_osd.cc</code>：</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/03/16/ceph-osd-heartbeat/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
