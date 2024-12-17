@@ -4920,6 +4920,209 @@ mmcblk1            <span class="token number">0</span>        4M      76M       
       </tags>
   </entry>
   <entry>
+    <title>在KVM虚拟机中开启TSC作为时钟源</title>
+    <url>/2024/12/17/enable-tsc-virtualization-on-kvm/</url>
+    <content><![CDATA[<p>上一篇<a href="/2024/11/11/facts-about-x86-tsc/">x86平台的TSC（TIME-STAMP COUNTER）</a>中大概分析了一下TSC的一些相关的特性，以及TSC作为系统时钟源的一些基础条件。那么，在虚拟化的场景下，如何让Guest也用上TSC呢？这篇文章就来讨论一下TSC在KVM虚拟化中的使用。</p>
+<h2 id="基础分析"><a href="#基础分析" class="headerlink" title="基础分析"></a>基础分析</h2><p>默认情况下，KVM虚拟机首选的时钟源是<code>kvm-clock</code>，即使将VM的CPU Model设置为<code>host-passthrough</code>，也不会使用TSC作为时钟源。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># lscpu|grep Flags</span>
+Flags:                                fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq dtes64 vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves wbnoinvd arat vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq la57 rdpid fsrm md_clear flush_l1d arch_capabilities
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/available_clocksource</span>
+kvm-clock acpi_pm
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+kvm-clock<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span id="more"></span>
+<p>可以看到，即使CPU有大部分TSC相关的Flags，但是<code>available_clocksource</code>里并没有TSC，current_clocksource也是kvm-clock，原因可以从dmesg里看到：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># dmesg |grep -i tsc</span>
+<span class="token punctuation">[</span>    <span class="token number">0.000000</span><span class="token punctuation">]</span> tsc: Detected <span class="token number">2199.998</span> MHz processor
+<span class="token punctuation">[</span>    <span class="token number">0.001000</span><span class="token punctuation">]</span> clocksource: tsc-early: mask: 0xffffffffffffffff max_cycles: 0x1fb63109b96, max_idle_ns: <span class="token number">440795265316</span> ns
+<span class="token punctuation">[</span>    <span class="token number">0.001000</span><span class="token punctuation">]</span> TSC deadline timer enabled
+<span class="token punctuation">[</span>    <span class="token number">0.577230</span><span class="token punctuation">]</span> clocksource: tsc: mask: 0xffffffffffffffff max_cycles: 0x1fb63109b96, max_idle_ns: <span class="token number">440795265316</span> ns
+<span class="token punctuation">[</span>    <span class="token number">0.692265</span><span class="token punctuation">]</span> tsc: Marking TSC unstable due to TSC halts <span class="token keyword">in</span> idle states deeper than C2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>可以看到，在启动的时候，但是由于TSC在C2状态下会停止，所以被标记为不稳定。<br>当然，还有另外一种情况：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/available_clocksource</span>
+kvm-clock tsc acpi_pm
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+kvm-clock<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这种情况下，虽然TSC是可用的，但是还是没有被优先使用。虽然有两种可能性，但其实根因都是一个，那就是在Guest里，CPU缺少一个关键特性，那就是上篇文章提到的<code>Invariant TSC</code>。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># cpuid -1 -l 0x80000007</span>
+CPU:
+   RAS Capability <span class="token punctuation">(</span>0x80000007/ebx<span class="token punctuation">)</span>:
+      MCA overflow recovery support <span class="token operator">=</span> <span class="token boolean">false</span>
+      SUCCOR support                <span class="token operator">=</span> <span class="token boolean">false</span>
+      HWA: hardware assert support  <span class="token operator">=</span> <span class="token boolean">false</span>
+      scalable MCA support          <span class="token operator">=</span> <span class="token boolean">false</span>
+   Advanced Power Management Features <span class="token punctuation">(</span>0x80000007/ecx<span class="token punctuation">)</span>:
+      CmpUnitPwrSampleTimeRatio <span class="token operator">=</span> 0x0 <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+   Advanced Power Management Features <span class="token punctuation">(</span>0x80000007/edx<span class="token punctuation">)</span>:
+      TS: temperature sensing diode           <span class="token operator">=</span> <span class="token boolean">false</span>
+      FID: frequency ID control               <span class="token operator">=</span> <span class="token boolean">false</span>
+      VID: voltage ID control                 <span class="token operator">=</span> <span class="token boolean">false</span>
+      TTP: thermal trip                       <span class="token operator">=</span> <span class="token boolean">false</span>
+      TM: thermal monitor                     <span class="token operator">=</span> <span class="token boolean">false</span>
+      STC: software thermal control           <span class="token operator">=</span> <span class="token boolean">false</span>
+      <span class="token number">100</span> MHz multiplier control              <span class="token operator">=</span> <span class="token boolean">false</span>
+      hardware P-State control                <span class="token operator">=</span> <span class="token boolean">false</span>
+      TscInvariant                            <span class="token operator">=</span> <span class="token boolean">false</span>
+      CPB: core performance boost             <span class="token operator">=</span> <span class="token boolean">false</span>
+      read-only effective frequency interface <span class="token operator">=</span> <span class="token boolean">false</span>
+      processor feedback interface            <span class="token operator">=</span> <span class="token boolean">false</span>
+      APM power reporting                     <span class="token operator">=</span> <span class="token boolean">false</span>
+      connected standby                       <span class="token operator">=</span> <span class="token boolean">false</span>
+      RAPL: running average power limit       <span class="token operator">=</span> <span class="token boolean">false</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，关键的<code>TscInvariant</code>是false，在第一种情况下，<code>intel_idle</code>驱动正常加载，在<a href="https://github.com/torvalds/linux/blob/v6.12/drivers/idle/intel_idle.c#L2008">驱动代码中</a>：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> bool __init <span class="token function">intel_idle_verify_cstate</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">int</span> mwait_hint<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">int</span> mwait_cstate <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token function">MWAIT_HINT2CSTATE</span><span class="token punctuation">(</span>mwait_hint<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>
+					MWAIT_CSTATE_MASK<span class="token punctuation">;</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">int</span> num_substates <span class="token operator">=</span> <span class="token punctuation">(</span>mwait_substates <span class="token operator">>></span> mwait_cstate <span class="token operator">*</span> <span class="token number">4</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span>
+					MWAIT_SUBSTATE_MASK<span class="token punctuation">;</span>
+
+	<span class="token comment">/* Ignore the C-state if there are NO sub-states in CPUID for it. */</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>num_substates <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> false<span class="token punctuation">;</span>
+
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>mwait_cstate <span class="token operator">></span> <span class="token number">2</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span><span class="token function">boot_cpu_has</span><span class="token punctuation">(</span>X86_FEATURE_NONSTOP_TSC<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token function">mark_tsc_unstable</span><span class="token punctuation">(</span><span class="token string">"TSC halts in idle states deeper than C2"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">return</span> true<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>会检测CPU是否有<code>X86_FEATURE_NONSTOP_TSC</code>也就是<code>TscInvariant</code>，如果没有，就会标记TSC为不稳定。那么在这种情况下，因为TSC被标记为不稳定了，所以tsc是不会出现在available_clocksource中的。</p>
+<p>那第二种情况呢，TSC没有被标记为不稳定，也出现在了<code>available_clocksource</code>中，但是为什么还是没有被优先使用呢？这是因为默认情况下，kvm-clock的优先级比TSC要高，可以看到在内核中的<a href="https://github.com/torvalds/linux/blob/v6.12/arch/x86/kernel/kvmclock.c">代码</a>：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">struct</span> <span class="token class-name">clocksource</span> kvm_clock <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+	<span class="token punctuation">.</span>name	<span class="token operator">=</span> <span class="token string">"kvm-clock"</span><span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>read	<span class="token operator">=</span> kvm_clock_get_cycles<span class="token punctuation">,</span>
+    <span class="token comment">// 默认情况下，kvm-clock的rating是400，这比TSC的rating 300要高，所以当两者同时存在时，系统会优先使用kvm-clock作为时钟源</span>
+	<span class="token punctuation">.</span>rating	<span class="token operator">=</span> <span class="token number">400</span><span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>mask	<span class="token operator">=</span> <span class="token function">CLOCKSOURCE_MASK</span><span class="token punctuation">(</span><span class="token number">64</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>flags	<span class="token operator">=</span> CLOCK_SOURCE_IS_CONTINUOUS<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>id     <span class="token operator">=</span> CSID_X86_KVM_CLK<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>enable	<span class="token operator">=</span> kvm_cs_enable<span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>但是在<code>kvm-clock</code>初始化的过程中，如果发现TSC满足条件的话，会主动降低自己的rating：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> __init <span class="token function">kvmclock_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">// ...</span>
+
+	<span class="token comment">/*
+	 * X86_FEATURE_NONSTOP_TSC is TSC runs at constant rate
+	 * with P/T states and does not stop in deep C-states.
+	 *
+	 * Invariant TSC exposed by host means kvmclock is not necessary:
+	 * can use TSC as clocksource.
+	 *
+	 */</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">boot_cpu_has</span><span class="token punctuation">(</span>X86_FEATURE_CONSTANT_TSC<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+	    <span class="token function">boot_cpu_has</span><span class="token punctuation">(</span>X86_FEATURE_NONSTOP_TSC<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+	    <span class="token operator">!</span><span class="token function">check_tsc_unstable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		kvm_clock<span class="token punctuation">.</span>rating <span class="token operator">=</span> <span class="token number">299</span><span class="token punctuation">;</span>
+
+	<span class="token function">clocksource_register_hz</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>kvm_clock<span class="token punctuation">,</span> NSEC_PER_SEC<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	pv_info<span class="token punctuation">.</span>name <span class="token operator">=</span> <span class="token string">"KVM"</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，只要CPU支持<code>TscInvariant</code>，那么kvm-clock的rating会主动降低自己的rating到299，那么在这种情况下，TSC将会成为rating更高的时钟源，从而被优先使用。但是由于Guest里CPU不支持<code>TscInvariant</code>，所以TSC并没有被优先使用。</p>
+<p>到这里可以看出，要想让Guest支持并默认使用TSC作为时钟源，<code>TscInvariant</code>这个特性是十分关键的。</p>
+<h2 id="开启TscInvariant特性"><a href="#开启TscInvariant特性" class="headerlink" title="开启TscInvariant特性"></a>开启TscInvariant特性</h2><p>Qemu最早在2.1版本中已经支持了<code>TscInvariant</code>，可以看到在这个版本的<a href="https://wiki.qemu.org/ChangeLog/2.1">Changelog</a>中：</p>
+<blockquote>
+<p>New “invtsc” (Invariant TSC) CPU feature. When enabled, this will block migration and savevm, so it is not enabled by default on any CPU model. To enable invtsc, the migratable&#x3D;no flag (supported only by -cpu host, by now) is required. So, invtsc is available only if using: -cpu host,migratable&#x3D;no,+invtsc.</p>
+</blockquote>
+<p>开启方法很简单，只需要在启动时加上参数<code>-cpu host,migratable=no,+invtsc</code>即可，或者等价的，在Libvirt的XML中：</p>
+<pre class="line-numbers language-markup" data-language="markup"><code class="language-markup"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>cpu</span> <span class="token attr-name">mode</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>host-passthrough<span class="token punctuation">'</span></span> <span class="token attr-name">migratable</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>feature</span> <span class="token attr-name">policy</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>require<span class="token punctuation">'</span></span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>invtsc<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>cpu</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>按文档启动一个虚拟机，然后查看对应的效果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># lscpu |grep Fla</span>
+Flags:                              fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves wbnoinvd arat vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq la57 rdpid fsrm md_clear arch_capabilities
+<span class="token comment"># dmesg |grep tsc</span>
+<span class="token punctuation">[</span>    <span class="token number">0.000005</span><span class="token punctuation">]</span> tsc: Detected <span class="token number">2199.998</span> MHz processor
+<span class="token punctuation">[</span>    <span class="token number">0.112544</span><span class="token punctuation">]</span> clocksource: tsc-early: mask: 0xffffffffffffffff max_cycles: 0x1fb63109b96, max_idle_ns: <span class="token number">440795265316</span> ns
+<span class="token punctuation">[</span>    <span class="token number">0.310799</span><span class="token punctuation">]</span> clocksource: tsc: mask: 0xffffffffffffffff max_cycles: 0x1fb63109b96, max_idle_ns: <span class="token number">440795265316</span> ns
+<span class="token punctuation">[</span>    <span class="token number">0.310905</span><span class="token punctuation">]</span> clocksource: Switched to clocksource tsc
+<span class="token comment"># cpuid -1 -l 0x80000007|grep TscInvariant</span>
+      TscInvariant                            <span class="token operator">=</span> <span class="token boolean">true</span>
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/available_clocksource</span>
+tsc kvm-clock acpi_pm
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+tsc<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，TSC已经成为可用并且是默认的时钟源了。</p>
+<h2 id="VM热迁移"><a href="#VM热迁移" class="headerlink" title="VM热迁移"></a>VM热迁移</h2><p>现在我们已经实现了Guest默认使用TSC作为时钟源，但是还有一个问题，从上面的changelog里其实也能看出来，那就是现在的配置，VM是没有迁移能力的，当前的配置下，如果尝试迁移VM，会出现如下错误：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">Requested operation is not valid: cannot migrate domain: State blocked by non-migratable CPU device <span class="token punctuation">(</span>invtsc flag<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>为什么有了<code>TscInvariant</code>之后就无法迁移了呢？我们可以简单想象一下，一开始VM运行在Host1上，并且使用了TSC作为时钟源，那么VM里TSC的频率和Host1是一致的，这时如果VM被迁移到Host2上，并且Host2的TSC频率和Host1不一致的话，那此时VM读取到的TSC频率就会发生变化，这很显然并不是我们想要的结果。<br>但是，KVM是支持用户自定义VM的TSC频率的，如果我们手动设置一个TSC频率，让迁移前后，Guest看到的TSC频率保持一致，自然也就不会导致问题了，因此在Qemu 2.9版本中，也是支持了这种情况，当用户指定了TSC的频率，即使在有invtsc的情况下，依然可以支持热迁移，具体的修改可以参考<a href="https://github.com/qemu/qemu/commit/d99569d">这个commit</a>。而我们需要做的，就是在启动参数里加上<code>-cpu host,migratable=on,+invtsc,tsc-freq=XXX</code>，或者等价的，使用libvirt xml：</p>
+<pre class="line-numbers language-markup" data-language="markup"><code class="language-markup"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>cpu</span> <span class="token attr-name">mode</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>host-passthrough<span class="token punctuation">'</span></span> <span class="token attr-name">migratable</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>on<span class="token punctuation">'</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>feature</span> <span class="token attr-name">policy</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>require<span class="token punctuation">'</span></span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>invtsc<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>cpu</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>clock</span> <span class="token attr-name">offset</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>utc<span class="token punctuation">'</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>timer</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>tsc<span class="token punctuation">'</span></span> <span class="token attr-name">frequency</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>2200000000<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>clock</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="TSC虚拟化的硬件加速"><a href="#TSC虚拟化的硬件加速" class="headerlink" title="TSC虚拟化的硬件加速"></a>TSC虚拟化的硬件加速</h2><p>还剩下最后的一个问题，KVM是如何高效的实现固定Guest TSC频率的？当Guest TSC频率和Host TSC频率不一致时，这中间又是如何转换的？以及如何在迁移过程中确保TSC不会发生跳变？<br>在这种场景下，CPU支持的<code>TSC scaling</code>以及<code>TSC offseting</code>这两个特性就十分重要了，怎么理解呢，如果启用了<code>TSC offseting</code>，那么Guest在读取TSC的时候，硬件会在原始TSC值的基础上，加上一个设置的offset，这样在迁移过程中，源和目的宿主机的TSC base值不一样的情况下，只需要改一下这个offset值就好了，由于这个offset也只会在Guest读取时加上，因此也不会影响宿主机使用TSC。<br><code>TSC scaling</code>也是类似的机制，通过设置一个频率倍率，让Guest读取TSC时将CPU当前的TSC值乘以这个倍率之后返回给Geust，从而解决用户设置的TSC频率和CPU本身TSC频率不一致的问题。<br>具体的信息，可以参考一下Intel的<a href="https://cdrdv2.intel.com/v1/dl/getContent/671506">开发手册</a>：</p>
+<blockquote><h4 id="26-6-5-Time-Stamp-Counter-Offset-and-Multiplier"><a href="#26-6-5-Time-Stamp-Counter-Offset-and-Multiplier" class="headerlink" title="26.6.5 Time-Stamp Counter Offset and Multiplier"></a>26.6.5 Time-Stamp Counter Offset and Multiplier</h4><p> The VM-execution control fields include a 64-bit TSC-offset field. If the “RDTSC exiting” control is 0 and the “use TSC offsetting” control is 1, this field controls executions of the RDTSC and RDTSCP instructions. It also controls executions of the RDMSR instruction that read from the IA32_TIME_STAMP_COUNTER MSR. For all of these, the value of the TSC offset is added to the value of the time-stamp counter, and the sum is returned to guest software in EDX:EAX.</p>
+<p> Processors that support the 1-setting of the “use TSC scaling” control also support a 64-bit TSC-multiplier field. If this control is 1 (and the “RDTSC exiting” control is 0 and the “use TSC offsetting” control is 1), this field also affects the executions of the RDTSC, RDTSCP, and RDMSR instructions identified above. Specifically, the contents of the time-stamp counter is first multiplied by the TSC multiplier before adding the TSC offset.</p>
+<p> See Chapter 26 for a detailed treatment of the behavior of RDTSC, RDTSCP, and RDMSR in VMX non-root operation.</p>
+<h3 id="27-3-CHANGES-TO-INSTRUCTION-BEHAVIOR-IN-VMX-NON-ROOT-OPERATION"><a href="#27-3-CHANGES-TO-INSTRUCTION-BEHAVIOR-IN-VMX-NON-ROOT-OPERATION" class="headerlink" title="27.3 CHANGES TO INSTRUCTION BEHAVIOR IN VMX NON-ROOT OPERATION"></a>27.3 CHANGES TO INSTRUCTION BEHAVIOR IN VMX NON-ROOT OPERATION</h3><ul>
+<li><p><strong>RDTSC</strong>. Behavior of the RDTSC instruction is determined by the settings of the “RDTSC exiting” and “use TSC offsetting” VM-execution controls:<br>  - If both controls are 0, RDTSC operates normally.</p>
+<p>  - If the “RDTSC exiting” VM-execution control is 0 and the “use TSC offsetting” VM-execution control is 1, the value returned is determined by the setting of the “use TSC scaling” VM-execution control:</p>
+<ul>
+<li>If the control is 0, RDTSC loads EAX:EDX with the sum of the value of the IA32_TIME_STAMP_COUNTER MSR and the value of the TSC offset.</li>
+<li>If the control is 1, RDTSC first computes the product of the value of the IA32_TIME_STAMP_COUNTER MSR and the value of the TSC multiplier. It then shifts the value of the product right 48 bits and loads EAX:EDX with the sum of that shifted value and the value of the TSC offset.</li>
+</ul>
+<p>  - If the “RDTSC exiting” VM-execution control is 1, RDTSC causes a VM exit.</p>
+</li>
+</ul>
+</blockquote>
+
+<p>可以看到在Intel平台，<code>TSC-offset</code>以及<code>TSC multiplier</code>是VMCS中的两个字段，通过修改这两个以及<code>RDTSC exiting</code>字段，可以很好的控制Guest中TSC的行为。</p>
+<p>当然，AMD的实现和Intel还有一些区别，具体的也可以参考<a href="https://www.amd.com/content/dam/amd/en/documents/processor-tech-docs/programmer-references/40332.pdf">AMD的文档</a></p>
+<blockquote><h3 id="15-30-5-TSC-Ratio-MSR-C000-0104h"><a href="#15-30-5-TSC-Ratio-MSR-C000-0104h" class="headerlink" title="15.30.5 TSC Ratio MSR (C000_0104h)"></a>15.30.5 TSC Ratio MSR (C000_0104h)</h3><p>Writing to the TSC Ratio MSR allows the hypervisor to control the guest’s view of the Time Stamp Counter. The contents of TSC Ratio MSR sets the value of the TSCRatio. This constant scales the timestamp value returned when the TSC is read by a guest via the RDTSC or RDTSCP instructions or when the TSC, MPERF, or MPerfReadOnly MSRs are read via the RDMSR instruction by a guest running under virtualization.</p>
+<p>This facility allows the hypervisor to provide a consistent TSC, MPERF, and MPerfReadOnly rate for a guest process when moving that process between cores that have a differing P0 rate. The TSCRatio does not affect the value read from the TSC, MPERF, and MPerfReadOnly MSRs when in host mode or when virtualization is disabled. System Management Mode (SMM) code sees unscaled TSC, MPERF and MPerfReadOnly values unless the SMM code is executed within a guest container. The TSCRatio value does not affect the rate of the underlying TSC, MPERF, and MPerfReadOnly counters, nor the value that gets written to the TSC, MPERF, and MPerfReadOnly MSRs counters on a write by either the host or the guest.</p>
+<p>The TSC Ratio MSR specifies the TSCRatio value as a fixed-point binary number in 8.32 format, which is composed of 8 bits of integer and 32 bits of fraction. This number is the ratio of the desired P0 frequency to be presented to the guest relative to the P0 frequency of the core (See Section 17.1, “PState Control,” on page 657). The reset value of the TSCRatio is 1.0, which sets the guest P0 frequency to match the core P0 frequency.</p>
+<p>Note that:<br>        <code>TSCFreq = Core P0 frequency * TSCRatio, so TSCRatio = (Desired TSCFreq) / Core P0 frequency.</code></p>
+<p>The TSC value read by the guest is computed using the TSC Ratio MSR along with the TSC_OFFSET field from the VMCB so that the actual value returned is:<br>        <code>TSC Value (in guest) = (P0 frequency * TSCRatio * t) + VMCB.TSC_OFFSET + (Last Value Written to TSC) * TSCRatio</code><br>            Where t is time since the TSC was last written via the TSC MSR (or since reset if not written)</p>
+</blockquote>
+
+<p>和Intel相比，AMD的TSC offset值是设置在VMCB中的，而TSC Scaling的倍率是基于MSR来实现的。实现的逻辑有区别并不重要，毕竟KVM会隔离掉不同平台的实现细节。重要的是，软硬件的协同配合，使得在虚拟化场景下，TSC可以作为一个高效的时钟源被VM使用。</p>
+<h2 id="性能测试"><a href="#性能测试" class="headerlink" title="性能测试"></a>性能测试</h2><p>最后来看看相比于<code>kvm-clock</code>时钟源，使用<code>tsc</code>作为时钟源能够带来多大的性能提升吧。从红帽找到了一个测试时钟性能的<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux_for_real_time/7/html/reference_guide/sect-posix_clocks">例子</a>：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;time.h></span></span>
+
+<span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">int</span> rc<span class="token punctuation">;</span>
+	<span class="token keyword">long</span> i<span class="token punctuation">;</span>
+	<span class="token keyword">struct</span> <span class="token class-name">timespec</span> ts<span class="token punctuation">;</span>
+
+	<span class="token keyword">for</span><span class="token punctuation">(</span>i<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span> i<span class="token operator">&lt;</span><span class="token number">500000000</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		rc <span class="token operator">=</span> <span class="token function">clock_gettime</span><span class="token punctuation">(</span>CLOCK_MONOTONIC<span class="token punctuation">,</span> <span class="token operator">&amp;</span>ts<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>编译运行：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+tsc
+<span class="token comment"># time taskset -c 6 ./clock_timing</span>
+
+real    0m10.858s
+user    0m10.821s
+sys     0m0.000s
+<span class="token comment"># echo kvm-clock |sudo tee /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+kvm-clock
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+kvm-clock
+<span class="token comment"># time taskset -c 6 ./clock_timing</span>
+
+real    0m13.530s
+user    0m13.482s
+sys     0m0.002s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>同样是获取<code>500000000</code>次时间，<code>tsc</code>需要<code>10.821s</code>，而<code>kvm-clock</code>需要<code>13.482s</code>，差不多提升了20%，算是相当大的提升幅度了。</p>
+]]></content>
+      <categories>
+        <category>虚拟化</category>
+      </categories>
+      <tags>
+        <tag>TSC Virtualization</tag>
+        <tag>TSC直通</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>仿照PHP的实现简单的扩展动态加载</title>
     <url>/2015/03/09/ext-skel-like-php/</url>
     <content><![CDATA[<p>PHP通过扩展机制，可以方便的实现对PHP的动态扩展，在<a href="http://www.ichenfu.com/2015/03/02/php-load-extension/">PHP扩展加载过程</a>中简单的分析了PHP扩展的加载过程，下面可以继续根据PHP的相关实现，实现一个自己的简单的支持扩展的程序。</p>
@@ -5109,6 +5312,101 @@ print <span class="token keyword">in</span> myext<span aria-hidden="true" class=
       </tags>
   </entry>
   <entry>
+    <title>x86平台的TSC（TIME-STAMP COUNTER）</title>
+    <url>/2024/11/11/facts-about-x86-tsc/</url>
+    <content><![CDATA[<p>今天跟着Intel的开发手册，看看如何随着Intel对TSC不断的修改和增加新特性，让TSC从一个简单的性能计数器发展成当前Linux上x86平台最重要的时钟源之一。本文基本上可以看作是<a href="https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-vol-3b-part-2-manual.pdf">Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 3B: System Programming Guide, Part 2</a>中<code>17.15 TIME-STAMP COUNTER</code>这章的翻译和总结。</p>
+<p>在x86平台上，Linux系统里最常用的一个时钟源就是<code>tsc</code>，具体的，可以通过命令查看当前的时钟源和系统里可用的时钟源：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/available_clocksource</span>
+tsc hpet acpi_pm
+<span class="token comment"># cat /sys/devices/system/clocksource/clocksource0/current_clocksource</span>
+tsc<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>那么TSC是个什么东西呢？我们可以跟着手册看一看。</p>
+<span id="more"></span>
+
+<h2 id="TIME-STAMP-COUNTER"><a href="#TIME-STAMP-COUNTER" class="headerlink" title="TIME-STAMP COUNTER"></a>TIME-STAMP COUNTER</h2><p>从 Pentium 处理器开始，Intel 64 和 IA-32 架构定义了一种时间戳计数器机制（TSC），可以用于监控和识别处理器事件的相对时间。TSC包括以下组件：</p>
+<pre><code>- TSC flag：用于标识TSC是否可用，当`CPUID.1:EDX.TSC[bit 4] = 1`时，TSC可用
+- IA32_TIME_STAMP_COUNTER MSR：对应TSC值的寄存器
+- RDTSC指令：读取TSC寄存器值的指令
+- TSD flag： 用于开关TSC功能，`CR4.TSD[bit 2] = 1`时开启TSC
+</code></pre>
+<p>TSC从第一次在CPU中实现到如今很多年了，所以不同CPU上的一些表现还是有些区别的，但主要的特点是通用的，首先TSC是一个64bit大小的计数器，当CPU重置时，这个计数器也会被重置成0，重置后，即使CPU因为执行了HLT指令进入idle状态，这个寄存器也会持续的增加。</p>
+<p>但是TSC会按什么样的频率增加呢？这里不同的CPU差异就比较大了。在一些比较老的CPU上（大概是07-08年之前），TSC是跟着CPU的运行频率增加的，比如当前CPU跑在2.4GHz，那TSC就每秒增加24000000，但是针对这些老的CPU，超频、以及CPU自身的睿频都会对TSC的计数产生影响。这其实对用户是不太友好的，毕竟睿频是硬件层面的，这个计数器就不那么“稳定”了。</p>
+<p>所以后续的新CPU，Intel将这个行为修改成了以固定频率增加，只是这个频率具体是多少得看具体的配置，具体的TSC频率如何检测，手册里有专门的一章进行解释，这里我们不过多涉及。</p>
+<p>在新CPU里，TSC以固定频率增长，所以这其实是一个TSC的特性，叫做<code>Constant TSC</code>，有了这个特性之后，TSC频率相对就稳定了，不会随着CPU睿频而随意改变频率，所以他也就可以成为一个稳定的时钟源了。因此这个特性会一直在后续的CPU中提供。</p>
+<p>用户可以使用<code>RDTSC</code>这个CPU指令获取TSC的值，正常情况下（计数器没有溢出），Intel的CPU可以保证每次通过<code>RDTSC</code>读取的值都是单调递增的，同时可以保证在10年内计数器不会溢出。但是需要注意的是，这个指令它不是有序的（也就说他是有可能被CPU乱序执行的，所以可能需要加上memory barrier）。另外由于TSC是一个MSR，所以其实这个寄存器是可以通过<code>RDMSR</code>和<code>WRMSR</code>指令进行读写的，只是一些老CPU上只能写低32位（高32位此时会清0）。</p>
+<h3 id="Invariant-TSC"><a href="#Invariant-TSC" class="headerlink" title="Invariant TSC"></a>Invariant TSC</h3><p>前面提到TSC即使CPU处在halt状态，依然会持续的累加，但即使是这样，TSC依然不是100%可依赖最为一个时钟源的，为什么呢？因为halt状态只是CPU的C1状态，现代的CPU为了省电，引入了更多更深的C states，具体可以参考之前关于电源管理的内容<a href="/2020/07/17/cpu-idle-time-managment/">再谈CPU的电源管理（如何做到稳定全核睿频？）</a>，当CPU进入到比较深的C states，比如C6，此时整个CPU的Core基本都被关闭了，那TSC自然也有可能不工作了。</p>
+<p>为了解决这个问题呢，Intel又引入了一个新的特性增强，叫<code>Invariant TSC</code>，这个特性可以当<code>CPUID.80000007H:EDX[8] == 1</code>时，代表CPU支持这个特性。有这个特性的CPU，在任何的C states下，TSC都会持续运行，在Linux里，这个特性也会被称为<code>NONSTOP_TSC</code>（感觉这个更传神一些，不停止的TSC）。</p>
+<p>可以看到引入<code>Constant TSC</code>和<code>Invariant TSC</code>之后，CPU先后解决了P-States(CPU频率变化)和C-States(CPU电源状态)对TSC频率的影响，逐渐将TSC设计成符合时钟源要求的样子，这也算是软硬件协同发展，螺旋上升的正面例子吧。</p>
+<h3 id="IA32-TSC-AUX-Register-and-RDTSCP-Support"><a href="#IA32-TSC-AUX-Register-and-RDTSCP-Support" class="headerlink" title="IA32_TSC_AUX Register and RDTSCP Support"></a>IA32_TSC_AUX Register and RDTSCP Support</h3><p>看起来到这里已经万事大吉了？其实并没有，前面提到，<code>RDTSC</code>指令并不是有序的，意味着CPU硬件有可能对这个执行乱序执行，这可能并不是软件所预期的结果，举个例子，假如想通过基于类似<code>RDTSC;other insturctions;RDTSC</code>这样的指令顺序来计算<code>other insturctions</code>消耗的时间，在真正执行的时候，有可能就按<code>RDTSC;RDTSCother insturctions</code>的顺序了，这显然不是所期望的结果。</p>
+<p>所以Intel针对这个问题，又增加了一个新的指令<code>RDTSCP</code>，使得可以原子地读取TSC。当执行<code>RDTSCP</code>指令时，会同时读取TSC和IA32_TSC_AUX两个寄存器的值。并且这个操作是原子的，不会出现上下文切换的问题。不过需要注意的是，只有当<code>CPUID.80000001H:EDX[27] == 1</code>时，CPU才支持<code>RDTSCP</code>指令。</p>
+<p>针对这个乱序的问题，其实Linux内核里也是做了相应的处理的，我们可以从内核读取TSC的源码看出来，源码里的注释也是非常的详细：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> __always_inline <span class="token keyword">unsigned</span> <span class="token keyword">long</span> <span class="token keyword">long</span> <span class="token function">rdtsc_ordered</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token function">DECLARE_ARGS</span><span class="token punctuation">(</span>val<span class="token punctuation">,</span> low<span class="token punctuation">,</span> high<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token comment">/*
+	 * The RDTSC instruction is not ordered relative to memory
+	 * access.  The Intel SDM and the AMD APM are both vague on this
+	 * point, but empirically an RDTSC instruction can be
+	 * speculatively executed before prior loads.  An RDTSC
+	 * immediately after an appropriate barrier appears to be
+	 * ordered as a normal load, that is, it provides the same
+	 * ordering guarantees as reading from a global memory location
+	 * that some other imaginary CPU is updating continuously with a
+	 * time stamp.
+	 *
+	 * Thus, use the preferred barrier on the respective CPU, aiming for
+	 * RDTSCP as the default.
+	 */</span>
+     <span class="token comment">//优先使用rdtscp，如果不支持，先执行lfence再执行rdtsc</span>
+	<span class="token keyword">asm</span> <span class="token keyword">volatile</span><span class="token punctuation">(</span><span class="token function">ALTERNATIVE_2</span><span class="token punctuation">(</span><span class="token string">"rdtsc"</span><span class="token punctuation">,</span>
+				   <span class="token string">"lfence; rdtsc"</span><span class="token punctuation">,</span> X86_FEATURE_LFENCE_RDTSC<span class="token punctuation">,</span>
+				   <span class="token string">"rdtscp"</span><span class="token punctuation">,</span> X86_FEATURE_RDTSCP<span class="token punctuation">)</span>
+			<span class="token operator">:</span> <span class="token function">EAX_EDX_RET</span><span class="token punctuation">(</span>val<span class="token punctuation">,</span> low<span class="token punctuation">,</span> high<span class="token punctuation">)</span>
+			<span class="token comment">/* RDTSCP clobbers ECX with MSR_TSC_AUX. */</span>
+			<span class="token operator">::</span> <span class="token string">"ecx"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">return</span> <span class="token function">EAX_EDX_VAL</span><span class="token punctuation">(</span>val<span class="token punctuation">,</span> low<span class="token punctuation">,</span> high<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="Time-Stamp-Counter-Adjustment"><a href="#Time-Stamp-Counter-Adjustment" class="headerlink" title="Time-Stamp Counter Adjustment"></a>Time-Stamp Counter Adjustment</h3><p>最后的最后，还有一个问题需要解决，上面其实也提到了，TSC本质上是个MSR（IA32_TIME_STAMP_COUNTER MSR 地址10H），而这个MSR是可写的！这会存在一个问题，对于现代的多核系统，每个核都有自己的TSC MSR，如果某个核的MSR被修改了，这个修改怎么同步到其他核上去呢？很显然，不管是想计算出来被修改的核心的TSC的变化值，以及将这个值同步到其他的核上，都是不现实的。因为没办法在同一时刻在所有核上执行相同的指令。</p>
+<p>但是多核之间同步TSC需求又是客观存在的，怎么办呢？Intel提供了一个新的MSR：<code>IA32_TSC_ADJUST(地址3BH)</code>来解决这个问题。首先和TSC一样每个核都有自己独立的<code>IA32_TSC_ADJUST</code>，当处理器重置时，<code>IA32_TSC_ADJUST</code>也会被置为0，当对<code>IA32_TIME_STAMP_COUNTER</code>进行写入时，比如加上（或者）一个X的值，那么对应核的<code>IA32_TSC_ADJUST</code>也会有对应的X值被加上（或者减去）。因此有了这个MSR之后，想计算某个核TSC的变化值，直接读取<code>IA32_TSC_ADJUST</code>里的值就行了，如果要把这个值同步到其他的核，就只需要把这个值写入到其他核的<code>IA32_TSC_ADJUST</code>里就行了。这就直接解决了多核之间TSC同步的问题，不过这个特性也不是所有CPU都支持，只有当<code>CPUID.(EAX=07H, ECX=0H):EBX.TSC_ADJUST == 1</code>时才支持。</p>
+<p>到这里，TSC就变得真正可依赖了，首先有了<code>Constant TSC</code>，确保TSC按固定频率运行，然后有了<code>Invariant TSC</code>确保TSC一直运行，还有<code>IA32_TSC_ADJUST</code>确保当TSC被修改后依然能被同步回来。有了这些特性，TSC就可以成为系统中可信赖的时钟源。我们也可以通过Linux内核里的代码，看看内核是如何针对这种场景进行适配的：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> __init <span class="token function">check_system_tsc_reliable</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">// ...</span>
+	<span class="token comment">/*
+	 * Disable the clocksource watchdog when the system has:
+	 *  - TSC running at constant frequency
+	 *  - TSC which does not stop in C-States
+	 *  - the TSC_ADJUST register which allows to detect even minimal
+	 *    modifications
+	 *  - not more than two sockets. As the number of sockets cannot be
+	 *    evaluated at the early boot stage where this has to be
+	 *    invoked, check the number of online memory nodes as a
+	 *    fallback solution which is an reasonable estimate.
+	 */</span>
+    <span class="token comment">// 默认情况下Kernel假设TSC不稳定，所以会有个watchdog进行检测，当满足下面几个条件时，TSC足够稳定，watchdog也不需要运行了。</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">boot_cpu_has</span><span class="token punctuation">(</span>X86_FEATURE_CONSTANT_TSC<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+	    <span class="token function">boot_cpu_has</span><span class="token punctuation">(</span>X86_FEATURE_NONSTOP_TSC<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+	    <span class="token function">boot_cpu_has</span><span class="token punctuation">(</span>X86_FEATURE_TSC_ADJUST<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+	    nr_online_nodes <span class="token operator">&lt;=</span> <span class="token number">4</span><span class="token punctuation">)</span>
+		<span class="token function">tsc_disable_clocksource_watchdog</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>好了，跟着文档的节奏，其实也可以看到TSC的发展历程，硬件不断的做出一些变化从而满足软件层面的需求，确定经历了相当长的时间。其实除此之外，TSC还有一些其他相关的特性，主要是和虚拟化相关，也是硬件为了更好的实现虚拟化做出的适配，这里就暂时不说了，期望下次可以继续聊聊虚拟化场景下TSC的一些特性。</p>
+]]></content>
+      <categories>
+        <category>Linux Kernel</category>
+      </categories>
+      <tags>
+        <tag>x86_64</tag>
+        <tag>TSC</tag>
+        <tag>时钟源</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Git的浅克隆功能</title>
     <url>/2019/07/25/git-shallow-clone/</url>
     <content><![CDATA[<p>随着Git仓库不断的被修改，整个仓库会变得越来越大，其中最主要的原因是历史提交特别的多，这个对于想立即阅读最新代码或者CI&#x2F;CD场景下不是特别友好。</p>
@@ -5205,6 +5503,24 @@ log<span class="token punctuation">.</span><span class="token function">Println<
         <tag>Golang</tag>
         <tag>HTTP Timeout</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2014/11/20/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="http://hexo.io/">Hexo</a>! This is your very first post. Check <a href="http://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="http://hexo.io/docs/troubleshooting.html">trobuleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo new <span class="token string">"My New Post"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>More info: <a href="http://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo server<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>More info: <a href="http://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo generate<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>More info: <a href="http://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo deploy<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>More info: <a href="http://hexo.io/docs/deployment.html">Deployment</a></p>
+]]></content>
   </entry>
   <entry>
     <title>如何在一秒之内丢弃1000万个网络数据包？</title>
@@ -5481,24 +5797,6 @@ filter parent ffff: protocol <span class="token function">ip</span> pref <span c
         <tag>kubectl token</tag>
         <tag>RBAC</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2014/11/20/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="http://hexo.io/">Hexo</a>! This is your very first post. Check <a href="http://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="http://hexo.io/docs/troubleshooting.html">trobuleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo new <span class="token string">"My New Post"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="http://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo server<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="http://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo generate<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="http://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ hexo deploy<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>More info: <a href="http://hexo.io/docs/deployment.html">Deployment</a></p>
-]]></content>
   </entry>
   <entry>
     <title>Intel X700系列网卡（i40e驱动）收不到LLDP包问题</title>
@@ -6198,6 +6496,68 @@ Upload: <span class="token number">1.70</span> Mbit/s<span aria-hidden="true" cl
       </tags>
   </entry>
   <entry>
+    <title>Kubernetes Pod dnsPolicy 配置</title>
+    <url>/2018/12/20/k8s-pod-dns-policy/</url>
+    <content><![CDATA[<p>在Kubernetes中，可以针对每个Pod设置DNS的策略，通过PodSpec下的<code>dnsPolicy</code>字段可以指定相应的策略，目前支持的策略如下：</p>
+<ul>
+<li>“<code>Default</code>“: Pod继承所在宿主机的设置，也就是直接将宿主机的<code>/etc/resolv.conf</code>内容挂载到容器中。</li>
+<li>“<code>ClusterFirst</code>“: 默认的配置，所有请求会优先在集群所在域查询，如果没有才会转发到上游DNS。</li>
+<li>“<code>ClusterFirstWithHostNet</code>“: 和<code>ClusterFirst</code>一样，不过是Pod运行在<code>hostNetwork:true</code>的情况下强制指定的。</li>
+<li>“<code>None</code>“: 1.9版本引入的一个新值，这个配置忽略所有配置，以Pod的<code>dnsConfig</code>字段为准。</li>
+</ul>
+<span id="more"></span>
+
+
+<p>为什么会想起找一下dnsPolicy的文档呢，也是因为Pod里默认使用了<code>ClusterFirst</code>策略，导致经常有DNS请求出现timeout问题，想用一个简单的办法继承宿主机的配置，现在看来比较简单了，直接设置<code>dnsPolicy:Default</code>就可以了。</p>
+<p>针对上面说的<code>dnsConfig</code>字段，也有个详细的说明：</p>
+<p><code>dnsConfig</code>字段包括下面几个属性：</p>
+<ul>
+<li><code>nameservers</code>: DNS Server的列表，最多3个IP&#x2F;</li>
+<li><code>searches</code>: search域名列表，也就是<code>/etc/resolv.conf</code>中的<code>search</code>字段的配置，最多配置6个</li>
+<li><code>options</code>: u选项列表，也就是<code>/etc/resolv.conf</code>中的<code>option</code>字段的配置</li>
+</ul>
+<p>一个测试的yaml：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> default
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> dns<span class="token punctuation">-</span>example
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> test
+      <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx
+  <span class="token key atrule">dnsPolicy</span><span class="token punctuation">:</span> <span class="token string">"None"</span>
+  <span class="token key atrule">dnsConfig</span><span class="token punctuation">:</span>
+    <span class="token key atrule">nameservers</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> 1.2.3.4
+    <span class="token key atrule">searches</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> ns1.svc.cluster.local
+      <span class="token punctuation">-</span> my.dns.search.suffix
+    <span class="token key atrule">options</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ndots
+        <span class="token key atrule">value</span><span class="token punctuation">:</span> <span class="token string">"2"</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> edns0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>最后Pod中的<code>/etc/resolv.conf</code>配置就如下：</p>
+<pre class="line-numbers language-none"><code class="language-none">nameserver 1.2.3.4
+search ns1.svc.cluster.local my.dns.search.suffix
+options ndots:2 edns0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>所以，Kubernetes配置虽然复杂，但还是很灵活啊。</p>
+<p>参考：</p>
+<ol>
+<li><a href="https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy">https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>Kubernetes</category>
+      </categories>
+      <tags>
+        <tag>Kubernetes</tag>
+        <tag>dnsPolicy</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Kubernetes的Leader选举机制</title>
     <url>/2021/06/16/k8s-leader-elect-resource-lock/</url>
     <content><![CDATA[<p>在<a href="/2021/06/14/systemd-privatenetwork-cause-annoying-logs/">上一篇Blog</a>里遗留一个问题：在打开了<code>kube-proxy</code>得tracing日志之后，除去定时同步iptables得日志之外，还出现了一些<code>Calling handler.OnEndpointsUpdate</code>相关得日志输出，这些输出其实是不太寻常的：</p>
@@ -6456,68 +6816,6 @@ metadata:
         <tag>leader-elect-resource-lock</tag>
         <tag>endpoints</tag>
         <tag>leases</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Kubernetes Pod dnsPolicy 配置</title>
-    <url>/2018/12/20/k8s-pod-dns-policy/</url>
-    <content><![CDATA[<p>在Kubernetes中，可以针对每个Pod设置DNS的策略，通过PodSpec下的<code>dnsPolicy</code>字段可以指定相应的策略，目前支持的策略如下：</p>
-<ul>
-<li>“<code>Default</code>“: Pod继承所在宿主机的设置，也就是直接将宿主机的<code>/etc/resolv.conf</code>内容挂载到容器中。</li>
-<li>“<code>ClusterFirst</code>“: 默认的配置，所有请求会优先在集群所在域查询，如果没有才会转发到上游DNS。</li>
-<li>“<code>ClusterFirstWithHostNet</code>“: 和<code>ClusterFirst</code>一样，不过是Pod运行在<code>hostNetwork:true</code>的情况下强制指定的。</li>
-<li>“<code>None</code>“: 1.9版本引入的一个新值，这个配置忽略所有配置，以Pod的<code>dnsConfig</code>字段为准。</li>
-</ul>
-<span id="more"></span>
-
-
-<p>为什么会想起找一下dnsPolicy的文档呢，也是因为Pod里默认使用了<code>ClusterFirst</code>策略，导致经常有DNS请求出现timeout问题，想用一个简单的办法继承宿主机的配置，现在看来比较简单了，直接设置<code>dnsPolicy:Default</code>就可以了。</p>
-<p>针对上面说的<code>dnsConfig</code>字段，也有个详细的说明：</p>
-<p><code>dnsConfig</code>字段包括下面几个属性：</p>
-<ul>
-<li><code>nameservers</code>: DNS Server的列表，最多3个IP&#x2F;</li>
-<li><code>searches</code>: search域名列表，也就是<code>/etc/resolv.conf</code>中的<code>search</code>字段的配置，最多配置6个</li>
-<li><code>options</code>: u选项列表，也就是<code>/etc/resolv.conf</code>中的<code>option</code>字段的配置</li>
-</ul>
-<p>一个测试的yaml：</p>
-<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
-<span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
-<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
-  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> default
-  <span class="token key atrule">name</span><span class="token punctuation">:</span> dns<span class="token punctuation">-</span>example
-<span class="token key atrule">spec</span><span class="token punctuation">:</span>
-  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
-    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> test
-      <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx
-  <span class="token key atrule">dnsPolicy</span><span class="token punctuation">:</span> <span class="token string">"None"</span>
-  <span class="token key atrule">dnsConfig</span><span class="token punctuation">:</span>
-    <span class="token key atrule">nameservers</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> 1.2.3.4
-    <span class="token key atrule">searches</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> ns1.svc.cluster.local
-      <span class="token punctuation">-</span> my.dns.search.suffix
-    <span class="token key atrule">options</span><span class="token punctuation">:</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> ndots
-        <span class="token key atrule">value</span><span class="token punctuation">:</span> <span class="token string">"2"</span>
-      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> edns0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>最后Pod中的<code>/etc/resolv.conf</code>配置就如下：</p>
-<pre class="line-numbers language-none"><code class="language-none">nameserver 1.2.3.4
-search ns1.svc.cluster.local my.dns.search.suffix
-options ndots:2 edns0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-<p>所以，Kubernetes配置虽然复杂，但还是很灵活啊。</p>
-<p>参考：</p>
-<ol>
-<li><a href="https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy">https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>Kubernetes</category>
-      </categories>
-      <tags>
-        <tag>Kubernetes</tag>
-        <tag>dnsPolicy</tag>
       </tags>
   </entry>
   <entry>
@@ -10061,6 +10359,27 @@ Trying <span class="token string">"www.baidu.com"</span>
       </tags>
   </entry>
   <entry>
+    <title>在RHEL系统中快速抓取火焰图</title>
+    <url>/2023/10/18/rhel-perf-flamegraphs/</url>
+    <content><![CDATA[<p>在之前的好几篇Blog里，都使用了火焰图来对业务进行性能优化，之前为了抓取火焰图，需要用到好几个工具进行组合，流程还是比较麻烦的。随着RHEL的版本更新，Redhat提供了一个更简单快速的方法实现了一键抓取火焰图的功能。</p>
+<span id="more"></span>
+<p>这个功能在<code>RHEL 8.2</code>及以上版本可以使用，当然RHEL对应的衍生版比如<code>OracleLinux</code>、<code>AlmaLinux</code>、<code>RockyLinux</code>等也是可以直接使用的。</p>
+<p>首先需要安装<code>perf</code>和<code>js-d3-flame-graph</code>这两个软件包：</p>
+<pre class="line-numbers language-none"><code class="language-none"># yum install js-d3-flame-graph perf -y<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>然后就可以通过<code>perf script flamegraph -a -F 99 sleep 60</code>命令抓取整个系统的火焰图了，其中<code>-a</code>参数表示需要记录整个系统的性能数据，<code>-F</code>参数指定每秒的收集频率，<code>sleep 60</code>表示收集60S的数据。</p>
+<p>60秒后，命令自动退出并会在当前目录生成一个<code>flamegraph.html</code>文件，用任意浏览器打开这个文件，即可看到火焰图。</p>
+<p>当然，如果要收集某个进程的火焰图，可以使用<code>perf script flamegraph -a -F 99 -p PID1,PID2 sleep 60</code>命令。</p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>火焰图</tag>
+        <tag>perf</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>使用rpmbuild打包时不对文件进行strip操作</title>
     <url>/2017/11/20/rpmbuild-not-strip/</url>
     <content><![CDATA[<p>默认情况下，在使用rpmbuild打包时，会对安装的所有文件进行strip操作，去除文件的一些调试信息，并将这些调试信息放到debuginfo包中，但在很多时候，我们并不需要rpmbuild帮我们执行strip，也不需要生成debuginfo包，所以我们可以修改一下spec文件，关闭这些选项。</p>
@@ -10164,6 +10483,87 @@ Trying <span class="token string">"www.baidu.com"</span>
         <tag>SAE</tag>
         <tag>VPN</tag>
         <tag>独享型数据库</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>服务器网络启动方式探索Part2：UEFI启动篇</title>
+    <url>/2021/12/25/server-net-boot-part-2-uefi/</url>
+    <content><![CDATA[<p>上一篇<a href="/2021/11/28/server-net-boot-part-1-legacy/">服务器网络启动方式探索Part1：Legacy启动篇</a>里，总结了一些在Legacy启动模式下的一些网络启动方案，那么这一篇，很自然的就需要介绍一下在纯UEFI模式下的网络启动了。</p>
+<p>相比Legacy启动直接读取MBR启动分区的第一个扇区作为引导的逻辑，UEFI启动变得强大了很多，在UEFI模式下，固件直接具有的读取FAT文件系统的能力，并且直接通过运行EFI可执行文件的方式进行引导。<br>因为这个显而易见的变化，导致对应到PXE相关的实现上，也会有相应的区别。不过相比于Legacy启动的那些方案，区别不是那么大，依然是可以做到功能上一一对应的，同样的，我们从最简单的情况开始看起。</p>
+<span id="more"></span>
+<h2 id="UEFI-Boot-PXE"><a href="#UEFI-Boot-PXE" class="headerlink" title="UEFI Boot + PXE"></a>UEFI Boot + PXE</h2><p>这个方案依然是配置最简单的方案，和Legacy+PXE一样，也是需要ftp server和DHCP，只是DHCP服务器的配置有些不一样：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">option domain-name-servers <span class="token number">10.1</span>.1.1<span class="token punctuation">;</span>
+option routers <span class="token number">10.1</span>.1.1<span class="token punctuation">;</span>
+default-lease-time <span class="token number">14400</span><span class="token punctuation">;</span>
+ddns-update-style none<span class="token punctuation">;</span>
+subnet <span class="token number">10.1</span>.1.0 netmask <span class="token number">255.255</span>.255.0 <span class="token punctuation">&#123;</span>
+    range dynamic-bootp <span class="token number">10.1</span>.1.100 <span class="token number">10.1</span>.1.120<span class="token punctuation">;</span>
+    default-lease-time <span class="token number">14400</span><span class="token punctuation">;</span>
+    max-lease-time <span class="token number">172800</span><span class="token punctuation">;</span>
+    next-server <span class="token number">10.1</span>.1.10<span class="token punctuation">;</span>   <span class="token comment">#关键配置！用于指明tftp server的地址</span>
+    filename <span class="token string">"grubx64.efi"</span><span class="token punctuation">;</span>   <span class="token comment">#关键配置！用于指明bootloader的名字</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以发现其他的都没变化，只是把<code>filename</code>的配置换成了<code>grubx64.efi</code>，这意味着在UEFI启动里，放弃了使用<code>pxelinux</code>，转而使用了<code>grub</code>，当然其实SYSLINX也是有efi的，文件名<code>syslinux.efi</code>，但是因为确实用的比较少，所以在这个环境里就换成了<code>grub</code>作为Bootloader。</p>
+<p>接下来是<code>grubx64.efi</code>和配置文件的准备，以rhel举例，如果本身机器就是用的UEFI启动，那直接可以从<code>/boot/efi/EFI/redhat/grubx64.efi</code>拷贝，如果系统本身还是MBR安装，那可以可以参考<a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/chap-installation-server-setup">红帽的文档</a></p>
+<p>然后是配置文件，和<code>PXELINUX</code>一样，grub也是支持根据客户端的不同加载不同的配置文件的。具体的可以参考一下grub的文档:<a href="https://www.gnu.org/software/grub/manual/grub/grub.html#Network">8 Booting GRUB from the network</a><br>不过我们也不需要多配置文件了，只需要配置一个<code>grub.cfg</code>就行，把这个配置文件放在和grubx64.efi同目录下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">set</span> <span class="token assign-left variable">timeout</span><span class="token operator">=</span><span class="token number">5</span>
+menuentry <span class="token string">'RHEL'</span> <span class="token punctuation">&#123;</span>
+  linuxefi images/vmlinuz
+  initrdefi images/initrd.img
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>至此一个最简单的UEFI的PXE启动方式就配置完成了。</p>
+<h2 id="UEFI-Boot-iPXE"><a href="#UEFI-Boot-iPXE" class="headerlink" title="UEFI Boot + iPXE"></a>UEFI Boot + iPXE</h2><p>接下来就是iPXE了，相比于PXE来说，iPXE的变化要小的多，因为自带了bootloader，所以只需要把<code>filename</code>换成<code>ipxe.efi</code>就行了:</p>
+<pre class="line-numbers language-none"><code class="language-none">option domain-name-servers 10.1.1.1;
+option routers 10.1.1.1;
+default-lease-time 14400;
+ddns-update-style none;
+subnet 10.1.1.0 netmask 255.255.255.0 &#123;
+    range dynamic-bootp 10.1.1.100 10.1.1.120;
+    default-lease-time 14400;
+    max-lease-time 172800;
+    next-server 10.1.1.10;   #关键配置！用于指明tftp server的地址
+    if exists user-class and option user-class &#x3D; &quot;iPXE&quot; &#123; #根据user-class字段来判断客户端类型
+      filename &quot;http:&#x2F;&#x2F;10.1.1.10&#x2F;boot.script&quot;;
+    &#125; else &#123;
+      filename &quot;ipxe.efi&quot;;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>同样的，<code>ipxe.efi</code>可以从<a href="http://boot.ipxe.org/">http://boot.ipxe.org</a>直接下载。剩下的关于<code>boot.script</code>配置，和上一篇Legacy里的配置是一致的。这里就不用赘述了。</p>
+<h2 id="UEFI-HTTP-Boot"><a href="#UEFI-HTTP-Boot" class="headerlink" title="UEFI HTTP Boot"></a>UEFI HTTP Boot</h2><p>对于iPXE来说，支持通过HTTP&#x2F;FTP等等基于TCP传输的协议来获取kernel和initrd文件，速度相比于之前的PXE的tftp要快很多倍，但是如果稍微有那么一点点强迫症的话，依然会觉得整个iPXE方案里始终存在一个不太和谐的点。<br>是的，虽然kernel和initrd等文件可以通过HTTP获取，但是对于iPXE本身，无论是Legacy模式还是UEFI模式下，都依然需要用到tftp，虽然iPXE文件本身很小，只有KB级别，不会影响启动的速度了，但是tftp始终是一个依赖，这对于一个想Keep it Simple、Stupid的启动方式来说，实在是有那么些不舒服，如果能有什么办法（当然，直接把网卡刷成iPXE的方案不算）解决掉tftp的依赖，那显然是极好的。</p>
+<p>对于这个问题呢，设计固件的聪明人们自然也想到了，于是就在UEFI 2.5的SPEC里，加上了<code>HTTP Boot</code>的功能，直接让UEFI可以从HTTP URL获取启动文件，并通过这个启动文件启动系统，对于这个方案，目前已知的情况是，Intel提供的UEFI标准实现<a href="https://github.com/tianocore/edk2">edk2</a>是支持的，文档可以参考<a href="https://edk2-docs.gitbook.io/getting-started-with-uefi-https-boot-on-edk-ii/">Getting Started with UEFI HTTPS Boot on EDK II
+</a>，除此之外，<a href="https://www.dell.com/support/kbdoc/zh-cn/000138011/http-boot-in-sles-15?lang=en">Dell</a>、<a href="https://lenovopress.com/lp0736-using-http-boot-to-install-an-operating-system">联想</a>、<a href="https://support.hpe.com/hpesc/public/docDisplay?docId=c05088241&docLocale=en_US">HPE</a>等等国际大厂以及<a href="https://www.redhat.com/sysadmin/uefi-http-boot-libvirt">虚拟机</a>也是明确有相关文档支持的，，而对于国内的一些厂商，目前我知道的情况是大部分都支持，不过因为确实国内用的比较少，很多厂商并没有非常仔细的测试。</p>
+<p>我找了一台Dell的服务器，目前测试是没问题的，对于HTTP Boot来说，依然是通过DHCP获取启动配置，和iPXE类似，会带上一个特殊的标记，来区分普通PXE和HTTP Boot的区别，在iPXE文档<a href="https://ipxe.org/appnote/uefihttp">UEFI HTTP chainloading</a>里，也明确表示了iPXE支持这种启动方式。下面是个可以参考的DHCP服务器的配置：</p>
+<pre class="line-numbers language-none"><code class="language-none">option domain-name-servers 10.1.1.1;
+option routers 10.1.1.1;
+default-lease-time 14400;
+ddns-update-style none;
+subnet 10.1.1.0 netmask 255.255.255.0 &#123;
+    range dynamic-bootp 10.1.1.100 10.1.1.120;
+    default-lease-time 14400;
+    max-lease-time 172800;
+    next-server 10.1.1.10;
+    if exists user-class and option user-class &#x3D; &quot;iPXE&quot; &#123; #根据user-class字段来判断客户端类型
+      filename &quot;http:&#x2F;&#x2F;10.1.1.10&#x2F;boot.script&quot;;
+    &#125; elsif substring (option vendor-class-identifier, 0, 10) &#x3D; &quot;HTTPClient&quot; &#123; # UEFI HTTP BOOT
+      filename &quot;http:&#x2F;&#x2F;10.1.1.10&#x2F;ipxe.efi&quot;;
+    &#125; else &#123;
+      filename &quot;ipxe.efi&quot;;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>通过判断<code>vendor-class-identifier</code>字段是否是<code>HTTPClient</code>，来确认是否是UEFI HTTP BOOT，如果是HTTP Boot，那就把iPXE启动文件的URL返回，这样UEFI固件就可以通过HTTP协议获取iPXE启动文件，接下来的过程就和iPXE没有区别了。如此一来，如果UFEI支持HTTP Boot并开启，那么就完全不需要tftp，只需要一个HTTP服务器就可以完成所有的启动过程了。真正意义上去除了对tftp的依赖。<br>当然，如果想基于grub或者其他bootloader启动的话，也是可以的，基本原理也差不多，感兴趣的话，可以试试。</p>
+<h2 id="Secure-boot"><a href="#Secure-boot" class="headerlink" title="Secure boot"></a>Secure boot</h2><p>对于UEFI来说，还有一个非常重要的特性：Secure boot（安全启动），开启Secure boot之后，UEFI会利用数字签名来确认EFI驱动程序或者应用程序是否是受信任的，这其中就包括了从网络下载的bootloader，一般来说，大多数常见的OS发行版都会对Secure boot进行支持，具体支持的原理，这里就不作过多的介绍了，具体的可以参考一下红帽的文档：<a href="https://access.redhat.com/articles/5254641">What is UEFI Secure Boot and how it works?</a>。<br>需要说明的事，这篇Blog以及上一篇Blog所讨论的方法，都不涉及Secure boot，或者说这些配置都无法在Secure boot开启的情况下正常工作。但是也需要稍微进行一些修改，就可以顺利的在Secure boot环境下启动。大致的思路就是把bootloader换成一个受信任的shim，具体的实践，还需要大家自己去测试。</p>
+<h2 id="真正的总结"><a href="#真正的总结" class="headerlink" title="真正的总结"></a>真正的总结</h2><p>最近确实花了很多时间去研究服务器的网络启动方案，从PXE开始，到HTTP Boot结束，几乎把所有相关的可能性都测试了一遍，想找到一个依赖少、稳定、兼容性好的网络启动方案。然而实际情况是，面对的OEM厂商实在是太多了，每个厂商开发固件时的侧重点也不尽相同，导致在我个人内心中最完美的HTTP Boot方案，几乎没办法真正意义上在线上环境跑通。相对的，反而是最原始功能最少的方案，跨厂商的兼容性最好。</p>
+<p>其实一开始的目的不仅于此，如果要深究的话，其实在UEFI这种模式下，甚至有可能去除掉DHCP服务器这个依赖，理论上在UEFI模式下，固件是有自己的一套协议栈的，在PXE之前，是可以手动给网卡配置静态的IP地址，网关，DNS等等网络配置，同样的bootloader的位置也是可以静态指定的，除此之外，还有很多tricky的手段，不过这些方案总归兼容性堪忧，特别是国内的很多服务器厂商，大多对于这些高级功能缺乏测试。感兴趣的同学可以花点时间时间研究研究，还是挺有意思的😄。同样也是希望国内厂商能给力起来，像国际大厂们看齐，不断完善好固件等等各个方面。</p>
+]]></content>
+      <categories>
+        <category>日常折腾</category>
+      </categories>
+      <tags>
+        <tag>UEFI</tag>
+        <tag>PXE</tag>
+        <tag>HTTP Boot</tag>
       </tags>
   </entry>
   <entry>
@@ -10276,89 +10676,8 @@ boot<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span
       </categories>
       <tags>
         <tag>UEFI</tag>
+        <tag>PXE</tag>
         <tag>Legacy</tag>
-        <tag>PXE</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>服务器网络启动方式探索Part2：UEFI启动篇</title>
-    <url>/2021/12/25/server-net-boot-part-2-uefi/</url>
-    <content><![CDATA[<p>上一篇<a href="/2021/11/28/server-net-boot-part-1-legacy/">服务器网络启动方式探索Part1：Legacy启动篇</a>里，总结了一些在Legacy启动模式下的一些网络启动方案，那么这一篇，很自然的就需要介绍一下在纯UEFI模式下的网络启动了。</p>
-<p>相比Legacy启动直接读取MBR启动分区的第一个扇区作为引导的逻辑，UEFI启动变得强大了很多，在UEFI模式下，固件直接具有的读取FAT文件系统的能力，并且直接通过运行EFI可执行文件的方式进行引导。<br>因为这个显而易见的变化，导致对应到PXE相关的实现上，也会有相应的区别。不过相比于Legacy启动的那些方案，区别不是那么大，依然是可以做到功能上一一对应的，同样的，我们从最简单的情况开始看起。</p>
-<span id="more"></span>
-<h2 id="UEFI-Boot-PXE"><a href="#UEFI-Boot-PXE" class="headerlink" title="UEFI Boot + PXE"></a>UEFI Boot + PXE</h2><p>这个方案依然是配置最简单的方案，和Legacy+PXE一样，也是需要ftp server和DHCP，只是DHCP服务器的配置有些不一样：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">option domain-name-servers <span class="token number">10.1</span>.1.1<span class="token punctuation">;</span>
-option routers <span class="token number">10.1</span>.1.1<span class="token punctuation">;</span>
-default-lease-time <span class="token number">14400</span><span class="token punctuation">;</span>
-ddns-update-style none<span class="token punctuation">;</span>
-subnet <span class="token number">10.1</span>.1.0 netmask <span class="token number">255.255</span>.255.0 <span class="token punctuation">&#123;</span>
-    range dynamic-bootp <span class="token number">10.1</span>.1.100 <span class="token number">10.1</span>.1.120<span class="token punctuation">;</span>
-    default-lease-time <span class="token number">14400</span><span class="token punctuation">;</span>
-    max-lease-time <span class="token number">172800</span><span class="token punctuation">;</span>
-    next-server <span class="token number">10.1</span>.1.10<span class="token punctuation">;</span>   <span class="token comment">#关键配置！用于指明tftp server的地址</span>
-    filename <span class="token string">"grubx64.efi"</span><span class="token punctuation">;</span>   <span class="token comment">#关键配置！用于指明bootloader的名字</span>
-<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>可以发现其他的都没变化，只是把<code>filename</code>的配置换成了<code>grubx64.efi</code>，这意味着在UEFI启动里，放弃了使用<code>pxelinux</code>，转而使用了<code>grub</code>，当然其实SYSLINX也是有efi的，文件名<code>syslinux.efi</code>，但是因为确实用的比较少，所以在这个环境里就换成了<code>grub</code>作为Bootloader。</p>
-<p>接下来是<code>grubx64.efi</code>和配置文件的准备，以rhel举例，如果本身机器就是用的UEFI启动，那直接可以从<code>/boot/efi/EFI/redhat/grubx64.efi</code>拷贝，如果系统本身还是MBR安装，那可以可以参考<a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/chap-installation-server-setup">红帽的文档</a></p>
-<p>然后是配置文件，和<code>PXELINUX</code>一样，grub也是支持根据客户端的不同加载不同的配置文件的。具体的可以参考一下grub的文档:<a href="https://www.gnu.org/software/grub/manual/grub/grub.html#Network">8 Booting GRUB from the network</a><br>不过我们也不需要多配置文件了，只需要配置一个<code>grub.cfg</code>就行，把这个配置文件放在和grubx64.efi同目录下：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">set</span> <span class="token assign-left variable">timeout</span><span class="token operator">=</span><span class="token number">5</span>
-menuentry <span class="token string">'RHEL'</span> <span class="token punctuation">&#123;</span>
-  linuxefi images/vmlinuz
-  initrdefi images/initrd.img
-<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>至此一个最简单的UEFI的PXE启动方式就配置完成了。</p>
-<h2 id="UEFI-Boot-iPXE"><a href="#UEFI-Boot-iPXE" class="headerlink" title="UEFI Boot + iPXE"></a>UEFI Boot + iPXE</h2><p>接下来就是iPXE了，相比于PXE来说，iPXE的变化要小的多，因为自带了bootloader，所以只需要把<code>filename</code>换成<code>ipxe.efi</code>就行了:</p>
-<pre class="line-numbers language-none"><code class="language-none">option domain-name-servers 10.1.1.1;
-option routers 10.1.1.1;
-default-lease-time 14400;
-ddns-update-style none;
-subnet 10.1.1.0 netmask 255.255.255.0 &#123;
-    range dynamic-bootp 10.1.1.100 10.1.1.120;
-    default-lease-time 14400;
-    max-lease-time 172800;
-    next-server 10.1.1.10;   #关键配置！用于指明tftp server的地址
-    if exists user-class and option user-class &#x3D; &quot;iPXE&quot; &#123; #根据user-class字段来判断客户端类型
-      filename &quot;http:&#x2F;&#x2F;10.1.1.10&#x2F;boot.script&quot;;
-    &#125; else &#123;
-      filename &quot;ipxe.efi&quot;;
-    &#125;
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>同样的，<code>ipxe.efi</code>可以从<a href="http://boot.ipxe.org/">http://boot.ipxe.org</a>直接下载。剩下的关于<code>boot.script</code>配置，和上一篇Legacy里的配置是一致的。这里就不用赘述了。</p>
-<h2 id="UEFI-HTTP-Boot"><a href="#UEFI-HTTP-Boot" class="headerlink" title="UEFI HTTP Boot"></a>UEFI HTTP Boot</h2><p>对于iPXE来说，支持通过HTTP&#x2F;FTP等等基于TCP传输的协议来获取kernel和initrd文件，速度相比于之前的PXE的tftp要快很多倍，但是如果稍微有那么一点点强迫症的话，依然会觉得整个iPXE方案里始终存在一个不太和谐的点。<br>是的，虽然kernel和initrd等文件可以通过HTTP获取，但是对于iPXE本身，无论是Legacy模式还是UEFI模式下，都依然需要用到tftp，虽然iPXE文件本身很小，只有KB级别，不会影响启动的速度了，但是tftp始终是一个依赖，这对于一个想Keep it Simple、Stupid的启动方式来说，实在是有那么些不舒服，如果能有什么办法（当然，直接把网卡刷成iPXE的方案不算）解决掉tftp的依赖，那显然是极好的。</p>
-<p>对于这个问题呢，设计固件的聪明人们自然也想到了，于是就在UEFI 2.5的SPEC里，加上了<code>HTTP Boot</code>的功能，直接让UEFI可以从HTTP URL获取启动文件，并通过这个启动文件启动系统，对于这个方案，目前已知的情况是，Intel提供的UEFI标准实现<a href="https://github.com/tianocore/edk2">edk2</a>是支持的，文档可以参考<a href="https://edk2-docs.gitbook.io/getting-started-with-uefi-https-boot-on-edk-ii/">Getting Started with UEFI HTTPS Boot on EDK II
-</a>，除此之外，<a href="https://www.dell.com/support/kbdoc/zh-cn/000138011/http-boot-in-sles-15?lang=en">Dell</a>、<a href="https://lenovopress.com/lp0736-using-http-boot-to-install-an-operating-system">联想</a>、<a href="https://support.hpe.com/hpesc/public/docDisplay?docId=c05088241&docLocale=en_US">HPE</a>等等国际大厂以及<a href="https://www.redhat.com/sysadmin/uefi-http-boot-libvirt">虚拟机</a>也是明确有相关文档支持的，，而对于国内的一些厂商，目前我知道的情况是大部分都支持，不过因为确实国内用的比较少，很多厂商并没有非常仔细的测试。</p>
-<p>我找了一台Dell的服务器，目前测试是没问题的，对于HTTP Boot来说，依然是通过DHCP获取启动配置，和iPXE类似，会带上一个特殊的标记，来区分普通PXE和HTTP Boot的区别，在iPXE文档<a href="https://ipxe.org/appnote/uefihttp">UEFI HTTP chainloading</a>里，也明确表示了iPXE支持这种启动方式。下面是个可以参考的DHCP服务器的配置：</p>
-<pre class="line-numbers language-none"><code class="language-none">option domain-name-servers 10.1.1.1;
-option routers 10.1.1.1;
-default-lease-time 14400;
-ddns-update-style none;
-subnet 10.1.1.0 netmask 255.255.255.0 &#123;
-    range dynamic-bootp 10.1.1.100 10.1.1.120;
-    default-lease-time 14400;
-    max-lease-time 172800;
-    next-server 10.1.1.10;
-    if exists user-class and option user-class &#x3D; &quot;iPXE&quot; &#123; #根据user-class字段来判断客户端类型
-      filename &quot;http:&#x2F;&#x2F;10.1.1.10&#x2F;boot.script&quot;;
-    &#125; elsif substring (option vendor-class-identifier, 0, 10) &#x3D; &quot;HTTPClient&quot; &#123; # UEFI HTTP BOOT
-      filename &quot;http:&#x2F;&#x2F;10.1.1.10&#x2F;ipxe.efi&quot;;
-    &#125; else &#123;
-      filename &quot;ipxe.efi&quot;;
-    &#125;
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>通过判断<code>vendor-class-identifier</code>字段是否是<code>HTTPClient</code>，来确认是否是UEFI HTTP BOOT，如果是HTTP Boot，那就把iPXE启动文件的URL返回，这样UEFI固件就可以通过HTTP协议获取iPXE启动文件，接下来的过程就和iPXE没有区别了。如此一来，如果UFEI支持HTTP Boot并开启，那么就完全不需要tftp，只需要一个HTTP服务器就可以完成所有的启动过程了。真正意义上去除了对tftp的依赖。<br>当然，如果想基于grub或者其他bootloader启动的话，也是可以的，基本原理也差不多，感兴趣的话，可以试试。</p>
-<h2 id="Secure-boot"><a href="#Secure-boot" class="headerlink" title="Secure boot"></a>Secure boot</h2><p>对于UEFI来说，还有一个非常重要的特性：Secure boot（安全启动），开启Secure boot之后，UEFI会利用数字签名来确认EFI驱动程序或者应用程序是否是受信任的，这其中就包括了从网络下载的bootloader，一般来说，大多数常见的OS发行版都会对Secure boot进行支持，具体支持的原理，这里就不作过多的介绍了，具体的可以参考一下红帽的文档：<a href="https://access.redhat.com/articles/5254641">What is UEFI Secure Boot and how it works?</a>。<br>需要说明的事，这篇Blog以及上一篇Blog所讨论的方法，都不涉及Secure boot，或者说这些配置都无法在Secure boot开启的情况下正常工作。但是也需要稍微进行一些修改，就可以顺利的在Secure boot环境下启动。大致的思路就是把bootloader换成一个受信任的shim，具体的实践，还需要大家自己去测试。</p>
-<h2 id="真正的总结"><a href="#真正的总结" class="headerlink" title="真正的总结"></a>真正的总结</h2><p>最近确实花了很多时间去研究服务器的网络启动方案，从PXE开始，到HTTP Boot结束，几乎把所有相关的可能性都测试了一遍，想找到一个依赖少、稳定、兼容性好的网络启动方案。然而实际情况是，面对的OEM厂商实在是太多了，每个厂商开发固件时的侧重点也不尽相同，导致在我个人内心中最完美的HTTP Boot方案，几乎没办法真正意义上在线上环境跑通。相对的，反而是最原始功能最少的方案，跨厂商的兼容性最好。</p>
-<p>其实一开始的目的不仅于此，如果要深究的话，其实在UEFI这种模式下，甚至有可能去除掉DHCP服务器这个依赖，理论上在UEFI模式下，固件是有自己的一套协议栈的，在PXE之前，是可以手动给网卡配置静态的IP地址，网关，DNS等等网络配置，同样的bootloader的位置也是可以静态指定的，除此之外，还有很多tricky的手段，不过这些方案总归兼容性堪忧，特别是国内的很多服务器厂商，大多对于这些高级功能缺乏测试。感兴趣的同学可以花点时间时间研究研究，还是挺有意思的😄。同样也是希望国内厂商能给力起来，像国际大厂们看齐，不断完善好固件等等各个方面。</p>
-]]></content>
-      <categories>
-        <category>日常折腾</category>
-      </categories>
-      <tags>
-        <tag>UEFI</tag>
-        <tag>PXE</tag>
-        <tag>HTTP Boot</tag>
       </tags>
   </entry>
   <entry>
@@ -11367,6 +11686,291 @@ Transfer rate:          1737.32 [Kbytes&#x2F;sec] received<span aria-hidden="tru
       </tags>
   </entry>
   <entry>
+    <title>一个UFO引发的惨案</title>
+    <url>/2024/04/01/ufo-feature-caused-network-failure/</url>
+    <content><![CDATA[<p>首先需要解释一下标题，原谅我当了一回标题党，此UFO不是<code>Unidentified flying object</code>，而是在网络中的一个Oflload卸载技术<code>UDP fragmentation offload</code>。事情的起因是这样的，我们最近尝试将线上的虚拟机，从基于网卡SR-IOV+直通的方案，切换到基于DPDK+vhost-user的方案，以换取热迁移的效率提升。</p>
+<p>从之前的模拟压测和线上灰度效果来看，新的DPDK方案的性能和稳定性都处于很好的水平，在我们的场景下可以很好地满足需求。<br>直到灰度到某个业务的时候，发生了一些问题，导致了虚拟机的网络中断。<span id="more"></span></p>
+<p>我们通过热拔插方式进行网络切换，首先，会把当前直通的网卡从虚拟机中热拔出来，然后，再把一个vhost-user网卡热插到虚拟机中，从而实现网卡的切换。在切换过程中，大致会有3-5s左右的网络中断，但根据和业务的沟通，在单线程的操作情况下，这样的中断是没有问题的，不会影响业务。</p>
+<p>为了保证业务的稳定，我们在网卡切换后，会持续ping 10s对应的虚拟机，确保网络正常后才会进行下一台的操作。</p>
+<p>然后问题就发生了，在某些虚拟机切换网卡之后，大约5分钟内，网络是正常的，但是超过5分钟之后，突然网络就不通了，这个问题也是随机的，而对于网络不通的机器，通过重启DPDK进程的方式，网络又可以恢复几分钟，然后继续不通。这些现象确实在之前的测试中没有遇到过。从日志看，有少量的DPDK进程打印了这两条日志：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">VHOST_DATA: <span class="token punctuation">(</span>/tmp/ens8f0-2.sock<span class="token punctuation">)</span> failed to allocate memory <span class="token keyword">for</span> mbuf.
+VHOST_DATA: <span class="token punctuation">(</span>/tmp/ens8f0-2.sock<span class="token punctuation">)</span> failed to copy desc to mbuf.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>从日志看，应该是给DPDK分配的内存不够了，导致DPDK从内存池里分配mbuf时无内存可用，但是DPDK使用的内存，是经过精确计算的呀？看看内存分配数量相关的代码：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">DEFAULT_IP_MTU</span>	  <span class="token expression"><span class="token punctuation">(</span><span class="token number">1500</span><span class="token punctuation">)</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">L2_OVERHEAD</span>		  <span class="token expression"><span class="token punctuation">(</span><span class="token number">14</span> <span class="token operator">+</span> <span class="token number">4</span> <span class="token operator">+</span> <span class="token number">4</span><span class="token punctuation">)</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">VF_RX_OFFSET</span>	  <span class="token expression"><span class="token punctuation">(</span><span class="token number">32</span><span class="token punctuation">)</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">DEFAULT_MBUF_SIZE</span> <span class="token expression"><span class="token punctuation">(</span>DEFAULT_IP_MTU <span class="token operator">+</span> L2_OVERHEAD <span class="token operator">+</span> RTE_PKTMBUF_HEADROOM <span class="token operator">+</span> VF_RX_OFFSET<span class="token punctuation">)</span></span></span>
+
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">MAX_VHOST_QUEUE_PAIRS</span> <span class="token expression"><span class="token number">16</span></span></span>
+
+<span class="token comment">/* rxq/txq descriptors numbers */</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">RXQ_TXQ_DESC_1K</span> <span class="token expression"><span class="token number">1024</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">RXQ_TXQ_DESC_8K</span> <span class="token expression"><span class="token number">8192</span></span></span>
+
+<span class="token comment">/* relay mempool config */</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">DEFAULT_NR_RX_QUEUE</span> <span class="token expression">MAX_VHOST_QUEUE_PAIRS</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">DEFAULT_NR_TX_QUEUE</span> <span class="token expression">MAX_VHOST_QUEUE_PAIRS</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">DEFAULT_NR_RX_DESC</span>	<span class="token expression">RXQ_TXQ_DESC_8K</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">DEFAULT_NR_TX_DESC</span>	<span class="token expression">RXQ_TXQ_DESC_1K</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">NUM_PKTMBUF_POOL</span>	<span class="token expression"><span class="token punctuation">(</span>DEFAULT_NR_RX_DESC <span class="token operator">*</span> DEFAULT_NR_RX_QUEUE <span class="token operator">+</span> DEFAULT_NR_TX_DESC <span class="token operator">*</span> DEFAULT_NR_TX_QUEUE <span class="token operator">+</span> <span class="token number">4096</span><span class="token punctuation">)</span></span></span>
+
+<span class="token comment">// ...</span>
+mpool <span class="token operator">=</span> <span class="token function">rte_pktmbuf_pool_create</span><span class="token punctuation">(</span>mp_name<span class="token punctuation">,</span> n_mbufs<span class="token punctuation">,</span> RTE_MEMPOOL_CACHE_MAX_SIZE<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> DEFAULT_MBUF_SIZE<span class="token punctuation">,</span> request_socket_id<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们给每个VM分配了最多16个队列，MTU为1500，网卡侧同样支持16个发送队列+16个接收队列，其中每个接收队列设置ring buffer大小为8192，发送队列ring buffer大小1024，经过一系列的计算<code>NUM_PKTMBUF_POOL</code>这个值应该在所有场景都能满足需求，那为什么会出现内存不够的情况呢？我们再深入看一下DPDK相关的代码：</p>
+<p>首先这个日志，在DPDK中有两个地方会打印，一个是在<code>virtio_dev_tx_split</code>函数中，另一个函数是<code>vhost_dequeue_single_packed</code>，这俩函数的功能是一致的，只是一个是用来处理老的<code>virtio split ring</code>的场景，另一个是处理<code>packed ring</code>的场景，而我们目前用的还是老的<code>split ring</code>，于是着重看下相关的代码：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">__rte_always_inline
+<span class="token keyword">static</span> <span class="token class-name">uint16_t</span>
+<span class="token function">virtio_dev_tx_split</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">virtio_net</span> <span class="token operator">*</span>dev<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">vhost_virtqueue</span> <span class="token operator">*</span>vq<span class="token punctuation">,</span>
+	<span class="token keyword">struct</span> <span class="token class-name">rte_mempool</span> <span class="token operator">*</span>mbuf_pool<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">rte_mbuf</span> <span class="token operator">*</span><span class="token operator">*</span>pkts<span class="token punctuation">,</span> <span class="token class-name">uint16_t</span> count<span class="token punctuation">,</span>
+	bool legacy_ol_flags<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">// ...省略</span>
+
+    <span class="token comment">// 一次循环，最多取32个数据</span>
+	count <span class="token operator">=</span> <span class="token function">RTE_MIN</span><span class="token punctuation">(</span>count<span class="token punctuation">,</span> MAX_PKT_BURST<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	count <span class="token operator">=</span> <span class="token function">RTE_MIN</span><span class="token punctuation">(</span>count<span class="token punctuation">,</span> avail_entries<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token function">VHOST_LOG_DATA</span><span class="token punctuation">(</span>dev<span class="token operator">-></span>ifname<span class="token punctuation">,</span> DEBUG<span class="token punctuation">,</span> <span class="token string">"about to dequeue %u buffers\n"</span><span class="token punctuation">,</span> count<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">rte_pktmbuf_alloc_bulk</span><span class="token punctuation">(</span>mbuf_pool<span class="token punctuation">,</span> pkts<span class="token punctuation">,</span> count<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">for</span> <span class="token punctuation">(</span>i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> count<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// ...省略</span>
+
+        <span class="token comment">// 拷贝Guest中的网络包到pkts(rte_mbuf)中</span>
+		err <span class="token operator">=</span> <span class="token function">desc_to_mbuf</span><span class="token punctuation">(</span>dev<span class="token punctuation">,</span> vq<span class="token punctuation">,</span> buf_vec<span class="token punctuation">,</span> nr_vec<span class="token punctuation">,</span> pkts<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span>
+				   mbuf_pool<span class="token punctuation">,</span> legacy_ol_flags<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> false<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">unlikely</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>allocerr_warned<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token comment">// 拷贝失败了，打印了第二条日志，第一条日志在desc_to_mbuf打印了</span>
+				<span class="token function">VHOST_LOG_DATA</span><span class="token punctuation">(</span>dev<span class="token operator">-></span>ifname<span class="token punctuation">,</span> ERR<span class="token punctuation">,</span> <span class="token string">"failed to copy desc to mbuf.\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+				allocerr_warned <span class="token operator">=</span> true<span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+			dropped <span class="token operator">+=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+			i<span class="token operator">++</span><span class="token punctuation">;</span>
+			<span class="token keyword">break</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+
+	<span class="token punctuation">&#125;</span>
+    <span class="token comment">// ...省略</span>
+
+	<span class="token keyword">return</span> <span class="token punctuation">(</span>i <span class="token operator">-</span> dropped<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">static</span> __rte_always_inline <span class="token keyword">int</span>
+<span class="token function">desc_to_mbuf</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">virtio_net</span> <span class="token operator">*</span>dev<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">vhost_virtqueue</span> <span class="token operator">*</span>vq<span class="token punctuation">,</span>
+		  <span class="token keyword">struct</span> <span class="token class-name">buf_vector</span> <span class="token operator">*</span>buf_vec<span class="token punctuation">,</span> <span class="token class-name">uint16_t</span> nr_vec<span class="token punctuation">,</span>
+		  <span class="token keyword">struct</span> <span class="token class-name">rte_mbuf</span> <span class="token operator">*</span>m<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">rte_mempool</span> <span class="token operator">*</span>mbuf_pool<span class="token punctuation">,</span>
+		  bool legacy_ol_flags<span class="token punctuation">,</span> <span class="token class-name">uint16_t</span> slot_idx<span class="token punctuation">,</span> bool is_async<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+
+    <span class="token comment">// ...省略</span>
+
+	buf_addr <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_addr<span class="token punctuation">;</span>
+	buf_iova <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_iova<span class="token punctuation">;</span>
+	buf_len <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_len<span class="token punctuation">;</span>
+	buf_offset <span class="token operator">=</span> hdr_remain<span class="token punctuation">;</span>
+	buf_avail <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_len <span class="token operator">-</span> hdr_remain<span class="token punctuation">;</span>
+
+	<span class="token function">PRINT_PACKET</span><span class="token punctuation">(</span>dev<span class="token punctuation">,</span>
+			<span class="token punctuation">(</span><span class="token class-name">uintptr_t</span><span class="token punctuation">)</span><span class="token punctuation">(</span>buf_addr <span class="token operator">+</span> buf_offset<span class="token punctuation">)</span><span class="token punctuation">,</span>
+			<span class="token punctuation">(</span><span class="token class-name">uint32_t</span><span class="token punctuation">)</span>buf_avail<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	mbuf_offset <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	mbuf_avail  <span class="token operator">=</span> m<span class="token operator">-></span>buf_len <span class="token operator">-</span> RTE_PKTMBUF_HEADROOM<span class="token punctuation">;</span>
+
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>is_async<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		pkts_info <span class="token operator">=</span> async<span class="token operator">-></span>pkts_info<span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">async_iter_initialize</span><span class="token punctuation">(</span>dev<span class="token punctuation">,</span> async<span class="token punctuation">)</span><span class="token punctuation">)</span>
+			<span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// buf_avail是Guest中网络包的剩余长度，mbuf_avail是当前mbuf中剩余的容量</span>
+        <span class="token comment">// 本次拷贝数据量是这两者的小值</span>
+		cpy_len <span class="token operator">=</span> <span class="token function">RTE_MIN</span><span class="token punctuation">(</span>buf_avail<span class="token punctuation">,</span> mbuf_avail<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 拷贝数据</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>is_async<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">async_fill_seg</span><span class="token punctuation">(</span>dev<span class="token punctuation">,</span> vq<span class="token punctuation">,</span> cur<span class="token punctuation">,</span> mbuf_offset<span class="token punctuation">,</span>
+					   buf_iova <span class="token operator">+</span> buf_offset<span class="token punctuation">,</span> cpy_len<span class="token punctuation">,</span> false<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+				<span class="token keyword">goto</span> error<span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">likely</span><span class="token punctuation">(</span>hdr <span class="token operator">&amp;&amp;</span> cur <span class="token operator">==</span> m<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">rte_memcpy</span><span class="token punctuation">(</span><span class="token function">rte_pktmbuf_mtod_offset</span><span class="token punctuation">(</span>cur<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">,</span> mbuf_offset<span class="token punctuation">)</span><span class="token punctuation">,</span>
+				<span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token class-name">uintptr_t</span><span class="token punctuation">)</span><span class="token punctuation">(</span>buf_addr <span class="token operator">+</span> buf_offset<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+				cpy_len<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">sync_fill_seg</span><span class="token punctuation">(</span>dev<span class="token punctuation">,</span> vq<span class="token punctuation">,</span> cur<span class="token punctuation">,</span> mbuf_offset<span class="token punctuation">,</span>
+				      buf_addr <span class="token operator">+</span> buf_offset<span class="token punctuation">,</span>
+				      buf_iova <span class="token operator">+</span> buf_offset<span class="token punctuation">,</span> cpy_len<span class="token punctuation">,</span> false<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+
+        <span class="token comment">// 计算拷贝后的结果</span>
+		mbuf_avail  <span class="token operator">-=</span> cpy_len<span class="token punctuation">;</span>
+		mbuf_offset <span class="token operator">+=</span> cpy_len<span class="token punctuation">;</span>
+		buf_avail <span class="token operator">-=</span> cpy_len<span class="token punctuation">;</span>
+		buf_offset <span class="token operator">+=</span> cpy_len<span class="token punctuation">;</span>
+
+		<span class="token comment">/* This buf reaches to its end, get the next one */</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>buf_avail <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// 如果Guest里的数据都拷贝完了，直接break循环</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">++</span>vec_idx <span class="token operator">>=</span> nr_vec<span class="token punctuation">)</span>
+				<span class="token keyword">break</span><span class="token punctuation">;</span>
+
+			buf_addr <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_addr<span class="token punctuation">;</span>
+			buf_iova <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_iova<span class="token punctuation">;</span>
+			buf_len <span class="token operator">=</span> buf_vec<span class="token punctuation">[</span>vec_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>buf_len<span class="token punctuation">;</span>
+
+			buf_offset <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+			buf_avail  <span class="token operator">=</span> buf_len<span class="token punctuation">;</span>
+
+			<span class="token function">PRINT_PACKET</span><span class="token punctuation">(</span>dev<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token class-name">uintptr_t</span><span class="token punctuation">)</span>buf_addr<span class="token punctuation">,</span>
+					<span class="token punctuation">(</span><span class="token class-name">uint32_t</span><span class="token punctuation">)</span>buf_avail<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+
+		<span class="token comment">/*
+		 * This mbuf reaches to its end, get a new one
+		 * to hold more data.
+		 */</span>
+        <span class="token comment">// 拷贝未结束，但是mbuf空间用完了，需要重新申请一个新的mbuf</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>mbuf_avail <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			cur <span class="token operator">=</span> <span class="token function">rte_pktmbuf_alloc</span><span class="token punctuation">(</span>mbuf_pool<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 申请新的mbuf失败了，打印第一条日志，跳到error退出</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">unlikely</span><span class="token punctuation">(</span>cur <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token function">VHOST_LOG_DATA</span><span class="token punctuation">(</span>dev<span class="token operator">-></span>ifname<span class="token punctuation">,</span> ERR<span class="token punctuation">,</span>
+					<span class="token string">"failed to allocate memory for mbuf.\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+				<span class="token keyword">goto</span> error<span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+
+			prev<span class="token operator">-></span>next <span class="token operator">=</span> cur<span class="token punctuation">;</span>
+			prev<span class="token operator">-></span>data_len <span class="token operator">=</span> mbuf_offset<span class="token punctuation">;</span>
+			m<span class="token operator">-></span>nb_segs <span class="token operator">+=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+			m<span class="token operator">-></span>pkt_len <span class="token operator">+=</span> mbuf_offset<span class="token punctuation">;</span>
+			prev <span class="token operator">=</span> cur<span class="token punctuation">;</span>
+
+			mbuf_offset <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+			mbuf_avail  <span class="token operator">=</span> cur<span class="token operator">-></span>buf_len <span class="token operator">-</span> RTE_PKTMBUF_HEADROOM<span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+    <span class="token comment">// ...省略</span>
+error<span class="token operator">:</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>is_async<span class="token punctuation">)</span>
+		<span class="token function">async_iter_cancel</span><span class="token punctuation">(</span>async<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>从代码里可以看到确实是内存池不够用了，但是只有在Guest里数据包很大，超过我们预设的MTU的时候才会出现，什么时候Guest会发送超过MTU大小的包到网卡呢？很容易想到的一个点就是各种的Offload，特别是和网卡相关的分包Offload。于是就找了一台业务机器的现场看了一下网卡的特性开启情况：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># ethtool -k eth0</span>
+Features <span class="token keyword">for</span> eth0:
+rx-checksumming: on <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+tx-checksumming: on
+        tx-checksum-ipv4: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-checksum-ip-generic: on
+        tx-checksum-ipv6: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-checksum-fcoe-crc: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-checksum-sctp: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+scatter-gather: on
+        tx-scatter-gather: on
+        tx-scatter-gather-fraglist: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+tcp-segmentation-offload: off
+        tx-tcp-segmentation: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-tcp-ecn-segmentation: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-tcp6-segmentation: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+udp-fragmentation-offload: on
+generic-segmentation-offload: on
+generic-receive-offload: on
+<span class="token comment"># ...省略</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>再找一台没有问题的机器：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># ethtool -k eth0</span>
+Features <span class="token keyword">for</span> eth0:
+rx-checksumming: on <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+tx-checksumming: on
+        tx-checksum-ipv4: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-checksum-ip-generic: on
+        tx-checksum-ipv6: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-checksum-fcoe-crc: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-checksum-sctp: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+scatter-gather: on
+        tx-scatter-gather: on
+        tx-scatter-gather-fraglist: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+tcp-segmentation-offload: off
+        tx-tcp-segmentation: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-tcp-ecn-segmentation: off <span class="token punctuation">[</span>requested on<span class="token punctuation">]</span>
+        tx-tcp-mangleid-segmentation: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+        tx-tcp6-segmentation: off <span class="token punctuation">[</span>fixed<span class="token punctuation">]</span>
+generic-segmentation-offload: on
+<span class="token comment"># ...省略</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>发现像TSO这种常用的Offload特性都关了，但是出问题的机器，比没出问题的机器，多了一个特性<code>udp-fragmentation-offload: on</code>，这个特性就是<code>UFO</code>，和TSO类似，TSO是TCP的offload，而UFO是UDP的offload，既然这里有不同，那是不是出问题里有应用会发送大的UDP包呢？再尝试抓包看下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># tcpdump -i eth0 udp</span>
+tcpdump: verbose output suppressed, use <span class="token parameter variable">-v</span> or <span class="token parameter variable">-vv</span> <span class="token keyword">for</span> full protocol decode
+listening on eth0, link-type EN10MB <span class="token punctuation">(</span>Ethernet<span class="token punctuation">)</span>, capture size <span class="token number">65535</span> bytes
+<span class="token number">17</span>:55:43.880517 IP localhost.29784 <span class="token operator">></span> <span class="token number">192.168</span>.100.111.8333: UDP, length <span class="token number">9082</span>
+<span class="token number">17</span>:55:43.880526 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.880528 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.880539 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.880541 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.880542 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.880543 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.881681 IP localhost.29784 <span class="token operator">></span> <span class="token number">192.168</span>.100.111.8333: UDP, length <span class="token number">9076</span>
+<span class="token number">17</span>:55:43.881684 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.881686 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.881687 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.881689 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.881690 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.881692 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.882214 IP localhost.17670 <span class="token operator">></span> <span class="token number">192.168</span>.100.1.domain: <span class="token number">4442</span>+ PTR? <span class="token number">192.168</span>.100.1.in-addr.arpa. <span class="token punctuation">(</span><span class="token number">42</span><span class="token punctuation">)</span>
+<span class="token number">17</span>:55:43.882341 IP <span class="token number">192.168</span>.100.1.domain <span class="token operator">></span> localhost.17670: <span class="token number">4442</span> NXDomain <span class="token number">0</span>/1/0 <span class="token punctuation">(</span><span class="token number">119</span><span class="token punctuation">)</span>
+<span class="token number">17</span>:55:43.882828 IP localhost.29784 <span class="token operator">></span> <span class="token number">192.168</span>.100.111.8333: UDP, length <span class="token number">9046</span>
+<span class="token number">17</span>:55:43.882835 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.882837 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.882850 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.882852 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.882853 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp
+<span class="token number">17</span>:55:43.882854 IP localhost <span class="token operator">></span> <span class="token number">192.168</span>.100.111: udp<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>没错，除了DNS的请求之外，业务还会发送一些超过9000长度的UDP包，这些UDP包会占用预期外的mbuf资源，知道了这个问题，那就尝试把ufo特性关闭一下看看效果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># ethtoo -K eth0 ufo off</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>关闭UFO之后，观察一段时间，虚拟机的网络恢复正常了。随后我们在测试环境也通过iperf复现了问题，便于后续的验证。</p>
+<p>关闭UFO临时解决问题之余，又抛出来一个新的问题，为啥之前之前灰度的机器为什么没有出现同样的问题？为什么没有问题的机器里<code>udp-fragmentation-offload: on</code>这个特性直接消失了？</p>
+<p>通过一些搜索，找到了答案，来着内核的官方<a href="https://www.kernel.org/doc/html/latest/networking/segmentation-offloads.html">文档: Segmentation Offloads</a>：</p>
+<blockquote><p>UDP Fragmentation Offload<br>UDP fragmentation offload allows a device to fragment an oversized UDP datagram into multiple IPv4 fragments. Many of the requirements for UDP fragmentation offload are the same as TSO. However the IPv4 ID for fragments should not increment as a single IPv4 datagram is fragmented.</p>
+<p>UFO is deprecated: modern kernels will no longer generate UFO skbs, but can still receive them from tuntap and similar devices. Offload of UDP-based tunnel protocols is still supported.</p>
+</blockquote>
+
+<p>原来UFO已经被废弃了，现代内核不会再发送大的UFO skbs，但是仍然允许从tuntap等类似设备上接收这些包。再看一下这俩机器的内核版本：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment">#uname -r</span>
+<span class="token number">3.10</span>.0-514.el7.x86_64<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment">#uname -r</span>
+<span class="token number">5.14</span>.0-284.25.1.el9_2.x86_64<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>确实差了不少。</p>
+<p>最后呢，解决办法是将虚拟机的网卡配置调整了一下，修改成了：</p>
+<pre class="line-numbers language-markup" data-language="markup"><code class="language-markup"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>interface</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>vhostuser<span class="token punctuation">'</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>mac</span> <span class="token attr-name">address</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>&#123;&#123;.MACAddress&#125;&#125;<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>source</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>unix<span class="token punctuation">'</span></span> <span class="token attr-name">path</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>&#123;&#123;.VhostPath&#125;&#125;<span class="token punctuation">'</span></span> <span class="token attr-name">mode</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>server<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>model</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>virtio<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>driver</span> <span class="token attr-name">queues</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>16<span class="token punctuation">'</span></span> <span class="token attr-name">rx_queue_size</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>1024<span class="token punctuation">'</span></span> <span class="token attr-name">tx_queue_size</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>1024<span class="token punctuation">'</span></span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>host</span> <span class="token attr-name">tso4</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">tso6</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">ufo</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">ecn</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">mrg_rxbuf</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>guest</span> <span class="token attr-name">tso4</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">tso6</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">ufo</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span> <span class="token attr-name">ecn</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">'</span>off<span class="token punctuation">'</span></span><span class="token punctuation">/></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>driver</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>interface</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其实TSO这个特性是在DPDK里关闭的，但是因为已经上线了不少业务，UFO在DPDK里关闭的话，会影响老虚拟机的热迁移，因此还是在qemu这侧关闭吧。</p>
+]]></content>
+      <categories>
+        <category>Linux Kernel</category>
+      </categories>
+      <tags>
+        <tag>DPDK</tag>
+        <tag>virtio</tag>
+        <tag>UFO</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Harbor折腾升级记</title>
     <url>/2018/08/07/upgrade-harbor/</url>
     <content><![CDATA[<p>Harbor是vmware中国开发的一款企业级的DockerRegistry服务器，我们内部也是有搭建了一个Harbor，但是版本是0.5，对于当前最新的release版本1.5.2而言已经太老了，确实也有一些问题，比如不支持多级的镜像名称，某些情况下会触发bug导致panic。</p>
@@ -11619,27 +12223,6 @@ Filesystem              Blocks      Quota      Limit  Warn/Time      Mounted on
         <tag>XFS</tag>
         <tag>Directory Quota</tag>
         <tag>Project Quota</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>在RHEL系统中快速抓取火焰图</title>
-    <url>/2023/10/18/rhel-perf-flamegraphs/</url>
-    <content><![CDATA[<p>在之前的好几篇Blog里，都使用了火焰图来对业务进行性能优化，之前为了抓取火焰图，需要用到好几个工具进行组合，流程还是比较麻烦的。随着RHEL的版本更新，Redhat提供了一个更简单快速的方法实现了一键抓取火焰图的功能。</p>
-<span id="more"></span>
-<p>这个功能在<code>RHEL 8.2</code>及以上版本可以使用，当然RHEL对应的衍生版比如<code>OracleLinux</code>、<code>AlmaLinux</code>、<code>RockyLinux</code>等也是可以直接使用的。</p>
-<p>首先需要安装<code>perf</code>和<code>js-d3-flame-graph</code>这两个软件包：</p>
-<pre class="line-numbers language-none"><code class="language-none"># yum install js-d3-flame-graph perf -y<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>然后就可以通过<code>perf script flamegraph -a -F 99 sleep 60</code>命令抓取整个系统的火焰图了，其中<code>-a</code>参数表示需要记录整个系统的性能数据，<code>-F</code>参数指定每秒的收集频率，<code>sleep 60</code>表示收集60S的数据。</p>
-<p>60秒后，命令自动退出并会在当前目录生成一个<code>flamegraph.html</code>文件，用任意浏览器打开这个文件，即可看到火焰图。</p>
-<p>当然，如果要收集某个进程的火焰图，可以使用<code>perf script flamegraph -a -F 99 -p PID1,PID2 sleep 60</code>命令。</p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>火焰图</tag>
-        <tag>perf</tag>
       </tags>
   </entry>
 </search>
