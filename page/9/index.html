@@ -152,7 +152,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-count">103</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -163,7 +163,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">225</span>
+        <span class="site-state-item-count">228</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -198,6 +198,89 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2017/02/20/xfs-per-directory-quota/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2017/02/20/xfs-per-directory-quota/" class="post-title-link" itemprop="url">在XFS文件系统上实现针对目录的配额限制</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017年2月20日 10:08 10:08:25" itemprop="dateCreated datePublished" datetime="2017-02-20T10:08:25+08:00">2017年2月20日 10:08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>在Linux系统上支持对用户以及对用户组设置磁盘配额的文件系统很多，常见的Ext4文件系统对配额的支持就很好，但是如果要针对某个目录进行配额限制的话，就比较难办了。<br>至少在Ext4文件系统上并没有什么好的办法，有些比较hack的办法，比如使用 <code>fuse</code> 挂载一个目录，并在这个文件系统里实现目录级别的配额，虽然可以实现，但是问题就是 <code>fuse</code> 的性能要差很多。<br>然后调查了一下XFS，XFS文件系统支持 <code>Project Quota</code> 功能，通过该特性，可以支持目录级别的配额限制。
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2017/02/20/xfs-per-directory-quota/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1023,89 +1106,6 @@ Type <span class="token string">"help"</span>, <span class="token string">"copyr
 <p>在RAID5中，当整个集群有一块硬盘出现损坏需要替换时，需要进行重建，重建时，需要读取其他硬盘的数据，计算出替换的那块硬盘的数据，在重建过程中，除了需要考虑重建的时间之外，还要考虑的就是URE的影响，如果集群的容量足够大，比如超过10TB，那么，其实是有很大的概率出现读取错误的，而一旦读取出错，则RAID的重建就会失败，基本也就意味着，数据能恢复的可能性变得相当低了。所以在使用RAID5时，就需要考虑重建的问题。</p>
 <p>不过对于企业级的硬盘，URE普遍能做到1×10^-15，就意味着大约能读取125TB的数据，容量有比较大的提升，对于SSD，这个值会更加优秀，有些SSD能达到1×10^-17甚至1×10^-18，能提供更好的数据安全性。</p>
 <p>所以，稳定点的话，还是RAID10吧。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2016/10/14/remove-thunderbird-signature-separator/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2016/10/14/remove-thunderbird-signature-separator/" class="post-title-link" itemprop="url">删除Thunderbird默认签名分割符的两条横线</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2016年10月14日 14:31 14:31:27" itemprop="dateCreated datePublished" datetime="2016-10-14T14:31:27+08:00">2016年10月14日 14:31</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>默认的Thunderbird设置签名后，会在新建邮件时在前面自动添加两个短横线，类似：</p>
-<pre><code>--
-xxxxxx
-</code></pre>
-<p>如果要去掉这两个短横线分割符，需要在 <code>工具-&gt; 选项-&gt; 高级-&gt; 配置编辑</code> 中，将 <code>mail.identity.default.suppress_signature_separator</code> 配置项的值修改为 <code>true</code>。即可去掉分割符。</p>
-<p>原文在 <a target="_blank" rel="noopener" href="http://kb.mozillazine.org/Signatures_(Thunderbird)">Signatures - Thunderbird</a></p>
-<blockquote><p>If you don’t want a “– “ signature separator (the divider between the message body and the signature)<br>use the config editor to change mail.identity.default.suppress_signature_separator from false to true.<br>This requires Thunderbird 5.0 or later. If you are using Windows go to Tools → Options → Advanced → General<br>and press the Config Editor button. Enter suppress_signature_separator in the Filter: field and press return.<br>Find mail.identity.default.suppress_signature_separator in the results and double click on false in its Value column<br>to toggle it to true, then close the config editor and press the OK button. </p>
-</blockquote>
 
       
     </div>

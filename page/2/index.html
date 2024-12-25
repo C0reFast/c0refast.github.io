@@ -152,7 +152,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-count">103</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -163,7 +163,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">225</span>
+        <span class="site-state-item-count">228</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -198,6 +198,100 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/03/20/implement-a-k8s-authenticating-proxy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/03/20/implement-a-k8s-authenticating-proxy/" class="post-title-link" itemprop="url">实现一个Kubernetes的身份认证代理服务</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022年3月20日 16:41 16:41:36" itemprop="dateCreated datePublished" datetime="2022-03-20T16:41:36+08:00">2022年3月20日 16:41</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022年4月28日 13:53 13:53:29" itemprop="dateModified" datetime="2022-04-28T13:53:29+08:00">2022年4月28日 13:53</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>最近接到一个需求：把K8s的认证和授权体系，整合到我们内部的系统中，使得我们内部系统的用户，可以无缝的直接访问K8s集群，同时也需要限制好用户对应namespace的权限。</p>
+<p>对于需求的用户授权也就是authorization (authz)部分，实现思路还是比较简单的，毕竟K8s的<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/access-authn-authz/rbac/">RBAC</a>实现相对来说还是非常完善的，而且RBAC对于我们目前的用户和组织权限管理理念十分的接近。所以只需要将目前系统里的用户权限和组织关系，对应到一系列的RBAC Role和RoleBinding里，就可以实现对于用户权限的精细化控制。</p>
+<p>而对于用户的认证authentication (authn)部分，K8s提供了非常多的<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/access-authn-authz/authentication/">身份认证策略</a>。但是如文档里明确的一点：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/03/20/implement-a-k8s-authenticating-proxy/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1042,99 +1136,6 @@ failed to start daemon: Error initializing network controller: error obtaining c
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/05/23/the-ure-improvements-on-todays-hard-disks/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/03/18/ceph-osd-mark-down/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/03/18/ceph-osd-mark-down/" class="post-title-link" itemprop="url">Ceph Monitor标记OSD DOWN分析</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2021年3月18日 19:24 19:24:59" itemprop="dateCreated datePublished" datetime="2021-03-18T19:24:59+08:00">2021年3月18日 19:24</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2021年3月18日 14:32 14:32:38" itemprop="dateModified" datetime="2021-03-18T14:32:38+08:00">2021年3月18日 14:32</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Ceph/" itemprop="url" rel="index"><span itemprop="name">Ceph</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在上篇Blog：<a href="https://www.ichenfu.com/2021/03/16/ceph-osd-heartbeat/">Ceph OSD的心跳机制分析</a>的最后，我们知道Ceph OSD将心跳检测失败的OSD打包成MOSDFailure消息发送给Monitor，但是还遗留了一个问题，就是Monitor是怎么处理这个消息的？又是在什么的情况下会把这个OSD标记为Down状态？所以这篇就是要把整个流程补完。</p>
-<p>还是来看代码，首先需要注意的是，MOSDFailure不是一个原始的消息，我们得先找到这个消息对应得MSG TYPE，这样才能知道Monitor是怎么处理的，还是先看<code>src\messages\MOSDFailure.h</code>，找到MOSDFailure类的定义：</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/03/18/ceph-osd-mark-down/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>

@@ -152,7 +152,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-count">103</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -163,7 +163,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">225</span>
+        <span class="site-state-item-count">228</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -198,6 +198,116 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2024/12/25/rss-not-balanced-caused-by-ipip-tunnel/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2024/12/25/rss-not-balanced-caused-by-ipip-tunnel/" class="post-title-link" itemprop="url">IPIP隧道导致的DPDK收包RSS队列不均匀问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024年12月25日 20:56 20:56:47" itemprop="dateCreated datePublished" datetime="2024-12-25T20:56:47+08:00">2024年12月25日 20:56</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2024年12月25日 18:38 18:38:38" itemprop="dateModified" datetime="2024-12-25T18:38:38+08:00">2024年12月25日 18:38</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%99%9A%E6%8B%9F%E5%8C%96/" itemprop="url" rel="index"><span itemprop="name">虚拟化</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>最近线上出现一些VM网卡收包队列不均匀的问题，即使是将网卡队列中断均匀的绑定到各个CPU上，依然会出现某个核特别高的情况：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">%Cpu0  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.9</span> hi,  <span class="token number">0.9</span> si,  <span class="token number">0.0</span> st
+%Cpu1  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">97.5</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.8</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu2  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">99.1</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.9</span> si,  <span class="token number">0.0</span> st
+%Cpu3  <span class="token builtin class-name">:</span>  <span class="token number">0.9</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.9</span> si,  <span class="token number">0.0</span> st
+%Cpu4  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu5  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">97.4</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.9</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu6  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">97.4</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.9</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu7  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu8  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">46.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">3.4</span> hi, <span class="token number">50.3</span> si,  <span class="token number">0.0</span> st
+%Cpu9  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">97.4</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.9</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu10 <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu11 <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">99.1</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.9</span> si,  <span class="token number">0.0</span> st
+%Cpu12 <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu13 <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">99.1</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.9</span> si,  <span class="token number">0.0</span> st
+%Cpu14 <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu15 <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>能看到其他核大部分还是比较均匀的，就是cpu8确实比其他核高很多。经过了一些排查，发现和VM使用了<code>IPIP Tunnel</code>有关。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/12/25/rss-not-balanced-caused-by-ipip-tunnel/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -243,7 +353,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2024年12月17日 18:33 18:33:53" itemprop="dateModified" datetime="2024-12-17T18:33:53+08:00">2024年12月17日 18:33</time>
+      <time title="修改时间：2024年12月17日 18:59 18:59:34" itemprop="dateModified" datetime="2024-12-17T18:59:34+08:00">2024年12月17日 18:59</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1041,100 +1151,6 @@ tsc<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2022/04/05/spdk-reduce-block-compression-algorithm/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/03/20/implement-a-k8s-authenticating-proxy/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/03/20/implement-a-k8s-authenticating-proxy/" class="post-title-link" itemprop="url">实现一个Kubernetes的身份认证代理服务</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2022年3月20日 16:41 16:41:36" itemprop="dateCreated datePublished" datetime="2022-03-20T16:41:36+08:00">2022年3月20日 16:41</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2022年4月28日 13:53 13:53:29" itemprop="dateModified" datetime="2022-04-28T13:53:29+08:00">2022年4月28日 13:53</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>最近接到一个需求：把K8s的认证和授权体系，整合到我们内部的系统中，使得我们内部系统的用户，可以无缝的直接访问K8s集群，同时也需要限制好用户对应namespace的权限。</p>
-<p>对于需求的用户授权也就是authorization (authz)部分，实现思路还是比较简单的，毕竟K8s的<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/access-authn-authz/rbac/">RBAC</a>实现相对来说还是非常完善的，而且RBAC对于我们目前的用户和组织权限管理理念十分的接近。所以只需要将目前系统里的用户权限和组织关系，对应到一系列的RBAC Role和RoleBinding里，就可以实现对于用户权限的精细化控制。</p>
-<p>而对于用户的认证authentication (authn)部分，K8s提供了非常多的<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/access-authn-authz/authentication/">身份认证策略</a>。但是如文档里明确的一点：</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2022/03/20/implement-a-k8s-authenticating-proxy/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>

@@ -152,7 +152,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-count">103</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -163,7 +163,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">225</span>
+        <span class="site-state-item-count">228</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -198,6 +198,100 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2019/09/14/raspberrypi-boot-without-HDMI-connected/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2019/09/14/raspberrypi-boot-without-HDMI-connected/" class="post-title-link" itemprop="url">树莓派启动时需要连接HDMI问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019年9月14日 22:57 22:57:14" itemprop="dateCreated datePublished" datetime="2019-09-14T22:57:14+08:00">2019年9月14日 22:57</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年6月9日 15:06 15:06:19" itemprop="dateModified" datetime="2021-06-09T15:06:19+08:00">2021年6月9日 15:06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>前段时间将家里的树莓派3B系统换成了<code>ArchLinux Arm</code>，这样就可以用上64位指令集，不过遇到了一个问题，在没有连接HDMI时系统无法启动，刚开始还以为是什么其他的原因，因为之前接上显示器开机一切正常，但是换个地方不接显示器就启动不了，后来把显示器搬到旁边，一插上HDMI，立马就进入启动了。</p>
+<p>定位到和HDMI相关之后，搜索了一下，刚开始以为和系统有关，后来搜到了<a target="_blank" rel="noopener" href="https://www.raspberrypi.org/forums/viewtopic.php?t=11259">Won’t boot without HDMI connected (solved)</a>这个帖子，发现不是系统问题，是个简单的配置问题，很简单，在<code>/boot/config.txt</code>中，加入一行<code>hdmi_force_hotplug=1</code>就可以了，直接重启，没有接显示器也可以正常启动了。</p>
+<p>这个配置信息在<a target="_blank" rel="noopener" href="https://www.raspberrypi.org/documentation/configuration/config-txt/video.md">Video options in config.txt</a>有详细的解释，意思是强制认为HDMI已经连接，直接开启HDMI输出。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2019/09/14/raspberrypi-boot-without-HDMI-connected/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1178,100 +1272,6 @@ default via <span class="token number">169.254</span>.1.1 dev eth0
             </div>
           <!--/noindex-->
         
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2019/02/11/kubelet-boot-id/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2019/02/11/kubelet-boot-id/" class="post-title-link" itemprop="url">kubelet判断机器是否重启逻辑</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2019年2月11日 11:09 11:09:15" itemprop="dateCreated datePublished" datetime="2019-02-11T11:09:15+08:00">2019年2月11日 11:09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>如果K8s中某个Node节点重启，在Event信息中会有一条消息，大致内容如<code>Node xxxxx has been rebooted, boot id: xxx</code>，而如果是重启<code>kubelet</code>，则不会有这条消息，所以<code>kubelet</code>是怎么判断是自己重启了还是机器重启了呢？</p>
-<p>搜索了一下代码，在<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/blob/v1.10.12/pkg/kubelet/kubelet_node_status.go#L621">https://github.com/kubernetes/kubernetes/blob/v1.10.12/pkg/kubelet/kubelet_node_status.go#L621</a>这里，会判断上次记录的Node的BootID和当前从cAdvisor获取的BootID是否相同，如果不同则说明机器重启了。</p>
-<p>那么<code>cAdvisor</code>是怎么获得这个BootID的呢？看了一下<code>cAdvisor</code>的文档，发现默认是从<code>/proc/sys/kernel/random/boot_id</code>这个文件读取的。针对这个文件，找到一段解析：</p>
-<blockquote><p>&#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;random&#x2F;boot_id: A random ID that is regenerated on each boot. As such it can be used to identify the local machine’s current boot. It’s universally available on any recent Linux kernel. It’s a good and safe choice if you need to identify a specific boot on a specific booted kernel.</p>
-</blockquote>
-<p>是内核暴露的一个接口，每次启动都会随机生成一个ID，是一个比较通用和安全的判断启动的办法。</p>
-<p>参考：</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="http://0pointer.de/blog/projects/ids.html">http://0pointer.de/blog/projects/ids.html</a></li>
-</ol>
-
       
     </div>
 

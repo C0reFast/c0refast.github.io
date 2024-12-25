@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/favicon-orgin.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/favicon/favicon-orgin.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css" integrity="sha256-5eIC48iZUHmSlSUz9XtjRyK2mzQkHScZY1WdMaoz74E=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.21.1","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="最近线上出现一些VM网卡收包队列不均匀的问题，即使是将网卡队列中断均匀的绑定到各个CPU上，依然会出现某个核特别高的情况： %Cpu0  :  0.0 us,  0.0 sy,  0.0 ni, 98.3 id,  0.0 wa,  0.9 hi,  0.9 si,  0.0 st %Cpu1  :  0.0 us,  0.0 sy,  0.0 ni, 97.5 id,  0.0 wa,  0.8">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IPIP隧道导致的DPDK收包RSS队列不均匀问题">
+<meta property="og:url" content="https://www.ichenfu.com/2024/12/25/rss-not-balanced-caused-by-ipip-tunnel/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="最近线上出现一些VM网卡收包队列不均匀的问题，即使是将网卡队列中断均匀的绑定到各个CPU上，依然会出现某个核特别高的情况： %Cpu0  :  0.0 us,  0.0 sy,  0.0 ni, 98.3 id,  0.0 wa,  0.9 hi,  0.9 si,  0.0 st %Cpu1  :  0.0 us,  0.0 sy,  0.0 ni, 97.5 id,  0.0 wa,  0.8">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-12-25T12:56:47.000Z">
+<meta property="article:modified_time" content="2024-12-25T10:38:38.432Z">
+<meta property="article:author" content="陈孚">
+<meta property="article:tag" content="DPDK">
+<meta property="article:tag" content="RSS">
+<meta property="article:tag" content="IPIP">
+<meta property="article:tag" content="rte_flow">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2024/12/25/rss-not-balanced-caused-by-ipip-tunnel/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2024/12/25/rss-not-balanced-caused-by-ipip-tunnel/","path":"2024/12/25/rss-not-balanced-caused-by-ipip-tunnel/","title":"IPIP隧道导致的DPDK收包RSS队列不均匀问题"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>IPIP隧道导致的DPDK收包RSS队列不均匀问题 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?50e2a95e85fdbe38e53b7aaba8c6cfe1"></script>
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">陈孚</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">103</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">228</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2024/12/25/rss-not-balanced-caused-by-ipip-tunnel/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="IPIP隧道导致的DPDK收包RSS队列不均匀问题 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          IPIP隧道导致的DPDK收包RSS队列不均匀问题
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024年12月25日 20:56 20:56:47" itemprop="dateCreated datePublished" datetime="2024-12-25T20:56:47+08:00">2024年12月25日 20:56</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2024年12月25日 18:38 18:38:38" itemprop="dateModified" datetime="2024-12-25T18:38:38+08:00">2024年12月25日 18:38</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%99%9A%E6%8B%9F%E5%8C%96/" itemprop="url" rel="index"><span itemprop="name">虚拟化</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>最近线上出现一些VM网卡收包队列不均匀的问题，即使是将网卡队列中断均匀的绑定到各个CPU上，依然会出现某个核特别高的情况：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">%Cpu0  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.9</span> hi,  <span class="token number">0.9</span> si,  <span class="token number">0.0</span> st
+%Cpu1  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">97.5</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.8</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu2  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">99.1</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.9</span> si,  <span class="token number">0.0</span> st
+%Cpu3  <span class="token builtin class-name">:</span>  <span class="token number">0.9</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.9</span> si,  <span class="token number">0.0</span> st
+%Cpu4  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu5  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">97.4</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.9</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu6  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">97.4</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.9</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu7  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu8  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">46.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">3.4</span> hi, <span class="token number">50.3</span> si,  <span class="token number">0.0</span> st
+%Cpu9  <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">97.4</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.9</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu10 <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu11 <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">99.1</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.9</span> si,  <span class="token number">0.0</span> st
+%Cpu12 <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu13 <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">99.1</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.9</span> si,  <span class="token number">0.0</span> st
+%Cpu14 <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st
+%Cpu15 <span class="token builtin class-name">:</span>  <span class="token number">0.0</span> us,  <span class="token number">0.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">98.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">1.7</span> si,  <span class="token number">0.0</span> st<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>能看到其他核大部分还是比较均匀的，就是cpu8确实比其他核高很多。经过了一些排查，发现和VM使用了<code>IPIP Tunnel</code>有关。</p>
+<span id="more"></span>
+
+<p>用户的场景是，在网络入口处有一台机器充当负载均衡的角色，然后这台负载均衡再通过<code>IPIP Tunnel</code>将用户的请求转发到这台VM，由于<code>IPIP</code>的原理是在原有的IP包基础上再“套”一层IP包头，导致RSS计算的Hash的之后只能看到外层的IP，所以即使内层IP包的五元组分布非常均匀，也会出现所以隧道的流量都跑到一个核上的情况。</p>
+<p>为了网络的灵活性，VM的网络流量，是经过了一个DPDK程序进行转发的，这个DPDK程序逻辑非常简单，就是从网卡对应的rx队列N接收数据包，然后发送到VM对应的rx队列N，因此如果VM的接收队列不平衡，也就意味着从网卡收包的时候就是不均匀的。</p>
+<p>那怎么解决这个问题呢，很显然的一个思路是，当DPDK收包之后，重新计算一下数据包的Hash，在计算过程中，如果发现数据包是一个IPIP数据包，就按内层IP头去计算Hash，然后再根据这个Hash计算VM的接受队列，并把包转发到对应队列。在这种情况下，不管从网卡收包是否是均衡的，到VM的流量基本就会是均衡的。这样确实会非常灵活（这也是当时多加一层DPDK而不是直接网卡直通的原因），但很显然DPDK程序的计算量增加了，对性能会有不小的影响。</p>
+<p>那网卡能不能支持针对IPIP数据包提供个“更高级的”RSS算法呢？毕竟现在的网卡功能特性都比较多，功能也比较强大，很有可能可以直接在网卡层面直接实现支持基于隧道内层IP头进行RSS的能力，如果能通过网卡层面实现，那是最优解了。</p>
+<p>跟网卡厂商交流之后，确认了网卡是支持这个特性的，而且，在使用Linux驱动收包的情况下，默认就是开启的，也就是说，如果使用的是网卡直通的模式，那直接就不会遇到这个问题。但我们使用了DPDK进行中转，默认是没有这个行为的，如果要开启基于IPIP Tunnel内层IP头进行RSS，需要给网卡下发这样一条流表：<code>flow create 0 group 0 ingress pattern eth / ipv4 proto is 4 / ipv4 / tcp / end actions rss queues 0 1 2 3 4 end level 2 / end</code>。简单翻译一下，就是通过流表去匹配<code>ipv4.proto == 4</code>(也就是IPIP Tunnel协议)的数据包，并让网卡以内层IP进行rss，并分配到<code>0 1 2 3 4</code>这几个队列中。</p>
+<p>知道了这个规则，我们就可以用<code>testpmd</code>测试下了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">testpmd<span class="token operator">></span> <span class="token builtin class-name">set</span> fwd rxonly
+Set rxonly packet forwarding mode
+testpmd<span class="token operator">></span>
+testpmd<span class="token operator">></span> start
+rxonly packet forwarding - <span class="token assign-left variable">ports</span><span class="token operator">=</span><span class="token number">1</span> - <span class="token assign-left variable">cores</span><span class="token operator">=</span><span class="token number">1</span> - <span class="token assign-left variable">streams</span><span class="token operator">=</span><span class="token number">16</span> - NUMA support enabled, MP allocation mode: native
+Logical Core <span class="token number">1</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> forwards packets on <span class="token number">16</span> streams:
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">0</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">0</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">1</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">1</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">2</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">2</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">3</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">3</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">4</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">4</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">5</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">5</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">6</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">6</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">7</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">7</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">8</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">8</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">9</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">9</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">10</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">10</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">11</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">11</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">12</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">12</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">13</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">13</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">14</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">14</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">15</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">15</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+
+  rxonly packet forwarding packets/burst<span class="token operator">=</span><span class="token number">32</span>
+  nb forwarding <span class="token assign-left variable">cores</span><span class="token operator">=</span><span class="token number">1</span> - nb forwarding <span class="token assign-left variable">ports</span><span class="token operator">=</span><span class="token number">1</span>
+  port <span class="token number">0</span>: RX queue number: <span class="token number">16</span> Tx queue number: <span class="token number">16</span>
+    Rx <span class="token assign-left variable">offloads</span><span class="token operator">=</span>0x0 Tx <span class="token assign-left variable">offloads</span><span class="token operator">=</span>0x10000
+    RX queue: <span class="token number">0</span>
+      RX <span class="token assign-left variable">desc</span><span class="token operator">=</span><span class="token number">4096</span> - RX <span class="token function">free</span> <span class="token assign-left variable">threshold</span><span class="token operator">=</span><span class="token number">64</span>
+      RX threshold registers: <span class="token assign-left variable">pthresh</span><span class="token operator">=</span><span class="token number">0</span> <span class="token assign-left variable">hthresh</span><span class="token operator">=</span><span class="token number">0</span>  <span class="token assign-left variable">wthresh</span><span class="token operator">=</span><span class="token number">0</span>
+      RX <span class="token assign-left variable">Offloads</span><span class="token operator">=</span>0x0
+    TX queue: <span class="token number">0</span>
+      TX <span class="token assign-left variable">desc</span><span class="token operator">=</span><span class="token number">4096</span> - TX <span class="token function">free</span> <span class="token assign-left variable">threshold</span><span class="token operator">=</span><span class="token number">0</span>
+      TX threshold registers: <span class="token assign-left variable">pthresh</span><span class="token operator">=</span><span class="token number">0</span> <span class="token assign-left variable">hthresh</span><span class="token operator">=</span><span class="token number">0</span>  <span class="token assign-left variable">wthresh</span><span class="token operator">=</span><span class="token number">0</span>
+      TX <span class="token assign-left variable">offloads</span><span class="token operator">=</span>0x10000 - TX RS bit <span class="token assign-left variable">threshold</span><span class="token operator">=</span><span class="token number">0</span>
+testpmd<span class="token operator">></span> stop
+Telling cores to stop<span class="token punctuation">..</span>.
+Waiting <span class="token keyword">for</span> lcores to finish<span class="token punctuation">..</span>.
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">12</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">12</span> -------
+  RX-packets: <span class="token number">139389</span>         TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ---------------------- Forward statistics <span class="token keyword">for</span> port <span class="token number">0</span>  ----------------------
+  RX-packets: <span class="token number">139389</span>         RX-dropped: <span class="token number">0</span>             RX-total: <span class="token number">139389</span>
+  TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>             TX-total: <span class="token number">0</span>
+  ----------------------------------------------------------------------------
+
+  +++++++++++++++ Accumulated forward statistics <span class="token keyword">for</span> all ports+++++++++++++++
+  RX-packets: <span class="token number">139389</span>         RX-dropped: <span class="token number">0</span>             RX-total: <span class="token number">139389</span>
+  TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>             TX-total: <span class="token number">0</span>
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Done.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到默认情况下，所有的包全跑到<code>Queue=12</code>这个队列了。很显然默认情况下RSS是有些问题的，那就继续试试下发流表之后的情况：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">testpmd<span class="token operator">></span> flow create <span class="token number">0</span> group <span class="token number">0</span> ingress pattern eth / ipv4 proto is <span class="token number">4</span> / ipv4 / tcp / end actions rss queues <span class="token number">0</span> <span class="token number">1</span> <span class="token number">2</span> <span class="token number">3</span> <span class="token number">4</span> <span class="token number">5</span> <span class="token number">6</span> <span class="token number">7</span> <span class="token number">8</span> <span class="token number">9</span> <span class="token number">10</span> <span class="token number">11</span> <span class="token number">12</span> <span class="token number">13</span> <span class="token number">14</span> <span class="token number">15</span> end level <span class="token number">2</span> / end
+Flow rule <span class="token comment">#0 created</span>
+testpmd<span class="token operator">></span> start
+rxonly packet forwarding - <span class="token assign-left variable">ports</span><span class="token operator">=</span><span class="token number">1</span> - <span class="token assign-left variable">cores</span><span class="token operator">=</span><span class="token number">1</span> - <span class="token assign-left variable">streams</span><span class="token operator">=</span><span class="token number">16</span> - NUMA support enabled, MP allocation mode: native
+Logical Core <span class="token number">1</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> forwards packets on <span class="token number">16</span> streams:
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">0</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">0</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">1</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">1</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">2</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">2</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">3</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">3</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">4</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">4</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">5</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">5</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">6</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">6</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">7</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">7</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">8</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">8</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">9</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">9</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">10</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">10</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">11</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">11</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">12</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">12</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">13</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">13</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">14</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">14</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+  RX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">15</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> -<span class="token operator">></span> TX <span class="token assign-left variable">P</span><span class="token operator">=</span><span class="token number">0</span>/Q<span class="token operator">=</span><span class="token number">15</span> <span class="token punctuation">(</span>socket <span class="token number">0</span><span class="token punctuation">)</span> <span class="token assign-left variable">peer</span><span class="token operator">=</span>02:00:00:00:00:00
+
+  rxonly packet forwarding packets/burst<span class="token operator">=</span><span class="token number">32</span>
+  nb forwarding <span class="token assign-left variable">cores</span><span class="token operator">=</span><span class="token number">1</span> - nb forwarding <span class="token assign-left variable">ports</span><span class="token operator">=</span><span class="token number">1</span>
+  port <span class="token number">0</span>: RX queue number: <span class="token number">16</span> Tx queue number: <span class="token number">16</span>
+    Rx <span class="token assign-left variable">offloads</span><span class="token operator">=</span>0x0 Tx <span class="token assign-left variable">offloads</span><span class="token operator">=</span>0x10000
+    RX queue: <span class="token number">0</span>
+      RX <span class="token assign-left variable">desc</span><span class="token operator">=</span><span class="token number">4096</span> - RX <span class="token function">free</span> <span class="token assign-left variable">threshold</span><span class="token operator">=</span><span class="token number">64</span>
+      RX threshold registers: <span class="token assign-left variable">pthresh</span><span class="token operator">=</span><span class="token number">0</span> <span class="token assign-left variable">hthresh</span><span class="token operator">=</span><span class="token number">0</span>  <span class="token assign-left variable">wthresh</span><span class="token operator">=</span><span class="token number">0</span>
+      RX <span class="token assign-left variable">Offloads</span><span class="token operator">=</span>0x0
+    TX queue: <span class="token number">0</span>
+      TX <span class="token assign-left variable">desc</span><span class="token operator">=</span><span class="token number">4096</span> - TX <span class="token function">free</span> <span class="token assign-left variable">threshold</span><span class="token operator">=</span><span class="token number">0</span>
+      TX threshold registers: <span class="token assign-left variable">pthresh</span><span class="token operator">=</span><span class="token number">0</span> <span class="token assign-left variable">hthresh</span><span class="token operator">=</span><span class="token number">0</span>  <span class="token assign-left variable">wthresh</span><span class="token operator">=</span><span class="token number">0</span>
+      TX <span class="token assign-left variable">offloads</span><span class="token operator">=</span>0x10000 - TX RS bit <span class="token assign-left variable">threshold</span><span class="token operator">=</span><span class="token number">0</span>
+testpmd<span class="token operator">></span> stop
+Telling cores to stop<span class="token punctuation">..</span>.
+Waiting <span class="token keyword">for</span> lcores to finish<span class="token punctuation">..</span>.
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">0</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">0</span> -------
+  RX-packets: <span class="token number">6001</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">1</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">1</span> -------
+  RX-packets: <span class="token number">5894</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">2</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">2</span> -------
+  RX-packets: <span class="token number">5931</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">3</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">3</span> -------
+  RX-packets: <span class="token number">5759</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">4</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">4</span> -------
+  RX-packets: <span class="token number">5821</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">5</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">5</span> -------
+  RX-packets: <span class="token number">5787</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">6</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">6</span> -------
+  RX-packets: <span class="token number">5893</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">7</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">7</span> -------
+  RX-packets: <span class="token number">5909</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">8</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">8</span> -------
+  RX-packets: <span class="token number">6013</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">9</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span> <span class="token number">9</span> -------
+  RX-packets: <span class="token number">5956</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">10</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">10</span> -------
+  RX-packets: <span class="token number">5735</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">11</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">11</span> -------
+  RX-packets: <span class="token number">5885</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">12</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">12</span> -------
+  RX-packets: <span class="token number">5771</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">13</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">13</span> -------
+  RX-packets: <span class="token number">5878</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">14</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">14</span> -------
+  RX-packets: <span class="token number">5844</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ------- Forward Stats <span class="token keyword">for</span> RX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">15</span> -<span class="token operator">></span> TX <span class="token assign-left variable">Port</span><span class="token operator">=</span> <span class="token number">0</span>/Queue<span class="token operator">=</span><span class="token number">15</span> -------
+  RX-packets: <span class="token number">5930</span>           TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>
+
+  ---------------------- Forward statistics <span class="token keyword">for</span> port <span class="token number">0</span>  ----------------------
+  RX-packets: <span class="token number">94007</span>          RX-dropped: <span class="token number">0</span>             RX-total: <span class="token number">94007</span>
+  TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>             TX-total: <span class="token number">0</span>
+  ----------------------------------------------------------------------------
+
+  +++++++++++++++ Accumulated forward statistics <span class="token keyword">for</span> all ports+++++++++++++++
+  RX-packets: <span class="token number">94007</span>          RX-dropped: <span class="token number">0</span>             RX-total: <span class="token number">94007</span>
+  TX-packets: <span class="token number">0</span>              TX-dropped: <span class="token number">0</span>             TX-total: <span class="token number">0</span>
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Done.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到下发流表后，流量相对均匀的分布到了<code>0-15</code>这16个队列上。说明网卡的功能没有问题。</p>
+<p>剩下来就是如何将这个规则下发以代码的形式集成到转发逻辑中了。</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">create_ipip_rss_flow</span><span class="token punctuation">(</span><span class="token class-name">dpdk_port_t</span> port_id<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token comment">// flow create 0 group 0 ingress pattern eth / ipv4 proto is 4 / ipv4 / end actions rss queues 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 end level 2 / end</span>
+    <span class="token keyword">struct</span> <span class="token class-name">rte_flow_error</span> error<span class="token punctuation">;</span>
+    <span class="token keyword">struct</span> <span class="token class-name">rte_flow</span> <span class="token operator">*</span>flow<span class="token punctuation">;</span>
+	<span class="token keyword">struct</span> <span class="token class-name">rte_flow_attr</span> flow_attr <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+		<span class="token punctuation">.</span>ingress <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+	<span class="token class-name">uint16_t</span> queue_list<span class="token punctuation">[</span><span class="token number">16</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+	<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">16</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        queue_list<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> i<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">struct</span> <span class="token class-name">rte_flow_item</span> patterns<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+		<span class="token punctuation">&#123;</span>
+			<span class="token punctuation">.</span>type <span class="token operator">=</span> RTE_FLOW_ITEM_TYPE_ETH<span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+		<span class="token punctuation">&#123;</span>
+			<span class="token punctuation">.</span>type <span class="token operator">=</span> RTE_FLOW_ITEM_TYPE_IPV4<span class="token punctuation">,</span>
+			<span class="token punctuation">.</span>spec <span class="token operator">=</span> <span class="token operator">&amp;</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">rte_flow_item_ipv4</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+                <span class="token punctuation">.</span>hdr<span class="token punctuation">.</span>next_proto_id <span class="token operator">=</span> IPPROTO_IPIP<span class="token punctuation">,</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+			<span class="token punctuation">.</span>mask <span class="token operator">=</span> <span class="token operator">&amp;</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">rte_flow_item_ipv4</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+                <span class="token punctuation">.</span>hdr<span class="token punctuation">.</span>next_proto_id <span class="token operator">=</span> <span class="token number">0xFF</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+		<span class="token punctuation">&#123;</span>
+			<span class="token punctuation">.</span>type <span class="token operator">=</span> RTE_FLOW_ITEM_TYPE_IPV4<span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+		<span class="token punctuation">&#123;</span>
+			<span class="token punctuation">.</span>type <span class="token operator">=</span> RTE_FLOW_ITEM_TYPE_END<span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+    <span class="token keyword">struct</span> <span class="token class-name">rte_flow_action</span> actions<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+		<span class="token punctuation">&#123;</span>
+			<span class="token punctuation">.</span>type <span class="token operator">=</span> RTE_FLOW_ACTION_TYPE_RSS<span class="token punctuation">,</span>
+			<span class="token punctuation">.</span>conf <span class="token operator">=</span> <span class="token operator">&amp;</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">rte_flow_action_rss</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+				<span class="token punctuation">.</span>queue_num <span class="token operator">=</span> <span class="token number">16</span><span class="token punctuation">,</span>
+				<span class="token punctuation">.</span>queue <span class="token operator">=</span> queue_list<span class="token punctuation">,</span>
+				<span class="token punctuation">.</span>level <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">,</span>
+			<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+		<span class="token punctuation">&#123;</span>
+			<span class="token punctuation">.</span>type <span class="token operator">=</span> RTE_FLOW_ACTION_TYPE_END<span class="token punctuation">,</span>
+		<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+    flow <span class="token operator">=</span> <span class="token function">rte_flow_create</span><span class="token punctuation">(</span>port_id<span class="token punctuation">,</span> <span class="token operator">&amp;</span>flow_attr<span class="token punctuation">,</span> patterns<span class="token punctuation">,</span> actions<span class="token punctuation">,</span> <span class="token operator">&amp;</span>error<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>flow<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">log_error</span><span class="token punctuation">(</span><span class="token string">"Failed to create ipip_rss_flow: %s"</span><span class="token punctuation">,</span> error<span class="token punctuation">.</span>message<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>实际开发过程中，稍微调整了一下流表的规则，不再匹配<code>tcp/udp</code>协议，而是只匹配到ipv4层，这样就可以同时支持<code>TCP/UDP</code>了。</p>
+<p>最后感谢一下<code>Github Copilot</code>和<code>Cursor</code>在代码研发中提供的巨大帮助！</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="陈孚 wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/DPDK/" rel="tag"># DPDK</a>
+              <a href="/tags/RSS/" rel="tag"># RSS</a>
+              <a href="/tags/IPIP/" rel="tag"># IPIP</a>
+              <a href="/tags/rte-flow/" rel="tag"># rte_flow</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/12/17/enable-tsc-virtualization-on-kvm/" rel="prev" title="在KVM虚拟机中开启TSC作为时钟源">
+                  <i class="fa fa-angle-left"></i> 在KVM虚拟机中开启TSC作为时钟源
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">陈孚</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/sidebar.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

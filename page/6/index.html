@@ -152,7 +152,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-count">103</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -163,7 +163,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">225</span>
+        <span class="site-state-item-count">228</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -198,6 +198,100 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2019/02/11/kubelet-boot-id/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2019/02/11/kubelet-boot-id/" class="post-title-link" itemprop="url">kubelet判断机器是否重启逻辑</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019年2月11日 11:09 11:09:15" itemprop="dateCreated datePublished" datetime="2019-02-11T11:09:15+08:00">2019年2月11日 11:09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>如果K8s中某个Node节点重启，在Event信息中会有一条消息，大致内容如<code>Node xxxxx has been rebooted, boot id: xxx</code>，而如果是重启<code>kubelet</code>，则不会有这条消息，所以<code>kubelet</code>是怎么判断是自己重启了还是机器重启了呢？</p>
+<p>搜索了一下代码，在<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/blob/v1.10.12/pkg/kubelet/kubelet_node_status.go#L621">https://github.com/kubernetes/kubernetes/blob/v1.10.12/pkg/kubelet/kubelet_node_status.go#L621</a>这里，会判断上次记录的Node的BootID和当前从cAdvisor获取的BootID是否相同，如果不同则说明机器重启了。</p>
+<p>那么<code>cAdvisor</code>是怎么获得这个BootID的呢？看了一下<code>cAdvisor</code>的文档，发现默认是从<code>/proc/sys/kernel/random/boot_id</code>这个文件读取的。针对这个文件，找到一段解析：</p>
+<blockquote><p>&#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;random&#x2F;boot_id: A random ID that is regenerated on each boot. As such it can be used to identify the local machine’s current boot. It’s universally available on any recent Linux kernel. It’s a good and safe choice if you need to identify a specific boot on a specific booted kernel.</p>
+</blockquote>
+<p>是内核暴露的一个接口，每次启动都会随机生成一个ID，是一个比较通用和安全的判断启动的办法。</p>
+<p>参考：</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://0pointer.de/blog/projects/ids.html">http://0pointer.de/blog/projects/ids.html</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1093,99 +1187,6 @@ PG正在互联过程中。
 <li><a target="_blank" rel="noopener" href="https://unix.stackexchange.com/questions/384971/whats-the-difference-between-localtime-and-timezone-files">https://unix.stackexchange.com/questions/384971/whats-the-difference-between-localtime-and-timezone-files</a></li>
 </ol>
 
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/05/10/k8s-cronjob-source-code/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2018/05/10/k8s-cronjob-source-code/" class="post-title-link" itemprop="url">Kubernetes CronJob Controller源码分析</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2018年5月10日 10:21 10:21:53" itemprop="dateCreated datePublished" datetime="2018-05-10T10:21:53+08:00">2018年5月10日 10:21</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>最近的一个项目需要用到Kubernetes的CronJob，主要用来定时执行一个备份任务，刚开始使用的时候发现没有按照预期的情况运行，所以决定看看<code>CronJob Controller</code>的代码，看看他是怎么实现对应的功能的，正好发现网上也没有其他人写过关于<code>CronJob Controller</code>代码的解析（可能是太简单了不用写吧）。所以也就正好记录一下。</p>
-<p><code>CronJob Controller</code>的代码在<code>kubernetes/pkg/controller/cronjob</code>路径下，主要的逻辑实现在这个目录的<code>cronjob_controller.go</code>，这里分析的是<code>v1.10.2</code>版本的代码，可以直接链接到<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/blob/v1.10.2/pkg/controller/cronjob/cronjob_controller.go">Github</a>查看。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2018/05/10/k8s-cronjob-source-code/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
       
     </div>
 
