@@ -14,10 +14,10 @@
 
 
 
-<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css" integrity="sha256-5eIC48iZUHmSlSUz9XtjRyK2mzQkHScZY1WdMaoz74E=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.21.1","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js"></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.22.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js"></script>
 
     <meta name="description" content="本文是Kubernetes DNS-Based Service Discovery的翻译，也就是Kubernetes DNS specification的翻译，目前最新版本号是1.0.1。 0 - 关于此文档本文档是Kubernetes基于DNS的服务发现的规范说明，尽管在Kubernetes中还有其他方式的服务发现协议和机制，但是DNS仍然是最常见而且是最推荐使用的扩展。实际的DNS服务并不一定">
 <meta property="og:type" content="article">
@@ -175,6 +175,17 @@
       </div>
   </nav>
 </div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/C0reFast" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;C0reFast" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chenfu@ichenfu.com" title="E-Mail → mailto:chenfu@ichenfu.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/c0refast" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;c0refast" rel="noopener me" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
 
         </div>
       </div>
@@ -381,10 +392,12 @@
 <li><code>headless.default.svc.cluster.local. IN A</code></li>
 </ul>
 </li>
-<li>返回示例:<pre class="line-numbers language-none"><code class="language-none">headless.default.svc.cluster.local. 4 IN A 10.3.0.1
-headless.default.svc.cluster.local. 4 IN A 10.3.0.2
-headless.default.svc.cluster.local. 4 IN A 10.3.0.3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre></li>
+<li>返回示例:</li>
 </ul>
+<pre class="line-numbers language-none"><code class="language-none">headless.default.svc.cluster.local. 4 IN A 10.3.0.1
+headless.default.svc.cluster.local. 4 IN A 10.3.0.2
+headless.default.svc.cluster.local. 4 IN A 10.3.0.3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
 <p>针对每个拥有_hostname_为<code>&lt;hostname&gt;</code>、IP为<code>&lt;endpoint-ip&gt;</code>，状态为_ready_的endpoint，必须有一条<code>A</code>记录，如果名_hostname_的主机有多个IP，则每个IP也会有一个<code>A</code>记录。</p>
 <ul>
 <li>记录格式:<ul>
@@ -415,10 +428,12 @@ headless.default.svc.cluster.local. 4 IN A 10.3.0.3<span aria-hidden="true" clas
 <li><code>_https._tcp.headless.default.svc.cluster.local. IN SRV</code></li>
 </ul>
 </li>
-<li>返回示例:<pre class="line-numbers language-none"><code class="language-none">_https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 my-pet.headless.default.svc.cluster.local.
-_https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 my-pet-2.headless.default.svc.cluster.local.
-_https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 438934893.headless.default.svc.cluster.local.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre></li>
+<li>返回示例:</li>
 </ul>
+<pre class="line-numbers language-none"><code class="language-none">_https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 my-pet.headless.default.svc.cluster.local.
+_https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 my-pet-2.headless.default.svc.cluster.local.
+_https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 438934893.headless.default.svc.cluster.local.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
 <p>服务的<code>A</code>记录有可能随着<code>SRV</code>记录的附加部分一同返回。</p>
 <h4 id="2-4-3-PTR记录"><a href="#2-4-3-PTR记录" class="headerlink" title="2.4.3 - PTR记录"></a>2.4.3 - <code>PTR</code>记录</h4><p>针对一个_hostname_为<code>&lt;hostname&gt;</code>、IP地址为<code>&lt;a&gt;.&lt;b&gt;.&lt;c&gt;.&lt;d&gt;</code>状态为_ready_的endpoint，必须存在下面的<code>PTR</code>记录：</p>
 <ul>
@@ -509,7 +524,7 @@ _https._tcp.headless.default.svc.cluster.local. 4 IN SRV 10 100 443 438934893.he
 
   <div class="copyright">
     &copy; 
-    <span itemprop="copyrightYear">2024</span>
+    <span itemprop="copyrightYear">2025</span>
     <span class="with-love">
       <i class="fa fa-heart"></i>
     </span>
