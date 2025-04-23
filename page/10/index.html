@@ -152,7 +152,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">103</span>
+          <span class="site-state-item-count">104</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -163,7 +163,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">228</span>
+        <span class="site-state-item-count">230</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -209,6 +209,87 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2016/12/04/ure/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2016/12/04/ure/" class="post-title-link" itemprop="url">Unrecoverable Read Error Rate (URE)</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2016年12月4日 11:01 11:01:59" itemprop="dateCreated datePublished" datetime="2016-12-04T11:01:59+08:00">2016年12月4日 11:01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>很久之前，对于磁盘的了解，就知道一个很关键的指标MTBF，即相邻两次故障之间的平均工作时间，也称为平均故障间隔，这个值越大越好，越大意味着硬盘更不容易坏。<br>对于RAID，也是很相信，觉得大多数情况下，使用RAID，就能保证数据的安全性，几乎不会有数据丢失的风险。</p>
+<p>突然的，读到一篇对于RAID 6的文章 <a target="_blank" rel="noopener" href="http://www.zdnet.com/article/why-raid-6-stops-working-in-2019/">Why RAID 6 stops working in 2019</a>，这是一篇2010年的文章，很遗憾到目前才读到。<br>这篇文章里提到了一个指标，叫URE，也就是Unrecoverable Read Error Rate，不可恢复读取错误，一般普通的桌面级别硬盘，这个指标的值为1 × 10^-14，意味着每读取10^14bit的数据，就有可能产生1bit的错误。</p>
+<p>问题在于，这个错误是无法被检测和修复的。10^14bit，大约相当于12.5TB的数据，也就是说，每读取12.5TB的数据，就有可能产生一个错误的读取。而对于目前现在硬盘的容量越来越大，4TB，6TB硬盘的价格越来越低，这种现象会越来越严重。</p>
+<p>在RAID5中，当整个集群有一块硬盘出现损坏需要替换时，需要进行重建，重建时，需要读取其他硬盘的数据，计算出替换的那块硬盘的数据，在重建过程中，除了需要考虑重建的时间之外，还要考虑的就是URE的影响，如果集群的容量足够大，比如超过10TB，那么，其实是有很大的概率出现读取错误的，而一旦读取出错，则RAID的重建就会失败，基本也就意味着，数据能恢复的可能性变得相当低了。所以在使用RAID5时，就需要考虑重建的问题。</p>
+<p>不过对于企业级的硬盘，URE普遍能做到1×10^-15，就意味着大约能读取125TB的数据，容量有比较大的提升，对于SSD，这个值会更加优秀，有些SSD能达到1×10^-17甚至1×10^-18，能提供更好的数据安全性。</p>
+<p>所以，稳定点的话，还是RAID10吧。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1004,100 +1085,6 @@ xxxxxx
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2015/03/02/php-load-extension/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2015/03/01/override-php-function/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2015/03/01/override-php-function/" class="post-title-link" itemprop="url">替换PHP底层函数实现</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2015年3月1日 21:45 21:45:12" itemprop="dateCreated datePublished" datetime="2015-03-01T21:45:12+08:00">2015年3月1日 21:45</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">源码分析</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在PHP中，有很多内置的函数，这些函数包括绝大部分的功能，还有一些函数，是PHP的扩展提供的，只有安装了扩展并开启，函数才可以被使用，这些函数的实现，都是用C来实现的，因此有着最好的效率。</p>
-<p>在某些情况下，可能要对这些用C实现的函数进行一些额外的更改，比如说，对其进行一个伪实现，或者，在调用之前检查是否满足特定的情况，也就是说，对这些函数进行Hook。<br>比较暴力的办法，就是找到需要伪实现或者Hook的函数的源代码，直接把对应的源代码修改后重新编译，这样虽然能解决问题，但是相对的，非常麻烦，也不好移植。</p>
-<p>下面就是另一个办法，我们可以自己新建一个扩展，然后，在扩展中找到对应的函数实现，然后直接把这个函数实现替换成自己的。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2015/03/01/override-php-function/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>

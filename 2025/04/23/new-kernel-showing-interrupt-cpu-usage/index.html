@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/favicon-orgin.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/favicon/favicon-orgin.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.22.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="最近接到一个客户反馈，说他们的机器，遇到了top命令中，hardirq的值特别高的问题。 top - 15:27:37 up 43 days,  3:42,  1 user,  load average: 44.75, 53.47, 51.66 Tasks: 244 total,   1 running, 243 sleeping,   0 stopped,   0 zombie %Cpu0  :">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一个Linux新老内核对于硬件中断的统计差异">
+<meta property="og:url" content="https://www.ichenfu.com/2025/04/23/new-kernel-showing-interrupt-cpu-usage/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="最近接到一个客户反馈，说他们的机器，遇到了top命令中，hardirq的值特别高的问题。 top - 15:27:37 up 43 days,  3:42,  1 user,  load average: 44.75, 53.47, 51.66 Tasks: 244 total,   1 running, 243 sleeping,   0 stopped,   0 zombie %Cpu0  :">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.ichenfu.com/images/nanosleep-flamegraph.png">
+<meta property="article:published_time" content="2025-04-23T12:18:10.000Z">
+<meta property="article:modified_time" content="2025-04-23T06:26:38.660Z">
+<meta property="article:author" content="陈孚">
+<meta property="article:tag" content="CentOS">
+<meta property="article:tag" content="Kernel">
+<meta property="article:tag" content="Interrupt">
+<meta property="article:tag" content="hardirq">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.ichenfu.com/images/nanosleep-flamegraph.png">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2025/04/23/new-kernel-showing-interrupt-cpu-usage/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2025/04/23/new-kernel-showing-interrupt-cpu-usage/","path":"2025/04/23/new-kernel-showing-interrupt-cpu-usage/","title":"一个Linux新老内核对于硬件中断的统计差异"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>一个Linux新老内核对于硬件中断的统计差异 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?50e2a95e85fdbe38e53b7aaba8c6cfe1"></script>
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9D%E6%AD%A5%E8%B0%83%E6%9F%A5"><span class="nav-number">1.</span> <span class="nav-text">初步调查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">问题分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%BA%9B%E8%A7%A3%E9%87%8A"><span class="nav-number">3.</span> <span class="nav-text">一些解释</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">陈孚</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">104</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">230</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/C0reFast" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;C0reFast" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chenfu@ichenfu.com" title="E-Mail → mailto:chenfu@ichenfu.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/c0refast" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;c0refast" rel="noopener me" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/04/23/new-kernel-showing-interrupt-cpu-usage/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="一个Linux新老内核对于硬件中断的统计差异 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          一个Linux新老内核对于硬件中断的统计差异
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年4月23日 20:18 20:18:10" itemprop="dateCreated datePublished" datetime="2025-04-23T20:18:10+08:00">2025年4月23日 20:18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025年4月23日 14:26 14:26:38" itemprop="dateModified" datetime="2025-04-23T14:26:38+08:00">2025年4月23日 14:26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>最近接到一个客户反馈，说他们的机器，遇到了top命令中，hardirq的值特别高的问题。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">top</span> - <span class="token number">15</span>:27:37 up <span class="token number">43</span> days,  <span class="token number">3</span>:42,  <span class="token number">1</span> user,  load average: <span class="token number">44.75</span>, <span class="token number">53.47</span>, <span class="token number">51.66</span>
+Tasks: <span class="token number">244</span> total,   <span class="token number">1</span> running, <span class="token number">243</span> sleeping,   <span class="token number">0</span> stopped,   <span class="token number">0</span> zombie
+%Cpu0  <span class="token builtin class-name">:</span> <span class="token number">10.3</span> us, <span class="token number">19.8</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">39.7</span> id,  <span class="token number">0.4</span> wa, <span class="token number">28.2</span> hi,  <span class="token number">1.6</span> si,  <span class="token number">0.0</span> st
+%Cpu1  <span class="token builtin class-name">:</span> <span class="token number">10.7</span> us, <span class="token number">21.3</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">40.7</span> id,  <span class="token number">0.4</span> wa, <span class="token number">26.1</span> hi,  <span class="token number">0.8</span> si,  <span class="token number">0.0</span> st
+%Cpu2  <span class="token builtin class-name">:</span> <span class="token number">10.0</span> us, <span class="token number">19.1</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">41.4</span> id,  <span class="token number">0.4</span> wa, <span class="token number">27.9</span> hi,  <span class="token number">1.2</span> si,  <span class="token number">0.0</span> st
+%Cpu3  <span class="token builtin class-name">:</span> <span class="token number">10.4</span> us, <span class="token number">20.7</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">40.2</span> id,  <span class="token number">0.4</span> wa, <span class="token number">26.7</span> hi,  <span class="token number">1.6</span> si,  <span class="token number">0.0</span> st
+%Cpu4  <span class="token builtin class-name">:</span> <span class="token number">10.4</span> us, <span class="token number">15.5</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">45.4</span> id,  <span class="token number">0.4</span> wa, <span class="token number">28.3</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu5  <span class="token builtin class-name">:</span> <span class="token number">10.8</span> us, <span class="token number">21.9</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">39.4</span> id,  <span class="token number">0.4</span> wa, <span class="token number">27.1</span> hi,  <span class="token number">0.4</span> si,  <span class="token number">0.0</span> st
+%Cpu6  <span class="token builtin class-name">:</span> <span class="token number">10.1</span> us, <span class="token number">18.6</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">41.7</span> id,  <span class="token number">0.4</span> wa, <span class="token number">28.7</span> hi,  <span class="token number">0.4</span> si,  <span class="token number">0.0</span> st
+%Cpu7  <span class="token builtin class-name">:</span> <span class="token number">10.6</span> us, <span class="token number">25.2</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">36.6</span> id,  <span class="token number">0.0</span> wa, <span class="token number">26.4</span> hi,  <span class="token number">1.2</span> si,  <span class="token number">0.0</span> st<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>从<code>top</code>命令输出可以看到，<code>hardirq</code>的值特别高，超过了25%。这导致了idle的下降，触发了监控的频繁报警。</p>
+<span id="more"></span>
+
+<p>而同样业务以及相似的业务量情况下，另外一台机器表现就正常许多：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">top</span> - <span class="token number">15</span>:31:19 up <span class="token number">118</span> days, <span class="token number">20</span>:15,  <span class="token number">1</span> user,  load average: <span class="token number">93.25</span>, <span class="token number">74.45</span>, <span class="token number">63.84</span>
+Tasks: <span class="token number">209</span> total,   <span class="token number">1</span> running, <span class="token number">208</span> sleeping,   <span class="token number">0</span> stopped,   <span class="token number">0</span> zombie
+%Cpu0  <span class="token builtin class-name">:</span>  <span class="token number">5.5</span> us, <span class="token number">18.2</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">76.4</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu1  <span class="token builtin class-name">:</span>  <span class="token number">2.8</span> us,  <span class="token number">6.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">90.8</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.4</span> si,  <span class="token number">0.0</span> st
+%Cpu2  <span class="token builtin class-name">:</span>  <span class="token number">6.6</span> us, <span class="token number">19.8</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">72.7</span> id,  <span class="token number">0.4</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.4</span> si,  <span class="token number">0.0</span> st
+%Cpu3  <span class="token builtin class-name">:</span>  <span class="token number">2.4</span> us,  <span class="token number">6.3</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">91.4</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu4  <span class="token builtin class-name">:</span>  <span class="token number">5.9</span> us, <span class="token number">17.4</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">76.7</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu5  <span class="token builtin class-name">:</span>  <span class="token number">2.4</span> us,  <span class="token number">7.1</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">90.6</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu6  <span class="token builtin class-name">:</span>  <span class="token number">5.0</span> us, <span class="token number">18.7</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">76.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu7  <span class="token builtin class-name">:</span>  <span class="token number">2.4</span> us,  <span class="token number">6.7</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">90.6</span> id,  <span class="token number">0.4</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu8  <span class="token builtin class-name">:</span>  <span class="token number">5.1</span> us, <span class="token number">16.8</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">77.6</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.5</span> si,  <span class="token number">0.0</span> st<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这俩机器在业务性能表现上是类似的，最大的区别就是<code>hardirq</code>高的机器使用了更新的RockyLinux 9操作系统，内核版本会新一点。而另一台机器还在使用老的CentOS 7操作系统，内核版本会老一点。</p>
+<h2 id="初步调查"><a href="#初步调查" class="headerlink" title="初步调查"></a>初步调查</h2><p>除了Rocky 9机器<code>hardirq</code>高之外，两台机器的其他各方面指标都非常的相似，比较明显的，两台机器的中断数量以及context switch数量都比较高：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">~<span class="token punctuation">]</span>$ dstat <span class="token parameter variable">-y</span>
+---system--
+ int   csw
+ 364k 1247k
+ 358k 1242k
+ 384k 1271k
+ 547k 1480k
+ 562k 1505k<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上下文切换超过了100万次&#x2F;s。两者的火焰图也十分相似，不过从火焰图上观察，进程会大量调用<code>nanosleep</code>这个系统调用，调用比例和<code>hardirq</code>的比例是类似的：</p>
+<p><img src="/images/nanosleep-flamegraph.png" alt="进程火焰图"></p>
+<p>如果是大量<code>nanosleep</code>调用的话，那应该很容易用<code>stress-ng</code>工具复现了。事实证明，使用<code>stress-ng</code>工具可以获得和生产环境非常相似的现象，尝试了Rocky 9.5、CentOS 7.9，物理机、虚拟机的各种组合，结果发现确实和操作系统的内核版本关系很大。</p>
+<h2 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h2><p>在后续分析中，找到了这样一篇资料<a target="_blank" rel="noopener" href="https://tanelpoder.com/posts/linux-hiding-interrupt-cpu-usage/">Is Your Linux Version Hiding Interrupt CPU Usage From You?</a>。<br>在这篇文章中，作者发现<code>Ubuntu 20.10</code>及其默认Linux内核<code>5.8.0</code>版本的系统中，即使使用<code>fio</code>压测实现了11M IOPS的性能时，<code>dstat</code>和其他监控工具报告的<code>hardirq</code>时间依然为零，而在相同的机器上启动了使用<code>Oracle Enterprise Linux 8.3</code>及<code>5.4.17</code>版本内核时，发现<code>hardirq</code>时间会占用差不多27%的CPU。</p>
+<p>这和我们遇到的问题非常相似，他给出了一个关键性的内核配置项<code>CONFIG_IRQ_TIME_ACCOUNTING</code>。<br>在作者的Ubuntu系统中，<code>CONFIG_IRQ_TIME_ACCOUNTING</code>配置没有被启用，同样的，这个配置在我们的CentOS 7环境里也没有启用（甚至并没有这个配置项）:</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">uname</span> <span class="token parameter variable">-r</span>
+<span class="token number">3.10</span>.0-1160.el7.x86_64
+$ <span class="token function">grep</span> CONFIG_IRQ_TIME_ACCOUNTING /boot/config-<span class="token variable"><span class="token variable">`</span><span class="token function">uname</span> <span class="token parameter variable">-r</span><span class="token variable">`</span></span>
+$ <span class="token function">awk</span> <span class="token string">'/^cpu /&#123; print "HW interrupt svc time " $7 * 10 " ms" &#125;'</span> /proc/stat
+HW interrupt svc <span class="token function">time</span> <span class="token number">0</span> ms<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>而在更新的Rocky 9中，该配置被启用了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">uname</span> <span class="token parameter variable">-r</span>
+<span class="token number">5.14</span>.0-503.23.1.el9_5.x86_64
+$ <span class="token function">grep</span> CONFIG_IRQ_TIME_ACCOUNTING /boot/config-<span class="token variable"><span class="token variable">`</span><span class="token function">uname</span> <span class="token parameter variable">-r</span><span class="token variable">`</span></span>
+<span class="token assign-left variable">CONFIG_IRQ_TIME_ACCOUNTING</span><span class="token operator">=</span>y
+$ <span class="token function">awk</span> <span class="token string">'/^cpu /&#123; print "HW interrupt svc time " $7 * 10 " ms" &#125;'</span> /proc/stat
+HW interrupt svc <span class="token function">time</span> <span class="token number">432097660</span> ms<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，启用了这个配置后，硬件中断处理程序中花费的时间才会被统计，这也是为什么线上用户会报告硬件中断处理程序中花费的时间不匹配的原因。</p>
+<h2 id="一些解释"><a href="#一些解释" class="headerlink" title="一些解释"></a>一些解释</h2><p>关于中断时间的统计，文章作者也给了一些解释，这里也翻译一下，供大家参考。</p>
+<p>中断处理会影响任何线程的CPU时间，因为中断不关心CPU上正在运行的是什么，它们只是突然接管。这正是它们被称为中断的原因！ 更长的解释如下：</p>
+<p>首先假设 IRQ 时间统计被禁用：</p>
+<ul>
+<li>中断可以“随机”地发生在任何时间，这取决于硬件设备何时向 CPU 发出中断信号。</li>
+<li>当 CPU 恰好在运行某个运行在用户模式的应用程序线程时收到中断信号，中断处理的 CPU 周期将被计入该应用程序进程（正如您在 top 中看到的那样），并显示为 %usr 类型的利用率。</li>
+<li>当 CPU 恰好仍在运行一个由于发出系统调用而处于内核模式的应用程序线程时收到中断信号，那么中断 CPU 时间将被添加到该应用程序线程，但会显示为 %sys 类型。</li>
+<li>当 CPU 正在执行内核线程时（并且内核代码路径没有为某些关键部分临时禁用中断），收到中断信号，中断处理的 CPU 时间将被添加到该内核线程的 %sys 模式中。这感觉很直观，因为人们通常认为硬件设备、驱动程序和中断都是内核工作的一部分。</li>
+<li>这引发了一个有趣的问题：当 CPU 在收到中断信号时恰好处于空闲状态时会发生什么？ 像往常一样，这取决于硬件功能，例如电源感知中断路由是否可用，但完全有可能空闲的 CPU 被唤醒并必须使用 CPU 来处理 IRQ。由于 CPU 在空闲时没有运行任何用户&#x2F;内核线程（没有可用的 task_struct 线程上下文结构），CPU 时间被计入 Linux 内核伪任务 0，该任务在诸如 perf 之类的工具中显示为 swapper。因此，像 top 这样的工具不会在进程列表中显示任何来自“空闲” CPU 的高 IRQ CPU 使用率的进程，但基于 &#x2F;proc&#x2F;stat 的系统级工具（如 dstat、mpstat 甚至 top 标头中的系统级摘要）会显示某些东西正在使用 %sys 模式的 CPU。</li>
+</ul>
+<p>现在，启用 IRQ 时间统计后：</p>
+<ul>
+<li>启用 IRQ 时间统计后，硬件中断处理程序将使用 CPU 内置的时间戳计数器读取指令 (rdtsc) 在中断处理操作的入口和出口获取高精度“时间戳”。</li>
+<li>这些时间增量归因于 %irq 指标，而不是 %usr 或 %sys 线程 CPU 使用率（&#x2F;proc&#x2F;stat 每 CPU 都有一行包含 CPU 使用率指标）。</li>
+<li>像 mpstat 甚至 top 系统摘要部分这样的系统级工具现在将正确地细分 %irq% CPU 使用率。</li>
+<li>然而，进程&#x2F;线程级别的指标（如 top 进程列表部分）仍然会将任何 IRQ 时间与 %usr 和 %sys 指标混在一起，因为 Linux 不跟踪进程&#x2F;线程级别的“意外”IRQ 服务时间。<br>这只是关于裸机 Linux 服务器上硬件中断处理的简短总结，我不会在此深入探讨。此外，为了保持本文简洁，我特意没有涵盖软件中断或上半部&#x2F;下半部中断处理延迟架构。 请注意，我运行的是一个合成基准测试，它在用户空间线程中并没有做太多的工作，大部分时间都花在了系统调用和内核块层上。因此，当我们的进程已经处于内核模式时，更可能发生 CPU 处理的“突然”硬件中断。对于一个中断密集型应用程序（例如网络！），它的大部分时间都花在用户空间中，我们会看到更多的 %usr CPU 时间切换到 %hiq。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="陈孚 wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/CentOS/" rel="tag"># CentOS</a>
+              <a href="/tags/Kernel/" rel="tag"># Kernel</a>
+              <a href="/tags/Interrupt/" rel="tag"># Interrupt</a>
+              <a href="/tags/hardirq/" rel="tag"># hardirq</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/12/25/rss-not-balanced-caused-by-ipip-tunnel/" rel="prev" title="IPIP隧道导致的DPDK收包RSS队列不均匀问题">
+                  <i class="fa fa-angle-left"></i> IPIP隧道导致的DPDK收包RSS队列不均匀问题
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">陈孚</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/sidebar.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

@@ -152,7 +152,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">103</span>
+          <span class="site-state-item-count">104</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -163,7 +163,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">228</span>
+        <span class="site-state-item-count">230</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -209,6 +209,101 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2022/04/05/spdk-reduce-block-compression-algorithm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/04/05/spdk-reduce-block-compression-algorithm/" class="post-title-link" itemprop="url">SPDK的“Reduce”块压缩算法</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022年4月5日 21:03 21:03:28" itemprop="dateCreated datePublished" datetime="2022-04-05T21:03:28+08:00">2022年4月5日 21:03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022年4月28日 13:53 13:53:29" itemprop="dateModified" datetime="2022-04-28T13:53:29+08:00">2022年4月28日 13:53</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/SPDK/" itemprop="url" rel="index"><span itemprop="name">SPDK</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>本文是SPDK文档<a target="_blank" rel="noopener" href="https://spdk.io/doc/reduce.html">SPDK “Reduce” Block Compression Algorithm</a>的翻译，在读SPDK的文档过程中，刚好看到了SPDK里<code>bdev reduce</code>模块实现背后的算法描述，于是就想着翻译一下，正好也借翻译的同时仔细理解一下背后算法的原理，当然本人的水平有限，如果译文有任何歧义，还请参考原文并以实际原文为准。</p>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>SPDK的“reduce”块压缩方案使用SSD存储压缩后的块数据，同时将元数据存放到持久内存中。此元数据包含用户数据的逻辑块到压缩后的物理块的对应关系。本文档中描述的方案是通用的，不依赖于包括<code>SPDK</code>在内任何特定的块设备框架。该算法会在一个叫做<code>libreduce</code>的库中实现。更高层次的软件可以基于该模块创建和呈现特定的块设备。对于SPDK来说，<code>bdev_reduce</code>模块封装了<code>libreduce</code>库，从而在SPDK中提供一个bdev以实现压缩功能。</p>
+<p>本方案仅仅解释压缩后的数据块和用于跟踪这些数据块的元数据的管理。它依赖于高层软件模块来执行压缩操作。对于SPDK，<code>bdev_reduce</code>模块利用<code>DPDK compressdev</code>框架执行压缩和解压缩。</p>
+<p>（需要注意的是，在某些情况下，数据块可能是不可压缩的，或者无法压缩到足以实现空间节省的程度。在这些情况下，数据可能不经过压缩，直接存储在磁盘上。“压缩的存储块”包括这些不经压缩的块。）</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/04/05/spdk-reduce-block-compression-algorithm/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1051,102 +1146,6 @@ failed to start daemon: Error initializing network controller: error obtaining c
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/06/05/b550m-mortar-5600x-diy/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/05/23/the-ure-improvements-on-todays-hard-disks/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/05/23/the-ure-improvements-on-todays-hard-disks/" class="post-title-link" itemprop="url">关于URE(Unrecoverable Read Error Rate)的一些知识更新</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2021年5月23日 16:26 16:26:51" itemprop="dateCreated datePublished" datetime="2021-05-23T16:26:51+08:00">2021年5月23日 16:26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2021年6月9日 15:06 15:06:19" itemprop="dateModified" datetime="2021-06-09T15:06:19+08:00">2021年6月9日 15:06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在几年前，写的一篇Blog：<a href="https://www.ichenfu.com/2016/12/04/ure/">Unrecoverable Read Error Rate (URE)</a>，主要说起硬盘的一个重要指标：不可恢复读取错误率，在当时的场景下，如果是非企业级硬盘，一般这个指标是在<code>1 bit per 10^14bit</code>这个水平，也就是说每读取<code>10^14bit</code>的数据，其中某个bit有可能就是错误的，这会导致一些问题，比如如果是组建了一个比较大的RAID5阵列，当容量越大时，如果出现硬盘损坏，就会有很大概率无法恢复数据。</p>
-<p>当然也不是没有其他办法，比如使用RAID 6，或者购买企业级硬盘，因为企业级硬盘在当时就可以提供<code>1 bit per 10^15bit</code>的指标，这样算下来读取100TB数据都是没什么大问题的。</p>
-<p>不过随着近几年硬盘技术的发展，机械硬盘的容量越来越大，很多桌面级硬盘已经超过了10T，很显然，如果URE这个指标继续保持原有的水准，那这个硬盘就不太合格了，那么现在这些大容量硬盘的这个指标做到了多少呢？</p>
-<p>于是我就找了找希捷桌面级硬盘的<a target="_blank" rel="noopener" href="https://www.seagate.com/www-content/datasheets/pdfs/barracuda-pro-14-tb-DS1901-10-2006CN-zh_CN.pdf">文档</a>：</p>
-<p><img src="/images/barracuda-pro.png" alt="barracuda-pro"></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/05/23/the-ure-improvements-on-todays-hard-disks/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>

@@ -152,7 +152,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">103</span>
+          <span class="site-state-item-count">104</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -163,7 +163,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">228</span>
+        <span class="site-state-item-count">230</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -209,6 +209,102 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2021/05/23/the-ure-improvements-on-todays-hard-disks/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/05/23/the-ure-improvements-on-todays-hard-disks/" class="post-title-link" itemprop="url">关于URE(Unrecoverable Read Error Rate)的一些知识更新</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021年5月23日 16:26 16:26:51" itemprop="dateCreated datePublished" datetime="2021-05-23T16:26:51+08:00">2021年5月23日 16:26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2021年6月9日 15:06 15:06:19" itemprop="dateModified" datetime="2021-06-09T15:06:19+08:00">2021年6月9日 15:06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>在几年前，写的一篇Blog：<a href="https://www.ichenfu.com/2016/12/04/ure/">Unrecoverable Read Error Rate (URE)</a>，主要说起硬盘的一个重要指标：不可恢复读取错误率，在当时的场景下，如果是非企业级硬盘，一般这个指标是在<code>1 bit per 10^14bit</code>这个水平，也就是说每读取<code>10^14bit</code>的数据，其中某个bit有可能就是错误的，这会导致一些问题，比如如果是组建了一个比较大的RAID5阵列，当容量越大时，如果出现硬盘损坏，就会有很大概率无法恢复数据。</p>
+<p>当然也不是没有其他办法，比如使用RAID 6，或者购买企业级硬盘，因为企业级硬盘在当时就可以提供<code>1 bit per 10^15bit</code>的指标，这样算下来读取100TB数据都是没什么大问题的。</p>
+<p>不过随着近几年硬盘技术的发展，机械硬盘的容量越来越大，很多桌面级硬盘已经超过了10T，很显然，如果URE这个指标继续保持原有的水准，那这个硬盘就不太合格了，那么现在这些大容量硬盘的这个指标做到了多少呢？</p>
+<p>于是我就找了找希捷桌面级硬盘的<a target="_blank" rel="noopener" href="https://www.seagate.com/www-content/datasheets/pdfs/barracuda-pro-14-tb-DS1901-10-2006CN-zh_CN.pdf">文档</a>：</p>
+<p><img src="/images/barracuda-pro.png" alt="barracuda-pro"></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/05/23/the-ure-improvements-on-todays-hard-disks/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1069,99 +1165,6 @@ mount: wrong fs type, bad option, bad superblock on mon1.ichenfu.com:6789,mon2.i
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/09/04/mount-cephfs-wrong-fs-type/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/08/23/simple-example-for-enabling-sriov-using-udev/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/08/23/simple-example-for-enabling-sriov-using-udev/" class="post-title-link" itemprop="url">编写Udev规则文件开机设置网卡SR-IOV</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2020年8月23日 10:56 10:56:21" itemprop="dateCreated datePublished" datetime="2020-08-23T10:56:21+08:00">2020年8月23日 10:56</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2021年12月21日 16:40 16:40:10" itemprop="dateModified" datetime="2021-12-21T16:40:10+08:00">2021年12月21日 16:40</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/%E6%95%88%E7%8E%87%E9%85%8D%E7%BD%AE/" itemprop="url" rel="index"><span itemprop="name">效率配置</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在虚拟化场景下，<code>SR-IOV</code>（<code>Single Root I/O Virtualization</code>）是一个很常用的功能，通过SR-IOV，一个物理的设备（<code>Physical Function</code>），可以派生出很多虚拟设备（<code>Virtual Function</code>），这些虚拟设备具有简单的PCIe功能。以网卡为例，通过<code>SR-IOV</code>，我们可以将一块网卡，虚拟化成很多块网卡，这些虚拟出来的网卡，有自己独立的PCIe地址，中断，配置空间等，这些虚拟出来的网卡，可以作为单独的PCIe设备被attach到虚拟机中，实现网络功能，当然，场景并不局限于VM。</p>
-<p>这里先不关注<code>SR-IOV</code>的应用场景，或者其实现原理，而是关心一个简单的问题：如何设置<code>SR-IOV</code>，并且能稳定的实现开机启动时就设置好呢？</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/23/simple-example-for-enabling-sriov-using-udev/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>

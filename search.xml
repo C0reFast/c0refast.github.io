@@ -12479,4 +12479,90 @@ Filesystem              Blocks      Quota      Limit  Warn/Time      Mounted on
         <tag>Project Quota</tag>
       </tags>
   </entry>
+  <entry>
+    <title>一个Linux新老内核对于硬件中断的统计差异</title>
+    <url>/2025/04/23/new-kernel-showing-interrupt-cpu-usage/</url>
+    <content><![CDATA[<p>最近接到一个客户反馈，说他们的机器，遇到了top命令中，hardirq的值特别高的问题。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">top</span> - <span class="token number">15</span>:27:37 up <span class="token number">43</span> days,  <span class="token number">3</span>:42,  <span class="token number">1</span> user,  load average: <span class="token number">44.75</span>, <span class="token number">53.47</span>, <span class="token number">51.66</span>
+Tasks: <span class="token number">244</span> total,   <span class="token number">1</span> running, <span class="token number">243</span> sleeping,   <span class="token number">0</span> stopped,   <span class="token number">0</span> zombie
+%Cpu0  <span class="token builtin class-name">:</span> <span class="token number">10.3</span> us, <span class="token number">19.8</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">39.7</span> id,  <span class="token number">0.4</span> wa, <span class="token number">28.2</span> hi,  <span class="token number">1.6</span> si,  <span class="token number">0.0</span> st
+%Cpu1  <span class="token builtin class-name">:</span> <span class="token number">10.7</span> us, <span class="token number">21.3</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">40.7</span> id,  <span class="token number">0.4</span> wa, <span class="token number">26.1</span> hi,  <span class="token number">0.8</span> si,  <span class="token number">0.0</span> st
+%Cpu2  <span class="token builtin class-name">:</span> <span class="token number">10.0</span> us, <span class="token number">19.1</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">41.4</span> id,  <span class="token number">0.4</span> wa, <span class="token number">27.9</span> hi,  <span class="token number">1.2</span> si,  <span class="token number">0.0</span> st
+%Cpu3  <span class="token builtin class-name">:</span> <span class="token number">10.4</span> us, <span class="token number">20.7</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">40.2</span> id,  <span class="token number">0.4</span> wa, <span class="token number">26.7</span> hi,  <span class="token number">1.6</span> si,  <span class="token number">0.0</span> st
+%Cpu4  <span class="token builtin class-name">:</span> <span class="token number">10.4</span> us, <span class="token number">15.5</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">45.4</span> id,  <span class="token number">0.4</span> wa, <span class="token number">28.3</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu5  <span class="token builtin class-name">:</span> <span class="token number">10.8</span> us, <span class="token number">21.9</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">39.4</span> id,  <span class="token number">0.4</span> wa, <span class="token number">27.1</span> hi,  <span class="token number">0.4</span> si,  <span class="token number">0.0</span> st
+%Cpu6  <span class="token builtin class-name">:</span> <span class="token number">10.1</span> us, <span class="token number">18.6</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">41.7</span> id,  <span class="token number">0.4</span> wa, <span class="token number">28.7</span> hi,  <span class="token number">0.4</span> si,  <span class="token number">0.0</span> st
+%Cpu7  <span class="token builtin class-name">:</span> <span class="token number">10.6</span> us, <span class="token number">25.2</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">36.6</span> id,  <span class="token number">0.0</span> wa, <span class="token number">26.4</span> hi,  <span class="token number">1.2</span> si,  <span class="token number">0.0</span> st<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>从<code>top</code>命令输出可以看到，<code>hardirq</code>的值特别高，超过了25%。这导致了idle的下降，触发了监控的频繁报警。</p>
+<span id="more"></span>
+
+<p>而同样业务以及相似的业务量情况下，另外一台机器表现就正常许多：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">top</span> - <span class="token number">15</span>:31:19 up <span class="token number">118</span> days, <span class="token number">20</span>:15,  <span class="token number">1</span> user,  load average: <span class="token number">93.25</span>, <span class="token number">74.45</span>, <span class="token number">63.84</span>
+Tasks: <span class="token number">209</span> total,   <span class="token number">1</span> running, <span class="token number">208</span> sleeping,   <span class="token number">0</span> stopped,   <span class="token number">0</span> zombie
+%Cpu0  <span class="token builtin class-name">:</span>  <span class="token number">5.5</span> us, <span class="token number">18.2</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">76.4</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu1  <span class="token builtin class-name">:</span>  <span class="token number">2.8</span> us,  <span class="token number">6.0</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">90.8</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.4</span> si,  <span class="token number">0.0</span> st
+%Cpu2  <span class="token builtin class-name">:</span>  <span class="token number">6.6</span> us, <span class="token number">19.8</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">72.7</span> id,  <span class="token number">0.4</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.4</span> si,  <span class="token number">0.0</span> st
+%Cpu3  <span class="token builtin class-name">:</span>  <span class="token number">2.4</span> us,  <span class="token number">6.3</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">91.4</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu4  <span class="token builtin class-name">:</span>  <span class="token number">5.9</span> us, <span class="token number">17.4</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">76.7</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu5  <span class="token builtin class-name">:</span>  <span class="token number">2.4</span> us,  <span class="token number">7.1</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">90.6</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu6  <span class="token builtin class-name">:</span>  <span class="token number">5.0</span> us, <span class="token number">18.7</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">76.3</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu7  <span class="token builtin class-name">:</span>  <span class="token number">2.4</span> us,  <span class="token number">6.7</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">90.6</span> id,  <span class="token number">0.4</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu8  <span class="token builtin class-name">:</span>  <span class="token number">5.1</span> us, <span class="token number">16.8</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">77.6</span> id,  <span class="token number">0.0</span> wa,  <span class="token number">0.0</span> hi,  <span class="token number">0.5</span> si,  <span class="token number">0.0</span> st<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这俩机器在业务性能表现上是类似的，最大的区别就是<code>hardirq</code>高的机器使用了更新的RockyLinux 9操作系统，内核版本会新一点。而另一台机器还在使用老的CentOS 7操作系统，内核版本会老一点。</p>
+<h2 id="初步调查"><a href="#初步调查" class="headerlink" title="初步调查"></a>初步调查</h2><p>除了Rocky 9机器<code>hardirq</code>高之外，两台机器的其他各方面指标都非常的相似，比较明显的，两台机器的中断数量以及context switch数量都比较高：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">~<span class="token punctuation">]</span>$ dstat <span class="token parameter variable">-y</span>
+---system--
+ int   csw
+ 364k 1247k
+ 358k 1242k
+ 384k 1271k
+ 547k 1480k
+ 562k 1505k<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上下文切换超过了100万次&#x2F;s。两者的火焰图也十分相似，不过从火焰图上观察，进程会大量调用<code>nanosleep</code>这个系统调用，调用比例和<code>hardirq</code>的比例是类似的：</p>
+<p><img src="/images/nanosleep-flamegraph.png" alt="进程火焰图"></p>
+<p>如果是大量<code>nanosleep</code>调用的话，那应该很容易用<code>stress-ng</code>工具复现了。事实证明，使用<code>stress-ng</code>工具可以获得和生产环境非常相似的现象，尝试了Rocky 9.5、CentOS 7.9，物理机、虚拟机的各种组合，结果发现确实和操作系统的内核版本关系很大。</p>
+<h2 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h2><p>在后续分析中，找到了这样一篇资料<a href="https://tanelpoder.com/posts/linux-hiding-interrupt-cpu-usage/">Is Your Linux Version Hiding Interrupt CPU Usage From You?</a>。<br>在这篇文章中，作者发现<code>Ubuntu 20.10</code>及其默认Linux内核<code>5.8.0</code>版本的系统中，即使使用<code>fio</code>压测实现了11M IOPS的性能时，<code>dstat</code>和其他监控工具报告的<code>hardirq</code>时间依然为零，而在相同的机器上启动了使用<code>Oracle Enterprise Linux 8.3</code>及<code>5.4.17</code>版本内核时，发现<code>hardirq</code>时间会占用差不多27%的CPU。</p>
+<p>这和我们遇到的问题非常相似，他给出了一个关键性的内核配置项<code>CONFIG_IRQ_TIME_ACCOUNTING</code>。<br>在作者的Ubuntu系统中，<code>CONFIG_IRQ_TIME_ACCOUNTING</code>配置没有被启用，同样的，这个配置在我们的CentOS 7环境里也没有启用（甚至并没有这个配置项）:</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">uname</span> <span class="token parameter variable">-r</span>
+<span class="token number">3.10</span>.0-1160.el7.x86_64
+$ <span class="token function">grep</span> CONFIG_IRQ_TIME_ACCOUNTING /boot/config-<span class="token variable"><span class="token variable">`</span><span class="token function">uname</span> <span class="token parameter variable">-r</span><span class="token variable">`</span></span>
+$ <span class="token function">awk</span> <span class="token string">'/^cpu /&#123; print "HW interrupt svc time " $7 * 10 " ms" &#125;'</span> /proc/stat
+HW interrupt svc <span class="token function">time</span> <span class="token number">0</span> ms<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>而在更新的Rocky 9中，该配置被启用了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">uname</span> <span class="token parameter variable">-r</span>
+<span class="token number">5.14</span>.0-503.23.1.el9_5.x86_64
+$ <span class="token function">grep</span> CONFIG_IRQ_TIME_ACCOUNTING /boot/config-<span class="token variable"><span class="token variable">`</span><span class="token function">uname</span> <span class="token parameter variable">-r</span><span class="token variable">`</span></span>
+<span class="token assign-left variable">CONFIG_IRQ_TIME_ACCOUNTING</span><span class="token operator">=</span>y
+$ <span class="token function">awk</span> <span class="token string">'/^cpu /&#123; print "HW interrupt svc time " $7 * 10 " ms" &#125;'</span> /proc/stat
+HW interrupt svc <span class="token function">time</span> <span class="token number">432097660</span> ms<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，启用了这个配置后，硬件中断处理程序中花费的时间才会被统计，这也是为什么线上用户会报告硬件中断处理程序中花费的时间不匹配的原因。</p>
+<h2 id="一些解释"><a href="#一些解释" class="headerlink" title="一些解释"></a>一些解释</h2><p>关于中断时间的统计，文章作者也给了一些解释，这里也翻译一下，供大家参考。</p>
+<p>中断处理会影响任何线程的CPU时间，因为中断不关心CPU上正在运行的是什么，它们只是突然接管。这正是它们被称为中断的原因！ 更长的解释如下：</p>
+<p>首先假设 IRQ 时间统计被禁用：</p>
+<ul>
+<li>中断可以“随机”地发生在任何时间，这取决于硬件设备何时向 CPU 发出中断信号。</li>
+<li>当 CPU 恰好在运行某个运行在用户模式的应用程序线程时收到中断信号，中断处理的 CPU 周期将被计入该应用程序进程（正如您在 top 中看到的那样），并显示为 %usr 类型的利用率。</li>
+<li>当 CPU 恰好仍在运行一个由于发出系统调用而处于内核模式的应用程序线程时收到中断信号，那么中断 CPU 时间将被添加到该应用程序线程，但会显示为 %sys 类型。</li>
+<li>当 CPU 正在执行内核线程时（并且内核代码路径没有为某些关键部分临时禁用中断），收到中断信号，中断处理的 CPU 时间将被添加到该内核线程的 %sys 模式中。这感觉很直观，因为人们通常认为硬件设备、驱动程序和中断都是内核工作的一部分。</li>
+<li>这引发了一个有趣的问题：当 CPU 在收到中断信号时恰好处于空闲状态时会发生什么？ 像往常一样，这取决于硬件功能，例如电源感知中断路由是否可用，但完全有可能空闲的 CPU 被唤醒并必须使用 CPU 来处理 IRQ。由于 CPU 在空闲时没有运行任何用户&#x2F;内核线程（没有可用的 task_struct 线程上下文结构），CPU 时间被计入 Linux 内核伪任务 0，该任务在诸如 perf 之类的工具中显示为 swapper。因此，像 top 这样的工具不会在进程列表中显示任何来自“空闲” CPU 的高 IRQ CPU 使用率的进程，但基于 &#x2F;proc&#x2F;stat 的系统级工具（如 dstat、mpstat 甚至 top 标头中的系统级摘要）会显示某些东西正在使用 %sys 模式的 CPU。</li>
+</ul>
+<p>现在，启用 IRQ 时间统计后：</p>
+<ul>
+<li>启用 IRQ 时间统计后，硬件中断处理程序将使用 CPU 内置的时间戳计数器读取指令 (rdtsc) 在中断处理操作的入口和出口获取高精度“时间戳”。</li>
+<li>这些时间增量归因于 %irq 指标，而不是 %usr 或 %sys 线程 CPU 使用率（&#x2F;proc&#x2F;stat 每 CPU 都有一行包含 CPU 使用率指标）。</li>
+<li>像 mpstat 甚至 top 系统摘要部分这样的系统级工具现在将正确地细分 %irq% CPU 使用率。</li>
+<li>然而，进程&#x2F;线程级别的指标（如 top 进程列表部分）仍然会将任何 IRQ 时间与 %usr 和 %sys 指标混在一起，因为 Linux 不跟踪进程&#x2F;线程级别的“意外”IRQ 服务时间。<br>这只是关于裸机 Linux 服务器上硬件中断处理的简短总结，我不会在此深入探讨。此外，为了保持本文简洁，我特意没有涵盖软件中断或上半部&#x2F;下半部中断处理延迟架构。 请注意，我运行的是一个合成基准测试，它在用户空间线程中并没有做太多的工作，大部分时间都花在了系统调用和内核块层上。因此，当我们的进程已经处于内核模式时，更可能发生 CPU 处理的“突然”硬件中断。对于一个中断密集型应用程序（例如网络！），它的大部分时间都花在用户空间中，我们会看到更多的 %usr CPU 时间切换到 %hiq。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>CentOS</tag>
+        <tag>Kernel</tag>
+        <tag>Interrupt</tag>
+        <tag>hardirq</tag>
+      </tags>
+  </entry>
 </search>

@@ -152,7 +152,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">103</span>
+          <span class="site-state-item-count">104</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -163,7 +163,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">228</span>
+        <span class="site-state-item-count">230</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -209,6 +209,105 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2019/02/20/kubernetes-namespaces-stuck-in-terminating-state/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2019/02/20/kubernetes-namespaces-stuck-in-terminating-state/" class="post-title-link" itemprop="url">删除K8s Namespace时卡在Terminating状态</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019年2月20日 18:04 18:04:18" itemprop="dateCreated datePublished" datetime="2019-02-20T18:04:18+08:00">2019年2月20日 18:04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>想要删除K8s里的一个Namespace，结果删除了所有该Namespace资源之后使用<code>kubectl delete namespace test</code>发现删除不掉，一直卡在<code>Terminating</code>状态，使用<code>--force</code>参数依然无法删除，报错:<br><code>Error from server (Conflict): Operation cannot be fulfilled on namespaces &quot;test&quot;: The system is ensuring all content is removed from this namespace.  Upon completion, this namespace will automatically be purged by the system.</code><br>找了一圈，发现<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/issues/19317">这个Issue</a>，里面<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/issues/19317#issuecomment-457745457">有条评论</a></p>
+<blockquote><p>kubectl get namespace annoying-namespace-to-delete -o json &gt; tmp.json<br>then edit tmp.json and remove”kubernetes”</p>
+<p>curl -k -H “Content-Type: application&#x2F;json” -X PUT –data-binary @tmp.json <a target="_blank" rel="noopener" href="https://kubernetes-cluster-ip/api/v1/namespaces/annoying-namespace-to-delete/finalize">https://kubernetes-cluster-ip/api/v1/namespaces/annoying-namespace-to-delete/finalize</a></p>
+<p>and it should delete your namespace,</p>
+</blockquote>
+
+<p>跟着试了一下，很管用，直接就删除了：<br>先运行<code>kubectl get namespace test -o json &gt; tmp.json</code>，拿到当前namespace描述，然后打开<code>tmp.json</code>，删除其中的<code>spec</code>字段。因为这边的K8s集群是带认证的，所以又新开了窗口运行<code>kubectl proxy</code>跑一个API代理在本地的8081端口。最后运行<code>curl -k -H &quot;Content-Type: application/json&quot; -X PUT --data-binary @tmp.json http://127.0.0.1:8001/api/v1/namespaces/test/finalize</code></p>
+<p>搞定！</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2019/02/20/kubernetes-namespaces-stuck-in-terminating-state/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1097,107 +1196,6 @@ PG正在互联过程中。
             </div>
           <!--/noindex-->
         
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2018/05/15/linux-timezone/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2018/05/15/linux-timezone/" class="post-title-link" itemprop="url">Linux时间和timezone概念解释</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2018年5月15日 9:29 9:29:12" itemprop="dateCreated datePublished" datetime="2018-05-15T09:29:12+08:00">2018年5月15日 9:29</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在Docker环境中经常会遇到时区相关的问题，所以顺便也看了一下Linux系统下时间相关的一下配置和概念：</p>
-<h2 id="硬件时钟"><a href="#硬件时钟" class="headerlink" title="硬件时钟"></a>硬件时钟</h2><p>硬件时钟也叫RTC（Real Time Clock）或者CMOS时钟，这个是保存在BIOS中的，仅能保存：年、月、日、时、分、秒这些时间数值，无法保存当前时区以及是否使用夏令时调节。</p>
-<h2 id="系统时钟"><a href="#系统时钟" class="headerlink" title="系统时钟"></a>系统时钟</h2><p>系统时钟也叫软件时钟，在系统时钟里是有时区等概念的，在Linux内核里，是保存为自 UTC 时间 1970 年1月1日经过的秒数。系统启动时会读取硬件时钟，并根据<code>/etc/adjtime</code>的设置计算当前的时钟。系统启动之后，系统时钟与硬件时钟独立运行，Linux 通过时钟中断计数维护系统时钟。</p>
-<h2 id="etc-localtime"><a href="#etc-localtime" class="headerlink" title="&#x2F;etc&#x2F;localtime"></a>&#x2F;etc&#x2F;localtime</h2><p>这个文件一般情况下是一个软链接，链接到<code>/usr/share/zoneinfo/</code>目录下的一个对应时区的二进制文件，比如设置<code>Asia/Shanghai</code>的时区，则<code>/etc/localtime -&gt; /usr/share/zoneinfo/Asia/Shanghai</code>，调用<code>date</code>等工具获取时间时会考虑这个配置。<br>建议并强烈建议将这个文件设置为软链接，很多人会直接拷贝文件，其实是不推荐的。所有的Linux系统都会依赖这个文件。</p>
-<h2 id="etc-timezone"><a href="#etc-timezone" class="headerlink" title="&#x2F;etc&#x2F;timezone"></a>&#x2F;etc&#x2F;timezone</h2><p>这个文件一般会记录时区的直接文字表示，或者是一个时间偏移（很少见），比如如果设置时区为<code>Asia/Shanghai</code>，则这个文件的内容就会是<code>Asia/Shanghai</code>。这个文件并不是在所有Linux中都存在，比如在我的ArchLinux中就没有这个文件。这个文件一般也仅仅是一个简单的表示。</p>
-<p>最后我们基本可以得到下面的结论：</p>
-<ol>
-<li>BIOS时间即硬件时间没有时区</li>
-<li>Linux在启动时会根据<code>/etc/adjtime</code>的设置和当前的硬件时间计算出当前的UTC时间，并将其和1970 年1月1日的秒差记录在内核中，由时钟中断继续维护。</li>
-<li><code>date</code>等工具获得的时间是根据Linux内核中保存的时间和<code>/etc/localtime</code>的配置计算得来的。</li>
-</ol>
-<p>其他相关问题，比如设置时间以及和Windows时间同步等可以参考下面的ArchLinux Wiki链接</p>
-<p>参考：</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://wiki.archlinux.org/index.php/Time">https://wiki.archlinux.org/index.php/Time</a></li>
-<li><a target="_blank" rel="noopener" href="https://unix.stackexchange.com/questions/384971/whats-the-difference-between-localtime-and-timezone-files">https://unix.stackexchange.com/questions/384971/whats-the-difference-between-localtime-and-timezone-files</a></li>
-</ol>
-
       
     </div>
 

@@ -152,7 +152,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">103</span>
+          <span class="site-state-item-count">104</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -163,7 +163,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">228</span>
+        <span class="site-state-item-count">230</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -209,6 +209,100 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2015/03/01/override-php-function/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2015/03/01/override-php-function/" class="post-title-link" itemprop="url">替换PHP底层函数实现</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2015年3月1日 21:45 21:45:12" itemprop="dateCreated datePublished" datetime="2015-03-01T21:45:12+08:00">2015年3月1日 21:45</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2020年10月12日 9:50 9:50:42" itemprop="dateModified" datetime="2020-10-12T09:50:42+08:00">2020年10月12日 9:50</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">源码分析</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>在PHP中，有很多内置的函数，这些函数包括绝大部分的功能，还有一些函数，是PHP的扩展提供的，只有安装了扩展并开启，函数才可以被使用，这些函数的实现，都是用C来实现的，因此有着最好的效率。</p>
+<p>在某些情况下，可能要对这些用C实现的函数进行一些额外的更改，比如说，对其进行一个伪实现，或者，在调用之前检查是否满足特定的情况，也就是说，对这些函数进行Hook。<br>比较暴力的办法，就是找到需要伪实现或者Hook的函数的源代码，直接把对应的源代码修改后重新编译，这样虽然能解决问题，但是相对的，非常麻烦，也不好移植。</p>
+<p>下面就是另一个办法，我们可以自己新建一个扩展，然后，在扩展中找到对应的函数实现，然后直接把这个函数实现替换成自己的。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2015/03/01/override-php-function/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
