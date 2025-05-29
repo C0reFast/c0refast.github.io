@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/favicon-orgin.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/favicon/favicon-orgin.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.36/dist/fancybox/fancybox.css" integrity="sha256-zM8WXtG4eUn7dKKNMTuoWZub++VnSfaOpA/8PJfvTBo=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="近期线上出现了一个问题，现象是有一台机器，网络出现了不定时的延迟： # ping -i 0.05 192.168.0.5 #... 64 bytes from 192.168.0.5: icmp_seq&#x3D;673 ttl&#x3D;63 time&#x3D;0.203 ms 64 bytes from 192.168.0.5: icmp_seq&#x3D;674 ttl&#x3D;63 time&#x3D;0.210 ms 64 bytes fro">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一个中断关闭时间太长导致的网络延迟问题">
+<meta property="og:url" content="https://www.ichenfu.com/2025/05/10/a-network-latency-problem/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="近期线上出现了一个问题，现象是有一台机器，网络出现了不定时的延迟： # ping -i 0.05 192.168.0.5 #... 64 bytes from 192.168.0.5: icmp_seq&#x3D;673 ttl&#x3D;63 time&#x3D;0.203 ms 64 bytes from 192.168.0.5: icmp_seq&#x3D;674 ttl&#x3D;63 time&#x3D;0.210 ms 64 bytes fro">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-05-10T03:15:50.000Z">
+<meta property="article:modified_time" content="2025-05-26T01:52:52.183Z">
+<meta property="article:author" content="陈孚">
+<meta property="article:tag" content="nettrace">
+<meta property="article:tag" content="irqoff">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2025/05/10/a-network-latency-problem/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2025/05/10/a-network-latency-problem/","path":"2025/05/10/a-network-latency-problem/","title":"一个中断关闭时间太长导致的网络延迟问题"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>一个中断关闭时间太长导致的网络延迟问题 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?50e2a95e85fdbe38e53b7aaba8c6cfe1"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.36/dist/fancybox/fancybox.umd.js" integrity="sha256-hiUEBwFEpLF6DlB8sGXlKo4kPZ46Ui4qGpd0vrVkOm4=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">陈孚</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">106</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">235</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/C0reFast" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;C0reFast" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chenfu@ichenfu.com" title="E-Mail → mailto:chenfu@ichenfu.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/c0refast" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;c0refast" rel="noopener me" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/05/10/a-network-latency-problem/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="一个中断关闭时间太长导致的网络延迟问题 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          一个中断关闭时间太长导致的网络延迟问题
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年5月10日 11:15 11:15:50" itemprop="dateCreated datePublished" datetime="2025-05-10T11:15:50+08:00">2025年5月10日 11:15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025年5月26日 9:52 9:52:52" itemprop="dateModified" datetime="2025-05-26T09:52:52+08:00">2025年5月26日 9:52</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>近期线上出现了一个问题，现象是有一台机器，网络出现了不定时的延迟：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># ping -i 0.05 192.168.0.5</span>
+<span class="token comment">#...</span>
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">673</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.203</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">674</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.210</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">675</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.218</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">676</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.233</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">677</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">406</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">678</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">354</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">679</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">302</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">680</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">251</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">681</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">199</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">682</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">147</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">683</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">94.8</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">684</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">43.0</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">685</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.216</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">686</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.248</span> ms
+<span class="token comment">#...</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>以50ms为间隔ping，发现概率性的会出现超过400ms的延迟，但是并没有丢包的现象发生。</p>
+<span id="more"></span>
+<p>首先想到了使用<a target="_blank" rel="noopener" href="https://github.com/OpenCloudOS/nettrace">nettrace</a>工具来分析一下这个问题，<code>nettrace</code>是一个腾讯开源的基于<code>bpftrace</code>的网络流量追踪工具，可以追踪到内核网络栈的每一个函数调用。期望能通过这个工具来看一下这个延迟是不是消耗在了内核的网络协议栈上。根据ping结果中响应时间最长的seq&#x3D;677的包，过滤出来从协议栈接收包到发送回复包的所有函数调用：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># nettrace -p icmp</span>
+<span class="token comment">#...</span>
+***************** d8061b00 ***************
+<span class="token punctuation">[</span><span class="token number">24583464.629102</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629114</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>dev_gro_receive     <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629248</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__netif_receive_skb_core<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629253</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>packet_rcv          <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629256</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>tcf_classify        <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629262</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__netif_receive_skb_core<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629268</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>ip_rcv              <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629271</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>ip_rcv_core         <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629276</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>nf_hook_slow        <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span> *ipv4 <span class="token keyword">in</span> chain: PRE_ROUTING*
+<span class="token punctuation">[</span><span class="token number">24583464.629284</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>ip_route_input_slow <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629293</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>fib_validate_source <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629299</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>ip_local_deliver    <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629301</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>nf_hook_slow        <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span> *ipv4 <span class="token keyword">in</span> chain: INPUT*
+<span class="token punctuation">[</span><span class="token number">24583464.629304</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>nft_do_chain        <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span> *iptables table:filter, chain:INPUT*
+<span class="token punctuation">[</span><span class="token number">24583464.629311</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>ip_local_deliver_finish<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629316</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>icmp_rcv            <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629321</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>icmp_echo           <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629325</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>icmp_reply          <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629413</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>consume_skb         <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span> *packet is freed <span class="token punctuation">(</span>normally<span class="token punctuation">)</span>*
+<span class="token comment">#...</span>
+***************** a3faf500,a3faec00,a3faf800 ***************
+<span class="token punctuation">[</span><span class="token number">24583464.629343</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629347</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>nf_hook_slow        <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span> *ipv4 <span class="token keyword">in</span> chain: OUTPUT*
+<span class="token punctuation">[</span><span class="token number">24583464.629350</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>nft_do_chain        <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span> *iptables table:filter, chain:OUTPUT*
+<span class="token punctuation">[</span><span class="token number">24583464.629354</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>ip_output           <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629358</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>nf_hook_slow        <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span> *ipv4 <span class="token keyword">in</span> chain: POST_ROUTING*
+<span class="token punctuation">[</span><span class="token number">24583464.629361</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>ip_finish_output    <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629365</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>ip_finish_output2   <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629368</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__dev_queue_xmit    <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629372</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>tcf_classify        <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629376</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>skb_clone           <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629381</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__dev_queue_xmit    <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629385</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>dev_hard_start_xmit <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span> *skb is successfully sent to the NIC driver*
+<span class="token punctuation">[</span><span class="token number">24583464.629389</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>bond_dev_queue_xmit <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629393</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__dev_queue_xmit    <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629396</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>dev_hard_start_xmit <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span> *skb is successfully sent to the NIC driver*
+<span class="token punctuation">[</span><span class="token number">24583464.629398</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>skb_clone           <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629401</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>packet_rcv          <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629404</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>consume_skb         <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span> *packet is freed <span class="token punctuation">(</span>normally<span class="token punctuation">)</span>*
+<span class="token punctuation">[</span><span class="token number">24583464.629409</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>consume_skb         <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span> *packet is freed <span class="token punctuation">(</span>normally<span class="token punctuation">)</span>*
+<span class="token punctuation">[</span><span class="token number">24583464.630375</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>consume_skb         <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span> *packet is freed <span class="token punctuation">(</span>normally<span class="token punctuation">)</span>*
+<span class="token comment">#...</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>从过滤出来的结果看，最左侧的时间一栏，发现从接受icmp请求到将回复请求扔给网卡，整个协议栈只消耗了不到1ms的时间，几乎可以排除是内核网络协议栈的问题。那是怎么回事呢？</p>
+<p>尝试继续分析一下<code>nettrace</code>工具的输出：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># grep -E 'napi_gro_receive_entry|__ip_local_out' trace.log</span>
+<span class="token comment">#...</span>
+<span class="token punctuation">[</span><span class="token number">24583464.120360</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">675</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.120449</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">675</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.172360</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">676</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.172456</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">676</span>, id: <span class="token number">392</span>
+<span class="token comment"># 上次回复之后，大约等待了450ms，才继续收到下一个ping包，并且在同1ms内连续收到了8个包</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629102</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629118</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">678</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629503</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">679</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629515</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">680</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629521</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">681</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629526</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">682</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629531</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">683</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.630165</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">684</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629343</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">677</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629452</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">678</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629578</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">679</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629781</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">680</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629886</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">681</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.629989</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">682</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.630081</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">683</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.630282</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">684</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.637354</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">685</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.637439</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">685</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.689368</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">686</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.689469</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">686</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.741353</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">687</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.741462</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">687</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.793361</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>napi_gro_receive_entry<span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.4 -<span class="token operator">></span> <span class="token number">192.168</span>.0.5 <span class="token function">ping</span> request, seq: <span class="token number">688</span>, id: <span class="token number">392</span>
+<span class="token punctuation">[</span><span class="token number">24583464.793477</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>__ip_local_out      <span class="token punctuation">]</span> ICMP: <span class="token number">192.168</span>.0.5 -<span class="token operator">></span> <span class="token number">192.168</span>.0.4 <span class="token function">ping</span> reply, seq: <span class="token number">688</span>, id: <span class="token number">392</span>
+<span class="token comment">#...</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>从日志可以看到，在回复完seq&#x3D;676的包后，经过了450ms才继续接收到了seq&#x3D;678的包，并且在同1ms内连续收到了8个包，之后的处理也非常快，几乎没有延迟。这个日志也可以和ping的结果对应上，从ping的源端来看，由于ping的间隔是50ms，seq&#x3D;676的包发送出去，等待50ms发送seq&#x3D;677的包，而这个包被延迟了400ms被目的端收到并返回，依次类推，在这400ms期间，共有8个被发出，在处理seq&#x3D;677的包同时，其他包也被收到并处理，所以从源端看，678-684的包相应时间的以大约50ms的间隔缩短。</p>
+<p>感觉像是中断处理慢了，毕竟也没有发生丢包的情况，只是延迟了。借助bcc-tools里的<code>hardirqs</code>和<code>softirqs</code>工具，来看看中断的处理情况：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># /usr/share/bcc/tools/hardirqs 1 100</span>
+Tracing hard irq event time<span class="token punctuation">..</span>. Hit Ctrl-C to end.
+
+HARDIRQ                    TOTAL_usecs
+nvme0q52                             <span class="token number">5</span>
+nvme0q49                            <span class="token number">31</span>
+nvme0q73                            <span class="token number">44</span>
+mlx5_async17@pci:0000:1a:00.0          <span class="token number">68</span>
+acpi                                <span class="token number">73</span>
+mlx5_async17@pci:0000:1a:00.1          <span class="token number">73</span>
+nvme0q51                            <span class="token number">90</span>
+nvme0q76                           <span class="token number">120</span>
+nvme0q75                           <span class="token number">135</span>
+ens33f0-0                          <span class="token number">782</span>
+ens33f1-0                          <span class="token number">913</span>
+
+HARDIRQ                    TOTAL_usecs
+mlx5_async17@pci:0000:1a:00.0           <span class="token number">4</span>
+mlx5_async17@pci:0000:1a:00.1           <span class="token number">7</span>
+megasas0-msix51                     <span class="token number">48</span>
+megasas0-msix75                     <span class="token number">58</span>
+nvme0q52                            <span class="token number">60</span>
+nvme0q76                            <span class="token number">61</span>
+acpi                                <span class="token number">70</span>
+nvme0q75                            <span class="token number">83</span>
+nvme0q49                           <span class="token number">104</span>
+nvme0q51                           <span class="token number">123</span>
+nvme0q73                           <span class="token number">133</span>
+ens33f0-0                          <span class="token number">340</span>
+ens33f1-0                          <span class="token number">598</span>
+
+HARDIRQ                    TOTAL_usecs
+acpi                                <span class="token number">37</span>
+mlx5_async17@pci:0000:1a:00.1          <span class="token number">38</span>
+mlx5_async17@pci:0000:1a:00.0          <span class="token number">72</span>
+nvme0q73                           <span class="token number">113</span>
+nvme0q75                           <span class="token number">144</span>
+nvme0q51                           <span class="token number">148</span>
+nvme0q52                           <span class="token number">196</span>
+ens33f0-0                          <span class="token number">374</span>
+ens33f1-0                          <span class="token number">581</span>
+<span class="token comment">#...</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># /usr/share/bcc/tools/softirqs 1 100</span>
+Tracing soft irq event time<span class="token punctuation">..</span>. Hit Ctrl-C to end.
+
+SOFTIRQ          TOTAL_usecs
+net_tx                     <span class="token number">6</span>
+tasklet                  <span class="token number">483</span>
+sched                   <span class="token number">3923</span>
+rcu                     <span class="token number">6545</span>
+net_rx                  <span class="token number">9657</span>
+timer                  <span class="token number">24720</span>
+
+SOFTIRQ          TOTAL_usecs
+tasklet                  <span class="token number">221</span>
+sched                   <span class="token number">3256</span>
+net_rx                  <span class="token number">4408</span>
+rcu                     <span class="token number">5641</span>
+timer                  <span class="token number">25195</span>
+
+SOFTIRQ          TOTAL_usecs
+tasklet                  <span class="token number">287</span>
+sched                   <span class="token number">4734</span>
+net_rx                  <span class="token number">6355</span>
+rcu                     <span class="token number">8406</span>
+timer                  <span class="token number">25333</span>
+<span class="token comment">#...</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>并没有发现中断处理慢了的情况，那有没有可能是中断被屏蔽了呢？如果中断被屏蔽了400ms，在这400ms期间，收到的包都会存放在网卡的缓冲区里，但是网卡没办法通过中断的方式通知内核来处理这些包，等到中断被打开后，内核才会收到中断，并开始处理网卡缓冲区里的数据，这样就会出现上面提到的现象。这个假设似乎说得通，但是怎么验证呢？</p>
+<p>想起字节跳动几年前开源了一个叫做<a target="_blank" rel="noopener" href="https://github.com/bytedance/trace-irqoff"><code>trace-irqoff</code></a>的工具，可以用来追踪和定位中断或者软中断关闭的时间。</p>
+<p>尝试使用一下这个工具：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># cat /proc/trace_irqoff/distribute</span>
+hardirq-off:
+         msecs           <span class="token builtin class-name">:</span> count     distribution
+        <span class="token number">10</span> -<span class="token operator">></span> <span class="token number">19</span>         <span class="token builtin class-name">:</span> <span class="token number">1</span>        <span class="token operator">|</span>**********                              <span class="token operator">|</span>
+        <span class="token number">20</span> -<span class="token operator">></span> <span class="token number">39</span>         <span class="token builtin class-name">:</span> <span class="token number">0</span>        <span class="token operator">|</span>                                        <span class="token operator">|</span>
+        <span class="token number">40</span> -<span class="token operator">></span> <span class="token number">79</span>         <span class="token builtin class-name">:</span> <span class="token number">0</span>        <span class="token operator">|</span>                                        <span class="token operator">|</span>
+        <span class="token number">80</span> -<span class="token operator">></span> <span class="token number">159</span>        <span class="token builtin class-name">:</span> <span class="token number">1</span>        <span class="token operator">|</span>**********                              <span class="token operator">|</span>
+       <span class="token number">160</span> -<span class="token operator">></span> <span class="token number">319</span>        <span class="token builtin class-name">:</span> <span class="token number">2</span>        <span class="token operator">|</span>********************                    <span class="token operator">|</span>
+       <span class="token number">320</span> -<span class="token operator">></span> <span class="token number">639</span>        <span class="token builtin class-name">:</span> <span class="token number">4</span>        <span class="token operator">|</span>****************************************<span class="token operator">|</span>
+
+<span class="token comment"># cat /proc/trace_irqoff/trace_latency</span>
+trace_irqoff_latency: 50ms
+
+ hardirq:
+ cpu: <span class="token number">0</span>
+     COMMAND: kubelet PID: <span class="token number">1162942</span> LATENCY: 425ms
+     save_trace.isra.0+0x18c/0x1b0 <span class="token punctuation">[</span>trace_irqoff<span class="token punctuation">]</span>
+     trace_irqoff_record+0xa0/0xd0 <span class="token punctuation">[</span>trace_irqoff<span class="token punctuation">]</span>
+     trace_irqoff_hrtimer_handler+0x47/0xd6 <span class="token punctuation">[</span>trace_irqoff<span class="token punctuation">]</span>
+     __hrtimer_run_queues+0x12a/0x2c0
+     hrtimer_interrupt+0xfc/0x210
+     __sysvec_apic_timer_interrupt+0x5f/0x110
+     sysvec_apic_timer_interrupt+0x6d/0x90
+     asm_sysvec_apic_timer_interrupt+0x16/0x20
+     _raw_spin_unlock_irq+0x14/0x25
+     blkcg_print_blkgs+0x72/0xe0
+     tg_print_rwstat_recursive+0x40/0x50
+     seq_read_iter+0x124/0x4b0
+     new_sync_read+0x118/0x1a0
+     vfs_read+0xf5/0x190
+     ksys_read+0x5f/0xe0
+     do_syscall_64+0x5c/0x90
+     entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+     COMMAND: kubelet PID: <span class="token number">1162942</span> LATENCY: 462ms
+     save_trace.isra.0+0x18c/0x1b0 <span class="token punctuation">[</span>trace_irqoff<span class="token punctuation">]</span>
+     trace_irqoff_record+0xa0/0xd0 <span class="token punctuation">[</span>trace_irqoff<span class="token punctuation">]</span>
+     trace_irqoff_hrtimer_handler+0x47/0xd6 <span class="token punctuation">[</span>trace_irqoff<span class="token punctuation">]</span>
+     __hrtimer_run_queues+0x12a/0x2c0
+     hrtimer_interrupt+0xfc/0x210
+     __sysvec_apic_timer_interrupt+0x5f/0x110
+     sysvec_apic_timer_interrupt+0x6d/0x90
+     asm_sysvec_apic_timer_interrupt+0x16/0x20
+     _raw_spin_unlock_irq+0x14/0x25
+     blkcg_print_blkgs+0x72/0xe0
+     tg_print_rwstat_recursive+0x40/0x50
+     seq_read_iter+0x124/0x4b0
+     new_sync_read+0x118/0x1a0
+     vfs_read+0xf5/0x190
+     ksys_read+0x5f/0xe0
+     do_syscall_64+0x5c/0x90
+     entry_SYSCALL_64_after_hwframe+0x63/0xcd
+<span class="token comment">#...</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>还真是发现了中断被长时间屏蔽的情况，从这个调用栈看，<code>kubelet</code>进程会读取cgroups中的内容，在这个过程中，内核在处理<code>blkcg_print_blkgs</code>时，屏蔽了中断425ms和462ms。这个时间和ping延迟的400ms十分接近了，那几乎就是因为这个原因导致的问题了。</p>
+<p>具体到为什么会出现这么长的中断屏蔽时间，这里就不继续把分析的详细过程贴出来了，最终是找到了cgroups一个内存泄漏的bug，导致<code>blkcg_print_blkgs</code>时需要遍历超多的items，导致了中断屏蔽时间过长。</p>
+<p>确实需要感谢一下腾讯和字节跳动开源的这两个工具，极大的加速了问题的定位😁。说起来阿里开源的运维工具<a target="_blank" rel="noopener" href="https://gitee.com/anolis/sysak">SysAK</a>里也有一个<code>irqoff</code>工具，是基于eBPF实现的，相比字节的可能还要灵活一些，不过就得等下次再试用了😊。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="陈孚 wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/nettrace/" rel="tag"># nettrace</a>
+              <a href="/tags/irqoff/" rel="tag"># irqoff</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/04/23/new-kernel-showing-interrupt-cpu-usage/" rel="prev" title="一个Linux新老内核对于硬件中断的统计差异">
+                  <i class="fa fa-angle-left"></i> 一个Linux新老内核对于硬件中断的统计差异
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/05/29/a-leap-year-check-in-three-instructions/" rel="next" title="在三条指令内实现闰年判断">
+                  在三条指令内实现闰年判断 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">陈孚</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js" defer></script>
+
+</body>
+</html>

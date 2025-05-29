@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/favicon-orgin.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/favicon/favicon-orgin.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.36/dist/fancybox/fancybox.css" integrity="sha256-zM8WXtG4eUn7dKKNMTuoWZub++VnSfaOpA/8PJfvTBo=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文是A leap year check in three instructions的翻译，前两天在HackerNews上看到这篇文章，闰年的判断方法，从一开始学编程就是一个经典的练习题，但是深挖下去，作者只用了三条指令就能实现闰年的判断，感觉还挺有意思的，所以就翻译分享一下。 省流不看版（基于DeepSeek总结）：文章介绍了一种使用大约3个CPU指令实现快速闰年检查的方法。这种方法不同于标准算">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在三条指令内实现闰年判断">
+<meta property="og:url" content="https://www.ichenfu.com/2025/05/29/a-leap-year-check-in-three-instructions/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="本文是A leap year check in three instructions的翻译，前两天在HackerNews上看到这篇文章，闰年的判断方法，从一开始学编程就是一个经典的练习题，但是深挖下去，作者只用了三条指令就能实现闰年的判断，感觉还挺有意思的，所以就翻译分享一下。 省流不看版（基于DeepSeek总结）：文章介绍了一种使用大约3个CPU指令实现快速闰年检查的方法。这种方法不同于标准算">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.ichenfu.com/images/bit_ranges.png">
+<meta property="article:published_time" content="2025-05-29T12:29:37.000Z">
+<meta property="article:modified_time" content="2025-05-29T02:03:24.534Z">
+<meta property="article:author" content="陈孚">
+<meta property="article:tag" content="闰年">
+<meta property="article:tag" content="位操作">
+<meta property="article:tag" content="算法">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.ichenfu.com/images/bit_ranges.png">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2025/05/29/a-leap-year-check-in-three-instructions/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2025/05/29/a-leap-year-check-in-three-instructions/","path":"2025/05/29/a-leap-year-check-in-three-instructions/","title":"在三条指令内实现闰年判断"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>在三条指令内实现闰年判断 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?50e2a95e85fdbe38e53b7aaba8c6cfe1"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.36/dist/fancybox/fancybox.umd.js" integrity="sha256-hiUEBwFEpLF6DlB8sGXlKo4kPZ46Ui4qGpd0vrVkOm4=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%87%E5%87%86%E6%96%B9%E6%B3%95%E7%9A%84%E4%BC%98%E5%8C%96"><span class="nav-number">1.</span> <span class="nav-text">标准方法的优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%BB%E6%89%BE%E5%9F%BA%E4%BA%8E%E4%BD%8D%E6%93%8D%E4%BD%9C%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">寻找基于位操作的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E9%87%8A"><span class="nav-number">3.</span> <span class="nav-text">解释</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%92%88%E5%AF%B9%EF%BC%881%EF%BC%89%E5%92%8C%EF%BC%883%EF%BC%89%E8%BF%99%E4%B8%A4%E7%A7%8D%E7%AE%80%E5%8D%95%E5%9C%BA%E6%99%AF%EF%BC%9A"><span class="nav-number">3.0.1.</span> <span class="nav-text">针对（1）和（3）这两种简单场景：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%92%88%E5%AF%B9%EF%BC%882%EF%BC%89%E8%BF%99%E7%A7%8D%E6%9C%89%E8%B6%A3%E7%9A%84%E5%9C%BA%E6%99%AF%EF%BC%9A"><span class="nav-number">3.0.2.</span> <span class="nav-text">针对（2）这种有趣的场景：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%A9%E5%B1%95%E5%88%B0%E5%85%B6%E4%BB%96%E6%AF%94%E7%89%B9%E4%BD%8D"><span class="nav-number">4.</span> <span class="nav-text">扩展到其他比特位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="nav-number">5.</span> <span class="nav-text">性能测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">陈孚</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">106</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">235</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/C0reFast" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;C0reFast" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chenfu@ichenfu.com" title="E-Mail → mailto:chenfu@ichenfu.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/c0refast" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;c0refast" rel="noopener me" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/05/29/a-leap-year-check-in-three-instructions/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="在三条指令内实现闰年判断 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          在三条指令内实现闰年判断
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年5月29日 20:29 20:29:37" itemprop="dateCreated datePublished" datetime="2025-05-29T20:29:37+08:00">2025年5月29日 20:29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025年5月29日 10:03 10:03:24" itemprop="dateModified" datetime="2025-05-29T10:03:24+08:00">2025年5月29日 10:03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">源码分析</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>本文是<a target="_blank" rel="noopener" href="https://hueffner.de/falk/blog/a-leap-year-check-in-three-instructions.html">A leap year check in three instructions</a>的翻译，前两天在<a target="_blank" rel="noopener" href="https://news.ycombinator.com/item?id=43999748">HackerNews</a>上看到这篇文章，闰年的判断方法，从一开始学编程就是一个经典的练习题，但是深挖下去，作者只用了三条指令就能实现闰年的判断，感觉还挺有意思的，所以就翻译分享一下。</p>
+<p>省流不看版（基于DeepSeek总结）：<br>文章介绍了一种使用大约3个CPU指令实现快速闰年检查的方法。这种方法不同于标准算法（涉及模运算和分支），而是利用位操作和魔法数字，将闰年规则（能被4整除，但不能被100整除，除非能被400整除）巧妙地映射到对年份乘以一个常数后的结果进行位范围检查。这种位操作方法对于随机年份输入表现出显著的速度提升，并且针对特定范围已证明是最优解。这项优化技术涉及复杂的位运算细节。</p>
+<p>以下是原文的翻译：</p>
+<span id="more"></span>
+<p>通过以下代码，我们可以在大约 3 个 CPU 指令内检查 0 ≤ y ≤ 102499 的年份是否是闰年：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">bool <span class="token function">is_leap_year_fast</span><span class="token punctuation">(</span><span class="token class-name">uint32_t</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">*</span> <span class="token number">1073750999</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">3221352463</span><span class="token punctuation">)</span> <span class="token operator">&lt;=</span> <span class="token number">126976</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>这是如何工作的呢？答案出奇地复杂。本文解释了其中的原理，主要是为了享受位操作的乐趣；最后，我将简要讨论其实际用途。 我们一般使用的基础版闰年检查代码是这样的：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">bool <span class="token function">is_leap_year</span><span class="token punctuation">(</span><span class="token class-name">uint32_t</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">%</span> <span class="token number">4</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> false<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">%</span> <span class="token number">100</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> true<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">%</span> <span class="token number">400</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> true<span class="token punctuation">;</span>
+    <span class="token keyword">return</span> false<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>我们使用的是<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Proleptic_Gregorian_calendar">前推格里高利历</a>，它将格里高利历从1582年引入的时间向前延伸，并包含0年。因此，我们无需对1582年之前的年份做特殊处理。为简化起见，我们忽略负数年份，使用无符号年份。</p>
+<h2 id="标准方法的优化"><a href="#标准方法的优化" class="headerlink" title="标准方法的优化"></a>标准方法的优化</h2><p>我们先做一些简单的加速，以便获得一个良好的基准线。我不确定应该把功劳归给谁，这些技巧可能已经被独立实现很多次了。<br>我们可以将<code>(y % 100) != 0</code>替换为<code>(y % 25) != 0</code>：我们已经知道<code>y</code>是<code>2²</code>的倍数，所以如果它也是<code>5²</code>的倍数，它就是<code>2² * 5² = 100</code>的倍数。类似地，我们可以将<code>(y % 400) == 0</code>替换为<code>(y % 16) == 0</code>：我们已经知道<code>y</code>是<code>5²</code>的倍数，所以如果它也是<code>2⁴</code>的倍数，它就是<code>5² * 2⁴ = 400</code>的倍数：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">bool <span class="token function">is_leap_year1</span><span class="token punctuation">(</span><span class="token class-name">uint32_t</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">%</span> <span class="token number">4</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> false<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">%</span> <span class="token number">25</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> true<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">%</span> <span class="token number">16</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> true<span class="token punctuation">;</span>
+    <span class="token keyword">return</span> false<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这很有用，因为我们现在可以用位掩码替换对 4 和 16 的取余运算。还有一个编译器实现者熟知的技巧，可以将对 25 的取余运算降低成本。用 gcc 编译<code>(x % 25) != 0</code>并翻译回 C，我们得到<code>x * 3264175145 &gt; 171798691</code>。乘法在典型的延迟约为 3 个周期，而取余运算至少需要 20 个周期，这是一个巨大的改进。我只会简要说明其工作原理的直觉；更多细节可以在以下资源中找到：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://doi.org/10.1002/spe.2689">Faster remainder by direct computation: Applications to compilers and software libraries</a> by Daniel Lemire, Owen Kaser, and Nathan Kurz for lowering modulo by a constant in general;</li>
+<li><a target="_blank" rel="noopener" href="https://doi.org/10.1002/spe.3172">Euclidean affine functions and their application to calendar algorithms</a> by Cassio Neri and Lorenz Schneider more specifically for calendar calculations; and</li>
+<li><a target="_blank" rel="noopener" href="https://davecturner.github.io/2020/08/07/leapyear-optimization.html">Identifying leap years</a> by David Turner for the leap year check (including formal proofs!).</li>
+</ul>
+<p>关于<code>3264175145</code>和<code>171798691</code>这两个”magic numbers”是从哪里来的呢？我们有</p>
+<p>2<sup>32</sup> * 19&#x2F;25 &#x3D; 3264175144.96 (这个是精确值)<br>因此，通过乘以<code>3264175145</code>，我们可以近似得到乘以 (19&#x2F;25) 的小数部分，如果是乘以<code>3264175144.96</code>这个精确值的话，对于25的倍数，我们将得到一个整数。但实际乘的数是比精确值大了0.04，因此会有最大<code>0.04 * (2³² - 1) = 171798691.8</code>的误差，这也是<code>171798691</code>的来源。</p>
+<p>这个技巧对于<code>x % 100</code>效果不太好，需要多一条修正指令，所以从<code>y % 100</code>减少到<code>y % 25</code>还是有必要的。</p>
+<p>到这里，我们的代码变成了这样：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">bool <span class="token function">is_leap_year2</span><span class="token punctuation">(</span><span class="token class-name">uint32_t</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">&amp;</span> <span class="token number">3</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> false<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>y <span class="token operator">*</span> <span class="token number">3264175145u</span> <span class="token operator">></span> <span class="token number">171798691u</span><span class="token punctuation">)</span> <span class="token keyword">return</span> true<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">&amp;</span> <span class="token number">15</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> true<span class="token punctuation">;</span>
+    <span class="token keyword">return</span> false<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>需要注意的是，像 gcc 或 clang 这样的现代编译器会从 is_leap_year1 生成类似 is_leap_year2 的<a target="_blank" rel="noopener" href="https://godbolt.org/z/GeK6Trfx6">代码</a>，因此在 C 源代码中这样做意义不大，但在其他编程语言中可能还是有用的。<br>这段代码通常会被编译成带分支跳转的汇编代码。然而实际上这个函数的输入通常是可预测的，所以这不一定是坏事。如果我们想在牺牲最好场景下的性能来避免大部分场景下分支预测失败的开销的话，我们可以稍微调整一下顺序，得到<a target="_blank" rel="noopener" href="https://godbolt.org/z/PWs8saMYd">无分支跳转的代码</a>：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">bool <span class="token function">is_leap_year3</span><span class="token punctuation">(</span><span class="token class-name">uint32_t</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token operator">!</span><span class="token punctuation">(</span>y <span class="token operator">&amp;</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">%</span> <span class="token number">25</span><span class="token punctuation">)</span> <span class="token operator">?</span> <span class="token number">3</span> <span class="token operator">:</span> <span class="token number">15</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>当然如果您想了解更多日历计算相关的加速方法，可以查阅 Jacob Pratt 的<a target="_blank" rel="noopener" href="https://jhpratt.dev/blog/optimizing-with-novel-calendrical-algorithms/">Optimizing with Novel Calendrical Algorithms</a>。</p>
+<h2 id="寻找基于位操作的方法"><a href="#寻找基于位操作的方法" class="headerlink" title="寻找基于位操作的方法"></a>寻找基于位操作的方法</h2><p>我们能否通过放弃对所有输入的正确性来改进闰年计算？毕竟，我们通常不关心年份3584536493是否是闰年；实际上，Python、C# 和 Go 只支持 0 年（或 1 年）到 9999 年（此时相对于季节的漂移已经超过 4 天）。我的想法是，如果存在更短的形式，它基本上会像使用魔术常数进行某种奇怪的哈希操作，所以我尝试了一些方法，并通过暴力搜索猜测常数。<code>(y * f) &lt;= t</code>的形式似乎有用，但不够强大。我的一个备选方案是添加一个掩码：<code>((y * f) &amp; m) &lt;= t</code>。现在我们需要猜测 96个bit位，这无法单独通过暴力搜索完成。让我们使用<a target="_blank" rel="noopener" href="https://github.com/Z3Prover/z3">z3</a>，一个支持位向量约束的求解器，它非常适合这项工作。</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> z3
+
+BITS <span class="token operator">=</span> <span class="token number">32</span>
+f<span class="token punctuation">,</span> m<span class="token punctuation">,</span> t<span class="token punctuation">,</span> y <span class="token operator">=</span> z3<span class="token punctuation">.</span>BitVecs<span class="token punctuation">(</span><span class="token string">'f m t y'</span><span class="token punctuation">,</span> BITS<span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">target</span><span class="token punctuation">(</span>y<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">return</span> z3<span class="token punctuation">.</span>And<span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">&amp;</span> <span class="token number">3</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">,</span> z3<span class="token punctuation">.</span>Or<span class="token punctuation">(</span>z3<span class="token punctuation">.</span>URem<span class="token punctuation">(</span>y<span class="token punctuation">,</span> <span class="token number">25</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>y <span class="token operator">&amp;</span> <span class="token number">15</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">candidate</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">return</span> z3<span class="token punctuation">.</span>ULE<span class="token punctuation">(</span><span class="token punctuation">(</span>x <span class="token operator">*</span> f<span class="token punctuation">)</span> <span class="token operator">&amp;</span> m<span class="token punctuation">,</span> t<span class="token punctuation">)</span>
+
+solver <span class="token operator">=</span> z3<span class="token punctuation">.</span>Solver<span class="token punctuation">(</span><span class="token punctuation">)</span>
+solver<span class="token punctuation">.</span>add<span class="token punctuation">(</span>z3<span class="token punctuation">.</span>ForAll<span class="token punctuation">(</span>y<span class="token punctuation">,</span> z3<span class="token punctuation">.</span>Implies<span class="token punctuation">(</span>z3<span class="token punctuation">.</span>ULE<span class="token punctuation">(</span>y<span class="token punctuation">,</span> <span class="token number">400</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                   candidate<span class="token punctuation">(</span>y<span class="token punctuation">)</span> <span class="token operator">==</span> target<span class="token punctuation">(</span>y<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">if</span> solver<span class="token punctuation">.</span>check<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> z3<span class="token punctuation">.</span>sat<span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f'found solution: </span><span class="token interpolation"><span class="token punctuation">&#123;</span>solver<span class="token punctuation">.</span>model<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span></span><span class="token string">'</span></span><span class="token punctuation">)</span>
+<span class="token keyword">else</span><span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'no solution found'</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在几秒钟内，这找到了一些常数，它们在一定年份范围内给出了正确的结果。扩展范围后，大约花费了半小时的计算时间，我最终找到了在0年到102499年范围内给出正确结果的常数，并证明了这是32位的最优解：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">bool <span class="token function">is_leap_year_fast</span><span class="token punctuation">(</span><span class="token class-name">uint32_t</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> <span class="token class-name">uint32_t</span> f <span class="token operator">=</span> <span class="token number">1073750999u</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token class-name">uint32_t</span> m <span class="token operator">=</span> <span class="token number">3221352463u</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token class-name">uint32_t</span> t <span class="token operator">=</span> <span class="token number">126976u</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">*</span> f<span class="token punctuation">)</span> <span class="token operator">&amp;</span> m<span class="token punctuation">)</span> <span class="token operator">&lt;=</span> t<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="解释"><a href="#解释" class="headerlink" title="解释"></a>解释</h2><p>它是如何工作的呢？我们能将所有这些计算压缩到三条指令中，这似乎令人惊讶，感觉就像是魔法一样，不过，上面的内容已经给我们足够多的工具来理解它了。</p>
+<p>下面是这三个常量的二进制表示，并且用ABCD标识出来了相关的bit范围：</p>
+<p><img src="/images/bit_ranges.png"></p>
+<p>让我们首先考虑乘积 <code>p := y * f</code>，与 m 进行位与操作后再和t进行比较的作用。在区块 A 中，t 的位为 0，因此只要 p 中 A 中的任何位被设置，结果就为 false。否则，区块 B 就变得相关。在这里，t 中的所有位都为 1，所以只要 p 中 B 中的任何位未设置，结果就为 true。否则，对于区块 C，我们要求 p 中所有位都未设置。通过这种方式，多个位范围的比较都被统一到一个单一的 &lt;&#x3D; 操作中。 因此，我们可以将 is_leap_year_fast 重写如下：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">bool <span class="token function">is_leap_year_fast2</span><span class="token punctuation">(</span><span class="token class-name">uint32_t</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token class-name">uint32_t</span> p <span class="token operator">=</span> y <span class="token operator">*</span> <span class="token number">1073750999u</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token class-name">uint32_t</span> A <span class="token operator">=</span> <span class="token number">0</span>b11000000000000000000000000000000<span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token class-name">uint32_t</span> B <span class="token operator">=</span> <span class="token number">0</span>b00000000000000011111000000000000<span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token class-name">uint32_t</span> C <span class="token operator">=</span> <span class="token number">0</span>b00000000000000000000000000001111<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>p <span class="token operator">&amp;</span> A<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> false<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>p <span class="token operator">&amp;</span> B<span class="token punctuation">)</span> <span class="token operator">!=</span> B<span class="token punctuation">)</span> <span class="token keyword">return</span> true<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>p <span class="token operator">&amp;</span> C<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> true<span class="token punctuation">;</span>
+    <span class="token keyword">return</span> false<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这看起来非常像<code>is_leap_year2</code>！实际上，这三个条件的目的是完全相同的。我们可以证明：</p>
+<ol>
+<li>当<code>(p &amp; A) != 0</code>时，<code>(y % 4) != 0</code> 也成立；</li>
+<li>当<code>(p &amp; B) != B</code>时，<code>(y % 100) != 0</code>也成立；</li>
+<li>当<code>(p &amp; C) == 0</code>时，<code>(y % 16) == 0</code>（而且 <code>(y % 400) == 0</code>，因为我们已经知道 y 是25的倍数）。</li>
+</ol>
+<h4 id="针对（1）和（3）这两种简单场景："><a href="#针对（1）和（3）这两种简单场景：" class="headerlink" title="针对（1）和（3）这两种简单场景："></a>针对（1）和（3）这两种简单场景：</h4><p>(1)：f 中 A 的1位将 y 的低两位重现在 p 的 A 位置。这不会被与 D 中的位相乘的结果所破坏：我们能得到的最大值是 102499 * (f &amp; D) &#x3D; 940428325，它只有30位。因此，检查 p 中 A 是否为零等同于检查 y 是否模4为0。<br>(3)：检查 p 的最低4位是否都未设置，就是检查 p 是否模16为0。然而，我们实际想检查的是 y。这不是问题：只需查看 f 的最低4位即可，而 f 在那里是1111<sub>2</sub> &#x3D; 7。乘以7不会引入额外的因数2，因此依然是可以被16整除的。</p>
+<h4 id="针对（2）这种有趣的场景："><a href="#针对（2）这种有趣的场景：" class="headerlink" title="针对（2）这种有趣的场景："></a>针对（2）这种有趣的场景：</h4><p>接下来，让我们尝试找出哪些数满足 p &amp; B ≠ B。为此，f &amp; A 中的1位不起作用，所以考虑 f &amp; D 中的位。它们是 10001111010111<sub>2</sub> &#x3D; 9175。让我们看看哪些数通过了测试：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token operator">>></span><span class="token operator">></span> B <span class="token operator">=</span> <span class="token number">0b00000000000000011111000000000000</span>
+<span class="token operator">>></span><span class="token operator">></span> s <span class="token operator">=</span> <span class="token punctuation">[</span>y <span class="token keyword">for</span> y <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">5000</span><span class="token punctuation">)</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">*</span> <span class="token number">9175</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> B<span class="token punctuation">)</span> <span class="token operator">==</span> B<span class="token punctuation">]</span>
+<span class="token operator">>></span><span class="token operator">></span> <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token builtin">len</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">16</span><span class="token punctuation">)</span><span class="token punctuation">:</span> <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f'</span><span class="token interpolation"><span class="token punctuation">&#123;</span>n<span class="token punctuation">:</span><span class="token format-spec">4d</span><span class="token punctuation">&#125;</span></span><span class="token string">'</span></span> <span class="token keyword">for</span> n <span class="token keyword">in</span> s<span class="token punctuation">[</span>i<span class="token punctuation">:</span>i<span class="token operator">+</span><span class="token number">16</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+  <span class="token number">14</span>   <span class="token number">57</span>   <span class="token number">71</span>  <span class="token number">100</span>  <span class="token number">114</span>  <span class="token number">157</span>  <span class="token number">171</span>  <span class="token number">200</span>  <span class="token number">214</span>  <span class="token number">257</span>  <span class="token number">271</span>  <span class="token number">300</span>  <span class="token number">314</span>  <span class="token number">357</span>  <span class="token number">371</span>  <span class="token number">400</span>
+ <span class="token number">414</span>  <span class="token number">457</span>  <span class="token number">471</span>  <span class="token number">500</span>  <span class="token number">514</span>  <span class="token number">557</span>  <span class="token number">571</span>  <span class="token number">600</span>  <span class="token number">614</span>  <span class="token number">657</span>  <span class="token number">671</span>  <span class="token number">700</span>  <span class="token number">714</span>  <span class="token number">757</span>  <span class="token number">771</span>  <span class="token number">800</span>
+ <span class="token number">814</span>  <span class="token number">857</span>  <span class="token number">871</span>  <span class="token number">900</span>  <span class="token number">914</span>  <span class="token number">957</span>  <span class="token number">971</span> <span class="token number">1000</span> <span class="token number">1014</span> <span class="token number">1057</span> <span class="token number">1071</span> <span class="token number">1100</span> <span class="token number">1114</span> <span class="token number">1157</span> <span class="token number">1171</span> <span class="token number">1200</span>
+<span class="token number">1214</span> <span class="token number">1257</span> <span class="token number">1271</span> <span class="token number">1300</span> <span class="token number">1314</span> <span class="token number">1357</span> <span class="token number">1371</span> <span class="token number">1400</span> <span class="token number">1414</span> <span class="token number">1457</span> <span class="token number">1471</span> <span class="token number">1500</span> <span class="token number">1514</span> <span class="token number">1557</span> <span class="token number">1571</span> <span class="token number">1600</span>
+<span class="token number">1614</span> <span class="token number">1657</span> <span class="token number">1671</span> <span class="token number">1700</span> <span class="token number">1714</span> <span class="token number">1757</span> <span class="token number">1771</span> <span class="token number">1800</span> <span class="token number">1814</span> <span class="token number">1857</span> <span class="token number">1871</span> <span class="token number">1900</span> <span class="token number">1914</span> <span class="token number">1957</span> <span class="token number">1971</span> <span class="token number">2000</span>
+<span class="token number">2014</span> <span class="token number">2057</span> <span class="token number">2071</span> <span class="token number">2100</span> <span class="token number">2114</span> <span class="token number">2157</span> <span class="token number">2171</span> <span class="token number">2200</span> <span class="token number">2214</span> <span class="token number">2257</span> <span class="token number">2271</span> <span class="token number">2300</span> <span class="token number">2314</span> <span class="token number">2357</span> <span class="token number">2371</span> <span class="token number">2400</span>
+<span class="token number">2414</span> <span class="token number">2457</span> <span class="token number">2471</span> <span class="token number">2500</span> <span class="token number">2514</span> <span class="token number">2557</span> <span class="token number">2571</span> <span class="token number">2600</span> <span class="token number">2614</span> <span class="token number">2657</span> <span class="token number">2671</span> <span class="token number">2700</span> <span class="token number">2714</span> <span class="token number">2757</span> <span class="token number">2771</span> <span class="token number">2800</span>
+<span class="token number">2814</span> <span class="token number">2857</span> <span class="token number">2871</span> <span class="token number">2900</span> <span class="token number">2914</span> <span class="token number">2957</span> <span class="token number">2971</span> <span class="token number">3000</span> <span class="token number">3014</span> <span class="token number">3057</span> <span class="token number">3071</span> <span class="token number">3100</span> <span class="token number">3114</span> <span class="token number">3157</span> <span class="token number">3171</span> <span class="token number">3200</span>
+<span class="token number">3214</span> <span class="token number">3257</span> <span class="token number">3271</span> <span class="token number">3300</span> <span class="token number">3314</span> <span class="token number">3357</span> <span class="token number">3371</span> <span class="token number">3400</span> <span class="token number">3414</span> <span class="token number">3457</span> <span class="token number">3471</span> <span class="token number">3500</span> <span class="token number">3514</span> <span class="token number">3557</span> <span class="token number">3571</span> <span class="token number">3600</span>
+<span class="token number">3614</span> <span class="token number">3657</span> <span class="token number">3671</span> <span class="token number">3700</span> <span class="token number">3714</span> <span class="token number">3757</span> <span class="token number">3771</span> <span class="token number">3800</span> <span class="token number">3814</span> <span class="token number">3857</span> <span class="token number">3871</span> <span class="token number">3900</span> <span class="token number">3914</span> <span class="token number">3957</span> <span class="token number">3971</span> <span class="token number">4000</span>
+<span class="token number">4014</span> <span class="token number">4057</span> <span class="token number">4071</span> <span class="token number">4100</span> <span class="token number">4114</span> <span class="token number">4157</span> <span class="token number">4200</span> <span class="token number">4214</span> <span class="token number">4257</span> <span class="token number">4300</span> <span class="token number">4314</span> <span class="token number">4357</span> <span class="token number">4400</span> <span class="token number">4414</span> <span class="token number">4457</span> <span class="token number">4500</span>
+<span class="token number">4514</span> <span class="token number">4557</span> <span class="token number">4600</span> <span class="token number">4614</span> <span class="token number">4657</span> <span class="token number">4700</span> <span class="token number">4714</span> <span class="token number">4757</span> <span class="token number">4800</span> <span class="token number">4814</span> <span class="token number">4857</span> <span class="token number">4900</span> <span class="token number">4914</span> <span class="token number">4957</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>正如所愿，100的倍数在这里出现了，但也出现了一堆其他的数字。但只要它们都不是4的倍数都没关系，因为这些数字会在前一步里先被被过滤掉。另外，0不见了，但这也不是问题，因为0也是400的倍数。</p>
+<p>让我们试着理解这个规律。乍一看，它看起来非常简单：我们有 *14, *57, *71 和 *00。然而，从4171开始，*71 就消失了（你注意到了吗？）。后面也有新的规律出现。让我们再借助Python来分析一下：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">test</span><span class="token punctuation">(</span>y<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    B <span class="token operator">=</span> <span class="token number">126976</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">*</span> <span class="token number">9175</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> B<span class="token punctuation">)</span> <span class="token operator">==</span> B
+
+active <span class="token operator">=</span> <span class="token builtin">set</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token keyword">for</span> y <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">120000</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    r <span class="token operator">=</span> y <span class="token operator">%</span> <span class="token number">100</span>
+    <span class="token keyword">if</span> test<span class="token punctuation">(</span>y<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> r <span class="token keyword">not</span> <span class="token keyword">in</span> active<span class="token punctuation">:</span>
+            <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f'</span><span class="token interpolation"><span class="token punctuation">&#123;</span>y<span class="token punctuation">:</span><span class="token format-spec">6</span><span class="token punctuation">&#125;</span></span><span class="token string">: started *</span><span class="token interpolation"><span class="token punctuation">&#123;</span>r<span class="token punctuation">:</span><span class="token format-spec">02</span><span class="token punctuation">&#125;</span></span><span class="token string">'</span></span><span class="token punctuation">)</span>
+            active<span class="token punctuation">.</span>add<span class="token punctuation">(</span>r<span class="token punctuation">)</span>
+    <span class="token keyword">else</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> r <span class="token keyword">in</span> active<span class="token punctuation">:</span>
+            <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f'</span><span class="token interpolation"><span class="token punctuation">&#123;</span>y<span class="token punctuation">:</span><span class="token format-spec">6</span><span class="token punctuation">&#125;</span></span><span class="token string">: stopped *</span><span class="token interpolation"><span class="token punctuation">&#123;</span>r<span class="token punctuation">:</span><span class="token format-spec">02</span><span class="token punctuation">&#125;</span></span><span class="token string">'</span></span><span class="token punctuation">)</span>
+            active<span class="token punctuation">.</span>remove<span class="token punctuation">(</span>r<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以得到：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">    <span class="token number">14</span>: started *14
+    <span class="token number">57</span>: started *57
+    <span class="token number">71</span>: started *71
+   <span class="token number">100</span>: started *00
+  <span class="token number">4171</span>: stopped *71
+ <span class="token number">32843</span>: started *43
+ <span class="token number">36914</span>: stopped *14
+ <span class="token number">65586</span>: started *86
+ <span class="token number">69657</span>: stopped *57
+ <span class="token number">98329</span>: started *29
+<span class="token number">102500</span>: stopped *00<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>所以，从102500开始，我们不再捕获100的倍数，这解释了为什么102499是<code>is_leap_year_fast</code>能获得正确结果的最后一个数字。我们还看到，在此之下，除了100的倍数外，没有其他数字是4的倍数（方便的是，我们只需知道最后两位十进制数字就可以检查这一点）。如果信任这种暴力枚举的结果，这就完成了条件(2)的证明；但我们继续更深入地理解为什么我们恰好得到了这些数字。</p>
+<p>让我们深入研究一下为什么我们首先得到了100的倍数。因子9175在17位定点表示中接近于1&#x2F;100的倍数：</p>
+<p>2<sup>17</sup> * 7&#x2F;100 &#x3D; 9175.04 (这个是精确值)。</p>
+<p>将100的倍数乘以9175.04，会得到一个整数（7的倍数），位于第17位及以上，以及低于第17位的17个零位，例如：<br>9175.04 * 500 &#x3D; 10001100000000000000000<sub>2</sub>, 其中100011<sub>2</sub> &#x3D; 35 &#x3D; 5 * 7。</p>
+<p>将100的倍数乘以9175会得到略小的结果：<br>9175 * 500 &#x3D; 10001100000000000000000<sub>2</sub> − 500 * 0.04 &#x3D; 10001011111111111101100<sub>2</sub></p>
+<p>一般来说，从一个以很多零结尾的数字中减去一点点，除了末尾的0之外，会得到一个以很多一结尾的数字。在这里，我们检查 B 中的5位。对于 y 是100的倍数，这些位保证都是1，随着误差慢慢累计累积达到 B 的低位，这只有在 y &#x3D; 2<sup>17</sup> &#x2F; 0.04 &#x3D; 102400之后才会发生，所以这是符合预期的。</p>
+<p> 那么像14、57、71这样的其他数字是从哪里来的呢？让我们换个角度来看：<br> 我们有 9175 &#x3D; 2<sup>17</sup> * 0.06999969482421875 (精确值)，而 B &#x3D; 2<sup>17</sup> * 0.96875，所以：<br> p &amp; B &#x3D; B ⇔ {y * 0.06999969482421875} ≥ 0.96875 其中 {x} 是 x 的小数部分 ⇔ 6.999969482421875y mod 100 ≥ 96.875</p>
+<p> 这也同样解释了为什么100的倍数是可以的：对于100的倍数，7y mod 100 是 0，所以 6.999969482421875y mod 100 会稍微小于 100，并且只有在 y &#x3D; (100 − 96.875) &#x2F; (7 − 6.999969482421875) &#x3D; 102400 之后才会降到 96.875 以下。</p>
+<p> 为了理解在我们序列中出现的其他数字，让我们首先考虑如果我们在不等式中是整数 7，解会是什么：<br>7y mod 100 ≥ 96.875 ⇔ 7y mod 100 ∈ {97, 98, 99}。</p>
+<p>为了找到这个解，我们首先需要 7 mod 100 的模逆元，也就是说，一个数字 x 使得 7x mod 100 &#x3D; 1。我们可以使用扩展欧几里德算法计算它，或者直接使用<a target="_blank" rel="noopener" href="https://www.wolframalpha.com/input?i=modular+inverse+of+7+modulo+100">在线计算器</a>，它会告诉我们结果是 43。那么解就是 43 * 97 (mod 100)，43 * 98 (mod 100)，以及 43 * 99 (mod 100)，结果分别为 71、14 和 57 (mod 100)。这解释了为什么我们最初会看到 *14、*57 和 *71 形式的数字。这也解释了为什么我们在 4071 之后不再看到 *71 等数字：虽然 7 * 4171 &#x3D; 29197，但我们有 6.999969482421875 * 4171 &#x3D; 29196.872711181640625，它（模 100）小于 96.875。类似地，32843 出现是因为累积误差 (7 − 6.999969482421875) * 32843 &#x3D; 1.002288818359375 超过了1。再花一些精力，我们就可以手动重现上面的 Python 程序的输出，并检查这些数字中没有任何一个是4的倍数。</p>
+<h2 id="扩展到其他比特位"><a href="#扩展到其他比特位" class="headerlink" title="扩展到其他比特位"></a>扩展到其他比特位</h2><p>现在我们理解了这个技巧的工作原理，我们可以尝试为其他比特位寻找参数，可变部分是区块B，以及 f &amp; D 中100的小数部分部分：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token class-name">uint64_t</span> <span class="token function">score</span><span class="token punctuation">(</span><span class="token class-name">uint64_t</span> f<span class="token punctuation">,</span> <span class="token class-name">uint64_t</span> m<span class="token punctuation">,</span> <span class="token class-name">uint64_t</span> t<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token class-name">uint64_t</span> y <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token punctuation">;</span> y<span class="token operator">++</span><span class="token punctuation">)</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">*</span> f<span class="token punctuation">)</span> <span class="token operator">&amp;</span> m<span class="token punctuation">)</span> <span class="token operator">&lt;=</span> t<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token function">is_leap_year</span><span class="token punctuation">(</span>y<span class="token punctuation">)</span><span class="token punctuation">)</span>
+              <span class="token keyword">return</span> y<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  
+  <span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token class-name">uint64_t</span> best_score <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+      <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> k <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> k <span class="token operator">&lt;</span> BITS<span class="token punctuation">;</span> k<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+          <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> k2 <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> k2 <span class="token operator">&lt;</span> k<span class="token punctuation">;</span> k2<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+              <span class="token class-name">uint64_t</span> t <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token number">1ULL</span> <span class="token operator">&lt;&lt;</span> k<span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token punctuation">(</span><span class="token number">1ULL</span> <span class="token operator">&lt;&lt;</span> k2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+              <span class="token class-name">uint64_t</span> m <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token number">0</span>b11ULL <span class="token operator">&lt;&lt;</span> <span class="token punctuation">(</span>BITS <span class="token operator">-</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">|</span> t <span class="token operator">|</span> <span class="token number">0</span>b1111<span class="token punctuation">;</span>
+              <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> n <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> n <span class="token operator">&lt;</span> <span class="token number">100</span><span class="token punctuation">;</span> n<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                  <span class="token class-name">uint64_t</span> f <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token number">0</span>b01ULL <span class="token operator">&lt;&lt;</span> <span class="token punctuation">(</span>BITS <span class="token operator">-</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token number">1ULL</span> <span class="token operator">&lt;&lt;</span> k<span class="token punctuation">)</span> <span class="token operator">*</span> n<span class="token punctuation">)</span> <span class="token operator">/</span> <span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token class-name">uint64_t</span> new_score <span class="token operator">=</span> <span class="token function">score</span><span class="token punctuation">(</span>f<span class="token punctuation">,</span> m<span class="token punctuation">,</span> t<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                  <span class="token keyword">if</span> <span class="token punctuation">(</span>new_score <span class="token operator">></span> best_score<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                      <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%llu %llu %llu: %llu (%d %d %d)\n"</span><span class="token punctuation">,</span>
+                             f<span class="token punctuation">,</span> m<span class="token punctuation">,</span> t<span class="token punctuation">,</span> new_score<span class="token punctuation">,</span> k<span class="token punctuation">,</span> k <span class="token operator">-</span> k2<span class="token punctuation">,</span> n<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                      best_score <span class="token operator">=</span> new_score<span class="token punctuation">;</span>
+                  <span class="token punctuation">&#125;</span>
+              <span class="token punctuation">&#125;</span>
+          <span class="token punctuation">&#125;</span>
+      <span class="token punctuation">&#125;</span>
+      <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>对于BITS &#x3D; 64的情况，花了大约7分钟，我们找到了 f &#x3D; 4611686019114582671，m &#x3D; 13835058121854156815，t &#x3D; 66571993088，这个组合对于 y &#x3D; 5965232499 及以下的年份是都正确的。这很棒，因为 5965232499 &gt; 2<sup>17</sup>，所以任何32位整数年份都可以基于这个组合来计算。</p>
+<p>对于64位来说，这是我们能达到的最好结果吗？也许还有其他常数效果更好？我无法立即找到证明方法，所以我采用了久经考验的方法——让别人为我做这件事，将其发布到<a target="_blank" rel="noopener" href="https://codegolf.stackexchange.com/q/275505/116815">Code Golf StackExchange</a>上。果然，仅1小时后，用户ovs就发布了一个非常好的结果，两天后用户Exalted Toast发布了<a target="_blank" rel="noopener" href="https://codegolf.stackexchange.com/a/275541">证明</a>，表明5965232499确实是64位的最佳可能范围，同样的，他也使用了z3来进行求解。</p>
+<h2 id="性能测试"><a href="#性能测试" class="headerlink" title="性能测试"></a>性能测试</h2><p>想要做一个有意义的基准测试不太容易，因为函数执行时间都非常短，而且对于普通带分支跳转的版本，执行时间和输入强相关。我们尝试了两个极端情况：只输入2025年，以及使用完全随机的年份。以下是在 i7-8700K (Coffee Lake, 4.7 GHz) 上使用<code>g++ -O3 -fno-tree-vectorize</code>编译的<a target="_blank" rel="noopener" href="https://hueffner.de/falk/blog/benchmark.cc">基准测试</a>结果：</p>
+<table>
+<thead>
+<tr>
+<th>函数名称</th>
+<th>2025 (ns)</th>
+<th>random (ns)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>is_leap_year</td>
+<td>0.65</td>
+<td>2.61</td>
+</tr>
+<tr>
+<td>is_leap_year2</td>
+<td>0.65</td>
+<td>2.75</td>
+</tr>
+<tr>
+<td>is_leap_year3</td>
+<td>0.67</td>
+<td>0.88</td>
+</tr>
+<tr>
+<td>is_leap_year_fast</td>
+<td>0.69</td>
+<td>0.69</td>
+</tr>
+</tbody></table>
+<p>这个结果还是有些奇怪的地方的：</p>
+<ul>
+<li><code>is_leap_year2</code>在随机年份情况下比<code>is_leap_year</code>还要稍微慢一点。这有点奇怪，因为<code>y % 100</code>比<code>is_leap_year2</code>中的实现还要多一条指令。（根据Cassio Neri的<a target="_blank" rel="noopener" href="https://github.com/falk-hueffner/blog-falk/discussions/1#discussioncomment-13178116">评论</a>，一个可能的解释是分支预测错误的概率差距导致，is_leap_year平均每100次预测错误一次，而is_leap_year2平均每25次预测就会错误一次。）</li>
+<li><code>is_leap_year3</code>在随机数据上比固定值慢一点。这也很奇怪，因为它没有任何分支跳转，理论上时间应该固定的。 除了“基准测试很难”之外，我无法解释这一点。</li>
+</ul>
+<p>从结果看，对于随机数据，新函数<code>is_leap_year_fast</code>比标准实现快 3.8 倍，对于完美可预测的输入，大约慢 6%。总的来说，这看起来相当不错。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>总结一下，这么做一个小优化是否真的值得？我们是否应该用这个新的函数替换现有的实现，比如将<a target="_blank" rel="noopener" href="https://github.com/python/cpython/blob/5cdd49b3f4cbdcf0472a65fd0c723912c3d48211/Modules/_datetimemodule.c#L416">CPython datetime</a>替换掉？嗯，这还是得根据实际情况决定。实践中查询的大多数年份会是当前年份，或者至少是相当可预知的年份，在这种情况下，我们并没有很大的优势。为了充分证明改变是合理的，理想情况下我们需要一个使用闰年检查作为子程序的实际数据基准测试，而不仅仅是微基准测试。我很乐意听到任何此类结果！</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="陈孚 wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E9%97%B0%E5%B9%B4/" rel="tag"># 闰年</a>
+              <a href="/tags/%E4%BD%8D%E6%93%8D%E4%BD%9C/" rel="tag"># 位操作</a>
+              <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"># 算法</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/05/10/a-network-latency-problem/" rel="prev" title="一个中断关闭时间太长导致的网络延迟问题">
+                  <i class="fa fa-angle-left"></i> 一个中断关闭时间太长导致的网络延迟问题
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">陈孚</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js" defer></script>
+
+</body>
+</html>
