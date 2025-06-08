@@ -13156,8 +13156,8 @@ Results saved to /ultralytics/runs/detect/predict2
 💡 Learn <span class="token function">more</span> at https://docs.ultralytics.com/modes/predict<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>这次没有报错了，并且可以看到一闪而过的推理结果窗口：</p>
 <p><img src="/images/yolo11-on-wslg-docker/yolo-zidane.png" alt="yolo11-predict-zidane"><br>嘿嘿，效果不错。</p>
-<h2 id="视频检测测试"><a href="#视频检测测试" class="headerlink" title="视频检测测试"></a>视频检测测试</h2><p>从网上找一段视频，再看看实时推理的效果：</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@DESKTOP-ELU7EA9:/ultralytics<span class="token comment"># yolo predict model=yolo11n.pt show=True source=car.mp4</span>
+<h2 id="实时视频检测"><a href="#实时视频检测" class="headerlink" title="实时视频检测"></a>实时视频检测</h2><p>从网上找一段视频，再看看实时推理的效果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@DESKTOP:/ultralytics<span class="token comment"># yolo predict model=yolo11n.pt show=True source=car.mp4</span>
 Ultralytics <span class="token number">8.3</span>.151 🚀 Python-3.11.12 torch-2.7.0+cu126 CUDA:0 <span class="token punctuation">(</span>NVIDIA GeForce RTX <span class="token number">4070</span> Ti SUPER, 16376MiB<span class="token punctuation">)</span>
 YOLO11n summary <span class="token punctuation">(</span>fused<span class="token punctuation">)</span>: <span class="token number">100</span> layers, <span class="token number">2,616</span>,248 parameters, <span class="token number">0</span> gradients, <span class="token number">6.5</span> GFLOPs
 
@@ -13181,6 +13181,9 @@ Results saved to /ultralytics/runs/detect/predict4
 💡 Learn <span class="token function">more</span> at https://docs.ultralytics.com/modes/predict<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>性能还不错，毕竟也算是比较强力的显卡了，与此同时，还可以可以看到在任务管理器里的GPU使用率：</p>
 <div class="group-picture"><div class="group-picture-row"><div class="group-picture-column"><img src="/images/yolo11-on-wslg-docker/yolo-car.png" alt="yolo11-predict-car"></div><div class="group-picture-column"><img src="/images/yolo11-on-wslg-docker/gpu-usage.png" alt="yolo11-predict-gpuusage"></div></div></div>
+
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>确实有够折腾的，Windows + WSL + WSLg + Docker + YOLOv11的”无限”套娃组合，无痛的跑起来了YOLO的推理，理论上来说，包括当前LLM等等各种AI应用，都可以在这套体系下很好的工作，Windows不愧是“最好的”Linux发型版。微软还是牛逼啊。</p>
 ]]></content>
       <categories>
         <category>日常折腾</category>
