@@ -13037,7 +13037,7 @@ Filesystem              Blocks      Quota      Limit  Warn/Time      Mounted on
       </tags>
   </entry>
   <entry>
-    <title>套娃+套娃，在WSL的Docker中使用YOLOv11做目标检测</title>
+    <title>“无限”套娃，在WSL的Docker中使用YOLOv11做目标检测</title>
     <url>/2025/06/08/yolo11-on-wslg-docker/</url>
     <content><![CDATA[<p>前几天偶然发现，Windows 11的WSL2可以通过WSLg来无缝使用GUI应用。类似推理&#x2F;训练等任务，都不在话下，这瞬间勾起了我的好奇心，决定试试微软提供的这个神奇功能。其实微软在2021年就发布了WSLg，现在已经是2025年了，刚刚开始折腾也算是后知后觉了。</p>
 <p>WSL支持GUI应用只能算是WSLg的一个最简单的功能了，当涉及模型训练或者GPU加速时，GPU驱动还有CUDA等等相关的配置就会变得复杂起来。我并不希望因为“折腾”这么一下，就把我的WSL环境搞得一团糟，这时候，Docker的价值就体现出来了。利用Docker，可以在不修改现有WSL环境的情况下，快速搭建一个隔离的环境来做些简单的测试。我决定使用YOLO作为测试对象，看看在WSL+WSLg+Docker的场景下，YOLO还能不能很好的工作，正确使用我的GPU进行加速。</p>
