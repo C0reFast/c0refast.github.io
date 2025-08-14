@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/favicon-orgin.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/favicon/favicon-orgin.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.0.17/dist/fancybox/fancybox.css" integrity="sha256-yE0aDX61mjiw8FoDuGetFttFoGJMeWsU/iYEFOfpMhA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism-vsc-dark-plus","dark":"prism-vsc-dark-plus"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="大约在2019年的时候，公司的服务器接入网络架构开始向双上联去堆叠方向迁移，相比于之前老的接入网络而言，新的网络架构在各方面的提升都非常明显，尤其是在带宽利用率和冗余性方面，关于网络架构的部分，这里暂时就不多做介绍了，具体的可以参考京东以及H3C的相关分享和文档：异构去堆叠 | 一种完美提升网络高可用SLA的方案 ，H3C数据中心交换机S-MLAG最佳实践。 在新的网络架构中，我们的方案是通过AR">
+<meta property="og:type" content="article">
+<meta property="og:title" content="硬件Bonding卸载场景下的ARP&#x2F;ND双发">
+<meta property="og:url" content="https://www.ichenfu.com/2025/07/18/broadcast-arp-and-nd-on-hw-offloaded-bonding/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="大约在2019年的时候，公司的服务器接入网络架构开始向双上联去堆叠方向迁移，相比于之前老的接入网络而言，新的网络架构在各方面的提升都非常明显，尤其是在带宽利用率和冗余性方面，关于网络架构的部分，这里暂时就不多做介绍了，具体的可以参考京东以及H3C的相关分享和文档：异构去堆叠 | 一种完美提升网络高可用SLA的方案 ，H3C数据中心交换机S-MLAG最佳实践。 在新的网络架构中，我们的方案是通过AR">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-07-18T11:58:08.000Z">
+<meta property="article:modified_time" content="2025-08-14T02:29:58.360Z">
+<meta property="article:author" content="陈孚">
+<meta property="article:tag" content="去堆叠网络">
+<meta property="article:tag" content="OVS">
+<meta property="article:tag" content="ASAP²">
+<meta property="article:tag" content="ARP双发">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2025/07/18/broadcast-arp-and-nd-on-hw-offloaded-bonding/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2025/07/18/broadcast-arp-and-nd-on-hw-offloaded-bonding/","path":"2025/07/18/broadcast-arp-and-nd-on-hw-offloaded-bonding/","title":"硬件Bonding卸载场景下的ARP/ND双发"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>硬件Bonding卸载场景下的ARP/ND双发 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?50e2a95e85fdbe38e53b7aaba8c6cfe1"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.0.17/dist/fancybox/fancybox.umd.js" integrity="sha256-32A/chfN6JgQkwK/QFZY8siVcOZj3LUt1vSKIcDvshM=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Bonding%E7%9A%84%E5%8F%8C%E5%8F%91%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">Bonding的双发问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E5%8C%96%E7%9A%84%E7%BD%91%E5%8D%A1Bonding"><span class="nav-number">2.</span> <span class="nav-text">虚拟化的网卡Bonding</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Underlay%E7%BD%91%E7%BB%9C%E7%9A%84ARP%E5%8F%8C%E5%8F%91"><span class="nav-number">3.</span> <span class="nav-text">Underlay网络的ARP双发</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Underlay%E7%BD%91%E7%BB%9C%E7%9A%84ND%E5%8F%8C%E5%8F%91"><span class="nav-number">4.</span> <span class="nav-text">Underlay网络的ND双发</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">陈孚</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">109</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">243</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/C0reFast" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;C0reFast" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chenfu@ichenfu.com" title="E-Mail → mailto:chenfu@ichenfu.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/c0refast" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;c0refast" rel="noopener me" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/07/18/broadcast-arp-and-nd-on-hw-offloaded-bonding/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="硬件Bonding卸载场景下的ARP&#x2F;ND双发 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          硬件Bonding卸载场景下的ARP/ND双发
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年7月18日 19:58 19:58:08" itemprop="dateCreated datePublished" datetime="2025-07-18T19:58:08+08:00">2025年7月18日 19:58</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%99%9A%E6%8B%9F%E5%8C%96/" itemprop="url" rel="index"><span itemprop="name">虚拟化</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>大约在2019年的时候，公司的服务器接入网络架构开始向双上联去堆叠方向迁移，相比于之前老的接入网络而言，新的网络架构在各方面的提升都非常明显，尤其是在带宽利用率和冗余性方面，关于网络架构的部分，这里暂时就不多做介绍了，具体的可以参考京东以及H3C的相关分享和文档：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/62024674">异构去堆叠 | 一种完美提升网络高可用SLA的方案
+</a>，<a target="_blank" rel="noopener" href="https://www.h3c.com/cn/Service/Document_Software/Document_Center/Home/Switches/00-Public/Configure/Practice/H3C_S_MLAG-BP_Long/">H3C数据中心交换机S-MLAG最佳实践</a>。</p>
+<p>在新的网络架构中，我们的方案是通过ARP转主机路由方式来实现网络层面的负载均衡和高可用的，这个方案有个依赖，需要主机实现ARP&#x2F;ND相关协议包的双发。</p>
+<span id="more"></span>
+
+<h1 id="Bonding的双发问题"><a href="#Bonding的双发问题" class="headerlink" title="Bonding的双发问题"></a>Bonding的双发问题</h1><p>为什么会有这个双发的需求呢？因为在我们选择的去堆叠方案中，主机的网卡是通过Bonding的方式来实现双上联的，要想实现对负载均衡和高可用的同时支持，Bonding的流量分载只能是基于hash的模式，这会带来一个问题：对于Host侧的ARP请求&#x2F;响应报文，只会发送给某一台交换机，假设Host连接了LeafA和leafB两台交换机，当LeafA交换机的ARP表项即将过期，需要发送ARP请求探测Host状态时，Host回复的响应报文可能因为hash原因回复给LeafB了，这样一来，LeafA就无法及时获取到Host的最新状态信息，从而影响到整个网络的稳定性和可靠性。</p>
+<p>因为上面的这个原因，Host侧内核的Bonding模块必须作出相应的调整，将所有ARP的请求和响应报文，都进行复制，并在所有的子接口上进行发送。当然实现的方法并不麻烦，具体的可以参考龙蜥社区的实现<a target="_blank" rel="noopener" href="https://gitee.com/anolis/cloud-kernel/commit/b90e28f7170e">anolis: bond: broadcast ARP or ND messages to all slaves</a>。</p>
+<p>至此就基本解决了物理服务器层面对新接入网络架构融合的问题。</p>
+<h1 id="虚拟化的网卡Bonding"><a href="#虚拟化的网卡Bonding" class="headerlink" title="虚拟化的网卡Bonding"></a>虚拟化的网卡Bonding</h1><p>作为第一个接入新网络架构的虚拟化平台，只解决物理服务器层面的问题还不够，因为虚拟化的核心产品：VM的网络也需要解决。对于虚拟化业务的网卡，选择的都是Mellanox（现NVIDIA）的产品，不得不说，Mellanox的网卡对于虚拟化的场景来说，还是非常友好的，相比于普通的网卡而言，支持很多虚拟化相关的Offload特性，完全可以称得上是SmartNIC。</p>
+<p>对于Mellanox的网卡，有个比较重要的特性是<a target="_blank" rel="noopener" href="https://docs.nvidia.com/networking/display/mlnxofedv24102180lts/ovs+offload+using+asap%C2%B2+direct">OVS Offload Using ASAP² Direct</a>，基于这个特性，可以将虚拟化网络常见的封装等等都卸载到硬件，极大的提升网络的性能，这个特性里还有一个功能<a target="_blank" rel="noopener" href="https://docs.nvidia.com/networking/display/mlnxofedv24102180lts/ovs+offload+using+asap%C2%B2+direct#src-3658395192_safe-id-T1ZTT2ZmbG9hZFVzaW5nQVNBUMKyRGlyZWN0LVNSLUlPVlZGTEFH">SR-IOV VF LAG</a>，可以将Bonding的功能卸载到硬件，这两个特性，就是虚拟化平台最需要的能力。</p>
+<p>对于大部分公有云的场景，存在VPC的概念，不同用户的VM之间有租户的隔离，VM与VM之间的通信，会通过overlay网络通信，针对这种场景，ASAP²+SR-IOV VF LAG的功能可以很好的满足需求。VM的流量通过硬件卸载，Bonding通过硬件卸载，VM感知不到Bonding的存在，但是却可以享受到Bonding带来的高可用和负载均衡。与此同时，因为VM所有的流量都会额外封装一层隧道，所以对于交换机来说，只能看到宿主机的隧道端点IP地址，因此，对于类似的场景来说，只需要针对宿主机的IP进行ARP&#x2F;ND双发即可。而这个需求，通过上面的patch就已经可以实现了。</p>
+<h1 id="Underlay网络的ARP双发"><a href="#Underlay网络的ARP双发" class="headerlink" title="Underlay网络的ARP双发"></a>Underlay网络的ARP双发</h1><p>我们的场景和公有云有些不同，因为我们是一个私有云，并没有VPC的概念，所有的VM也是直接通过underlay网络通信的，这个网络模型，其实有点像早期公有云的经典网络。相比overlay网络而言，underlay网络的最大好处就是简单，所有VM的流量，只需要额外打上一个VLAN TAG即可，整个网络是扁平的，可以规避很多overlay的问题。并且作为一个私有云，所有的用户就是我们自己，也没有像公有云那样的租户隔离需求，因此使用这个模型是很自然的。</p>
+<p>但是这也带来了一个原本不存在的问题：因为VM的流量是直接通过underlay网络通信的，所以VM的ARP&#x2F;ND请求也需要“双发”了。一个可行的办法是把网络的结构暴露给VM，在VM里也打上bonding，然后就可以复用上面的patch，和物理服务器一样实现ARP&#x2F;ND双发。很显然这不是想要的，既然提供了VM服务，就应该给用户更好的体验，尽可能隔离掉底层的这些细节。</p>
+<p>这时候SR-IOV VF LAG的功能就派上用场了，SR-IOV VF LAG的功能可以将Bonding的功能卸载到硬件，这样一来，VM就感知不到Bonding的存在了。但是用上VF LAG之后，VM的流量都会被卸载到硬件里，就无法直接在网络层面实现ARP&#x2F;ND双发了，因为硬件卸载的Bonding并不支持ARP&#x2F;ND双发。当然修改网卡的固件也许能够解决这个问题，但定制固件的方案在时间和成本上都不太可行。</p>
+<p>我们先看看在VF LAG的场景下，网卡硬件是如何转发流量的。在ASAP²的场景下，网卡工作在一个叫做“switchdev”的模式下。在这个模式下，网卡化身为一个交换机，这个交换机，可以根据“流表”来转发流量。这个流表是由OVS来管理的，当网卡中一条流表规则也没有的时候，网卡默认会把网络包原封不动的转发给OVS，靠OVS实现流表的学习和转发，一旦OVS学习到流表之后，再通过Linux的TC flower或者DPDK的rte_flow下发给网卡，当有后续的流量可以匹配到对应的流表规则，网卡会直接根据流表规则转发流量，不再把流量转发给OVS。</p>
+<p>那流表长啥样？下面是一个线上实际的OVS流表例子和一些解释：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 00:11:22:33:44:01是交换机（网关）的MAC地址，port(1)是交换机侧在OVS里的代表口</span>
+<span class="token comment"># 52:11:22:33:44:55是VM的MAC地址，port(2)是VM侧在OVS里的代表口</span>
+
+<span class="token comment"># 交换机发送的ARP请求，将VLAN TAG去掉，转发给VM</span>
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span>00:11:22:33:44:01,dst<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x8100<span class="token punctuation">)</span>,vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,encap<span class="token punctuation">(</span>eth_type<span class="token punctuation">(</span>0x0806<span class="token punctuation">))</span>, packets:7, bytes:448, used:0.067s, actions:pop_vlan,2
+<span class="token comment"># VM发送的ARP请求，打上VLAN TAG，转发给交换机</span>
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55,dst<span class="token operator">=</span>00:11:22:33:44:01<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x0806<span class="token punctuation">)</span>, packets:2, bytes:104, used:0.081s, actions:push_vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,1
+<span class="token comment"># 交换机发送的IPv4数据包（eth_type 0x0800是IPv4），将VLAN TAG去掉，转发给VM</span>
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span>00:11:22:33:44:01,dst<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x8100<span class="token punctuation">)</span>,vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,encap<span class="token punctuation">(</span>eth_type<span class="token punctuation">(</span>0x0800<span class="token punctuation">))</span>, packets:22772, bytes:4038655, used:2.350s, actions:pop_vlan,2
+<span class="token comment"># VM发送的IPv4数据包，打上VLAN TAG，转发给交换机</span>
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55,dst<span class="token operator">=</span>00:11:22:33:44:01<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x0800<span class="token punctuation">)</span>, packets:26714, bytes:3151911, used:0.300s, actions:push_vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,1
+<span class="token comment"># 交换机发送的IPv6数据包（eth_type 0x86dd是IPv6），将VLAN TAG去掉，转发给VM</span>
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span>00:11:22:33:44:01,dst<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x8100<span class="token punctuation">)</span>,vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,encap<span class="token punctuation">(</span>eth_type<span class="token punctuation">(</span>0x86dd<span class="token punctuation">))</span>, packets:111019, bytes:140906750, used:1.490s, actions:pop_vlan,2
+<span class="token comment"># VM发送的IPv6数据包，打上VLAN TAG，转发给交换机</span>
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55,dst<span class="token operator">=</span>00:11:22:33:44:01<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x86dd<span class="token punctuation">)</span>, packets:96546, bytes:8451184, used:1.490s, actions:push_vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，因为这几条流表的存在，交换机和VM之间的流量几乎都可以被匹配上，直接在硬件中进行转发。</p>
+<p>由于ARP是作为独立的一个<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/EtherType">EtherType 0x0806</a>进行传输的，仔细观察流表就不难发现ARP的流量有两条单独的流表规则，默认情况下，ARP的流表也会被写入到硬件中，从而实现硬件的offload加速，而我们需要进行ARP的双发，那第一步肯定是不希望ARP的流表被写入到硬件中，这样一来，ARP的流量会被硬件上送到OVS，由OVS来处理，刚好一个关键点是在流表的卸载方式选择上，我们使用了<code>OVS-Kernel</code>的方式，OVS处理的流量最终会通过内核进行转发，这样一来，ARP相关的报文自然而然的进入到了内核Bonding模块处理，而双发的逻辑也就起了作用。</p>
+<p>那理论上分析可行，剩下的就是需要修改一下OVS的代码了，实现起来倒是也不困难，OVS针对硬件流表的下发，都放在<code>lib/netdev-offload-tc.c</code>这个文件中。所有的流表下发逻辑在<code>netdev_tc_flow_put</code>函数中，因此只需要在这个函数中添加一个判断，如果是ARP的流表，直接返回<code>EOPNOTSUPP</code>即可。</p>
+<h1 id="Underlay网络的ND双发"><a href="#Underlay网络的ND双发" class="headerlink" title="Underlay网络的ND双发"></a>Underlay网络的ND双发</h1><p>相比IPv4的ARP来说，IPv6的ND双发就有些麻烦了，一方面，用于IPv6邻居发现的Neighbor Discovery（ND）协议是通过ICMPv6来实现的，另一方面，ICMPv6的报文并没有单独的EtherType，而是和IPv6数据包一起共用了<code>0x86DD</code>这个EtherType，从上面的流表也可以看出来，对于IPv6的流量，默认情况下只会有一组流表规则，根本区分不出业务的TCP&#x2F;UDP流量和ICMPv6的数据报文，更区分不出ICMPv6中更细的ND相关的报文。</p>
+<p>但是理论上，只要类似ARP那样，让硬件匹配不到，或者让硬件匹配到，然后上送给OVS处理，就可以类似ARP那样实现ND的双发了。</p>
+<p>通过NVIDIA提供的文档<a target="_blank" rel="noopener" href="https://docs.nvidia.com/networking/display/mlnxofedv24102180lts/ovs+offload+using+asap%C2%B2+direct#src-3658395192_safe-id-T1ZTT2ZmbG9hZFVzaW5nQVNBUMKyRGlyZWN0LWNsYXNzaWZpY2F0aW9uZmllbGRz">Classification Fields (Matches)</a>，可以看到网卡是支持匹配IPv4&#x2F;IPv6的TCP&#x2F;UDP&#x2F;ICMP&#x2F;ICMPv6这几个Protocol的，既然可以匹配ICMPv6，那就尝试手动添加一条流表，看看是否可以匹配上。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 添加一条ICMPv6的流表规则，匹配ICMPv6</span>
+<span class="token comment"># ovs-ofctl add-flow ovs-sriov "table=0,priority=200,icmp6 actions=normal"</span>
+<span class="token comment"># 再尝试dump当前学习到的流表</span>
+<span class="token comment"># ovs-appctl dpctl/dump-flows|grep 0x86dd</span>
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55,dst<span class="token operator">=</span>00:11:22:33:44:01<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x86dd<span class="token punctuation">)</span>,ipv6<span class="token punctuation">(</span>proto<span class="token operator">=</span><span class="token number">58</span><span class="token punctuation">)</span>, packets:1, bytes:1, used:0s, actions:push_vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,1
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span>00:11:22:33:44:01,dst<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x8100<span class="token punctuation">)</span>,vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,encap<span class="token punctuation">(</span>eth_type<span class="token punctuation">(</span>0x86dd<span class="token punctuation">)</span>,ipv6<span class="token punctuation">(</span>proto<span class="token operator">=</span><span class="token number">58</span><span class="token punctuation">))</span>, packets:1, bytes:1, used:0s, actions:pop_vlan,2
+
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55,dst<span class="token operator">=</span>00:11:22:33:44:01<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x86dd<span class="token punctuation">)</span>,ipv6<span class="token punctuation">(</span>proto<span class="token operator">=</span><span class="token number">17</span><span class="token punctuation">)</span>, packets:3, bytes:210, used:1.560s, actions:push_vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,1
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span>00:11:22:33:44:01,dst<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x8100<span class="token punctuation">)</span>,vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,encap<span class="token punctuation">(</span>eth_type<span class="token punctuation">(</span>0x86dd<span class="token punctuation">)</span>,ipv6<span class="token punctuation">(</span>proto<span class="token operator">=</span><span class="token number">17</span><span class="token punctuation">))</span>, packets:0, bytes:0, used:1.560s, actions:pop_vlan,2
+
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55,dst<span class="token operator">=</span>00:11:22:33:44:01<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x86dd<span class="token punctuation">)</span>,ipv6<span class="token punctuation">(</span>proto<span class="token operator">=</span><span class="token number">6</span><span class="token punctuation">)</span>, packets:49, bytes:3923, used:2.850s, actions:push_vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,1
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span>00:11:22:33:44:01,dst<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x8100<span class="token punctuation">)</span>,vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,encap<span class="token punctuation">(</span>eth_type<span class="token punctuation">(</span>0x86dd<span class="token punctuation">)</span>,ipv6<span class="token punctuation">(</span>proto<span class="token operator">=</span><span class="token number">6</span><span class="token punctuation">))</span>, packets:411, bytes:605503, used:2.850s, actions:pop_vlan,2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>可以看到，IPv6的TCP(proto&#x3D;6)、UDP(proto&#x3D;17)和ICMPv6(proto&#x3D;58)都被单独匹配出来了，现在的流表规则，已经类似ARP的流表规则了，那接下来理论上参考ARP的修改，继续让ICMPv6的流表不卸载到硬件，就可以实现双发了。</p>
+<p>但相比于ARP来说，ICMPv6本身包含的功能还是比较多的，这样修改的话，除了ND相关的报文，IPv6 Ping相关的报文也会被上送OVS处理了，总体来说还是会影响一些效率，是否可以继续拆分呢？比如只把ND相关的报文拆成单独流表不下发，剩下的Ping报文依然走硬件转发。OVS是支持这样的配置的，可以尝试一下，稍微修改一下下发的流表：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 添加一条ICMPv6的流表规则，匹配ICMPv6的ND报文，icmp_type=135是ND协议中的NS包，也是我们需要双发的包</span>
+<span class="token comment"># ovs-ofctl add-flow ovs-sriov "table=0,priority=200,icmp6,icmp_type=135 actions=normal"</span>
+<span class="token comment"># ovs-appctl dpctl/dump-flows|grep 0x86dd</span>
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55,dst<span class="token operator">=</span>00:11:22:33:44:01<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x86dd<span class="token punctuation">)</span>,ipv6<span class="token punctuation">(</span>proto<span class="token operator">=</span><span class="token number">58</span><span class="token punctuation">)</span>,icmpv6<span class="token punctuation">(</span>type<span class="token operator">=</span><span class="token number">135</span><span class="token punctuation">)</span>, packets:0, bytes:0, used:0s, actions:push_vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,1
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span>00:11:22:33:44:01,dst<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x8100<span class="token punctuation">)</span>,vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">6</span><span class="token punctuation">)</span>,encap<span class="token punctuation">(</span>eth_type<span class="token punctuation">(</span>0x86dd<span class="token punctuation">)</span>,ipv6<span class="token punctuation">(</span>proto<span class="token operator">=</span><span class="token number">58</span><span class="token punctuation">)</span>,icmpv6<span class="token punctuation">(</span>type<span class="token operator">=</span><span class="token number">136</span>/0xfc<span class="token punctuation">))</span>, packets:0, bytes:0, used:0s, actions:pop_vlan,2
+
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55,dst<span class="token operator">=</span>00:11:22:33:44:01<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x86dd<span class="token punctuation">)</span>,ipv6<span class="token punctuation">(</span>proto<span class="token operator">=</span><span class="token number">58</span><span class="token punctuation">)</span>,icmpv6<span class="token punctuation">(</span>type<span class="token operator">=</span>type<span class="token operator">=</span><span class="token number">128</span>/0xfc<span class="token punctuation">)</span>, packets:0, bytes:0, used:0s, actions:push_vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>,1
+recirc_id<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>,in_port<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>,eth<span class="token punctuation">(</span>src<span class="token operator">=</span>00:11:22:33:44:01,dst<span class="token operator">=</span><span class="token number">52</span>:11:22:33:44:55<span class="token punctuation">)</span>,eth_type<span class="token punctuation">(</span>0x8100<span class="token punctuation">)</span>,vlan<span class="token punctuation">(</span>vid<span class="token operator">=</span><span class="token number">1000</span>,pcp<span class="token operator">=</span><span class="token number">6</span><span class="token punctuation">)</span>,encap<span class="token punctuation">(</span>eth_type<span class="token punctuation">(</span>0x86dd<span class="token punctuation">)</span>,ipv6<span class="token punctuation">(</span>proto<span class="token operator">=</span><span class="token number">58</span><span class="token punctuation">)</span>,icmpv6<span class="token punctuation">(</span>type<span class="token operator">=</span>type<span class="token operator">=</span><span class="token number">129</span>/0xfc<span class="token punctuation">))</span>, packets:0, bytes:0, used:0s, actions:pop_vlan,2
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，NS(type&#x3D;135)和NA(type&#x3D;136)的流表规则已经被拆分出来了，同样的Ping的Echo Request(type&#x3D;128)和Echo Reply(type&#x3D;129)的流表规则也被拆分出来了，理论上也可以如法炮制，只让NS报文相关的流表不下发到硬件，这样一来，ICMPv6的双发就可以实现了。但这里有一个问题，就是网卡其实不支持匹配更细致的报文了，直接看一下下发到硬件中的流表和对应的状态：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 由于OVS-Kernel使用TC下发流表规则到网卡驱动，所以可以通过tc命令查询流表和对应的状态</span>
+<span class="token comment"># tc filter show dev vf0 ingress</span>
+filter protocol ipv6 pref <span class="token number">3</span> flower chain <span class="token number">0</span>
+filter protocol ipv6 pref <span class="token number">3</span> flower chain <span class="token number">0</span> handle 0x1
+  dst_mac 00:11:22:33:44:01
+  src_mac <span class="token number">52</span>:11:22:33:44:55
+  eth_type ipv6
+  ip_proto icmpv6
+  icmp_type <span class="token number">135</span>
+  not_in_hw
+        action order <span class="token number">1</span>: vlan  push <span class="token function">id</span> <span class="token number">1000</span> protocol <span class="token number">802</span>.1Q priority <span class="token number">0</span> pipe
+         index <span class="token number">8</span> ref <span class="token number">1</span> <span class="token builtin class-name">bind</span> <span class="token number">1</span>
+        no_percpu
+
+        action order <span class="token number">2</span>: mirred <span class="token punctuation">(</span>Egress Redirect to device bond0<span class="token punctuation">)</span> stolen
+        index <span class="token number">11</span> ref <span class="token number">1</span> <span class="token builtin class-name">bind</span> <span class="token number">1</span>
+        cookie b332255e9d440e02192dbb9b04d20332
+        no_percpu<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以发现，虽然OVS生成了NS报文的流表，并且也成功的转成TC规则并下发，但dump出来的规则里<code>not_in_hw</code>表示这条规则并没有下发到硬件中，网卡在这种场景下不支持匹配ICMPv6的type字段，所以即使像之前一样修改OVS不下发该流表，最终网卡的行为都是一致的。</p>
+<p>虽然没办法精确的将NS报文从硬件中拾取出来，但将ICMPv6报文全部上送软件处理，也算是可以接受的方案了，即使有些不完美，考虑到大部分业务的流量还是走的TCP&#x2F;UDP，对业务的影响应该微乎其微。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>虽然最终没有达到最完美的状态，但最终还是实现了在硬件Bonding卸载的场景下，ARP和ND的双发。经过这几年的实践，这个网络方案在我们的私有云上运行的非常稳定，一方面，因为场景和公有云的差异，选择了一个比较简单的Underlay+OVS-Kernel卸载的方案，而不是基于DPDK的方案，另一方面，正是基于这样的选择，带来了额外的VM双发需求，只能说环环相扣，处处充满妥协了😀。</p>
+<p>那么未来呢，未来的虚拟化网络是属于DPU（或者说IPU）的，借助DPU的帮助，终于可以在固件层面做一些想做的事了，类似的问题也就不是问题了，未来值得期待。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="陈孚 wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E5%8E%BB%E5%A0%86%E5%8F%A0%E7%BD%91%E7%BB%9C/" rel="tag"># 去堆叠网络</a>
+              <a href="/tags/OVS/" rel="tag"># OVS</a>
+              <a href="/tags/ASAP%C2%B2/" rel="tag"># ASAP²</a>
+              <a href="/tags/ARP%E5%8F%8C%E5%8F%91/" rel="tag"># ARP双发</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/08/yolo11-on-wslg-docker/" rel="prev" title="“无限”套娃，在WSL的Docker中使用YOLOv11做目标检测">
+                  <i class="fa fa-angle-left"></i> “无限”套娃，在WSL的Docker中使用YOLOv11做目标检测
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/08/14/testing-broadcast-arp-and-nd/" rel="next" title="测试ARP&#x2F;ND双发效果的小工具">
+                  测试ARP/ND双发效果的小工具 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">陈孚</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js" defer></script>
+
+</body>
+</html>

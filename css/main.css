@@ -1464,7 +1464,7 @@ pre code {
     vertical-align: middle;
   }
   .links-of-author a::before {
-    background: #2025ff;
+    background: #45ffff;
     display: inline-block;
     margin-right: 3px;
     transform: translateY(-2px);
@@ -2609,6 +2609,7 @@ ul.breadcrumb li:last-child {
 }
 .search-active {
   overflow: hidden;
+  margin-right: var(--dialog-scrollgutter, 0);
 }
 .search-pop-overlay {
   background: rgba(0,0,0,0);

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/favicon-orgin.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/favicon/favicon-orgin.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.0.17/dist/fancybox/fancybox.css" integrity="sha256-yE0aDX61mjiw8FoDuGetFttFoGJMeWsU/iYEFOfpMhA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism-vsc-dark-plus","dark":"prism-vsc-dark-plus"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="在上一篇Blog里说了一下关于ARP&#x2F;ND双发的实现，但是还遗留了一个小问题，就是如何测试最终的效果，毕竟正常情况下，ARP还有ND相关的报文，都是由内核协议栈根据需要发出的，不太稳定，总不能一直抓包等着内核发包吧？所以还是需要借助一些工具来实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="测试ARP&#x2F;ND双发效果的小工具">
+<meta property="og:url" content="https://www.ichenfu.com/2025/08/14/testing-broadcast-arp-and-nd/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="在上一篇Blog里说了一下关于ARP&#x2F;ND双发的实现，但是还遗留了一个小问题，就是如何测试最终的效果，毕竟正常情况下，ARP还有ND相关的报文，都是由内核协议栈根据需要发出的，不太稳定，总不能一直抓包等着内核发包吧？所以还是需要借助一些工具来实现。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-08-14T12:30:24.000Z">
+<meta property="article:modified_time" content="2025-08-14T06:28:21.061Z">
+<meta property="article:author" content="陈孚">
+<meta property="article:tag" content="ARP双发">
+<meta property="article:tag" content="单播ND报文">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2025/08/14/testing-broadcast-arp-and-nd/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2025/08/14/testing-broadcast-arp-and-nd/","path":"2025/08/14/testing-broadcast-arp-and-nd/","title":"测试ARP/ND双发效果的小工具"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>测试ARP/ND双发效果的小工具 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?50e2a95e85fdbe38e53b7aaba8c6cfe1"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.0.17/dist/fancybox/fancybox.umd.js" integrity="sha256-32A/chfN6JgQkwK/QFZY8siVcOZj3LUt1vSKIcDvshM=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP%E5%8F%8C%E5%8F%91%E6%A3%80%E6%B5%8B"><span class="nav-number">1.</span> <span class="nav-text">ARP双发检测</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ND%E5%8F%8C%E5%8F%91%E6%A3%80%E6%B5%8B"><span class="nav-number">2.</span> <span class="nav-text">ND双发检测</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">陈孚</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">109</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">243</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/C0reFast" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;C0reFast" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chenfu@ichenfu.com" title="E-Mail → mailto:chenfu@ichenfu.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/c0refast" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;c0refast" rel="noopener me" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/08/14/testing-broadcast-arp-and-nd/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="测试ARP&#x2F;ND双发效果的小工具 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          测试ARP/ND双发效果的小工具
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年8月14日 20:30 20:30:24" itemprop="dateCreated datePublished" datetime="2025-08-14T20:30:24+08:00">2025年8月14日 20:30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%99%9A%E6%8B%9F%E5%8C%96/" itemprop="url" rel="index"><span itemprop="name">虚拟化</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>在<a href="/2025/07/18/broadcast-arp-and-nd-on-hw-offloaded-bonding/">上一篇Blog</a>里说了一下关于ARP&#x2F;ND双发的实现，但是还遗留了一个小问题，就是如何测试最终的效果，毕竟正常情况下，ARP还有ND相关的报文，都是由内核协议栈根据需要发出的，不太稳定，总不能一直抓包等着内核发包吧？所以还是需要借助一些工具来实现。</p>
+<span id="more"></span>
+
+<h2 id="ARP双发检测"><a href="#ARP双发检测" class="headerlink" title="ARP双发检测"></a>ARP双发检测</h2><p>ARP双发的测试还是比较简单的，毕竟大家都知道<code>arping</code>这个工具，可以用来发送ARP请求并接收ARP应答。使用起来也是非常顺畅的：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># arping 192.68.100.1 -c 2</span>
+ARPING <span class="token number">192.68</span>.100.1 from <span class="token number">192.68</span>.100.21 eth0
+Unicast reply from <span class="token number">192.68</span>.100.1 <span class="token punctuation">[</span>00:11:22:33:44:01<span class="token punctuation">]</span>  <span class="token number">1</span>.315ms
+Unicast reply from <span class="token number">192.68</span>.100.1 <span class="token punctuation">[</span>00:11:22:33:44:01<span class="token punctuation">]</span>  <span class="token number">1</span>.355ms
+Unicast reply from <span class="token number">192.68</span>.100.1 <span class="token punctuation">[</span>00:11:22:33:44:01<span class="token punctuation">]</span>  <span class="token number">1</span>.112ms
+Unicast reply from <span class="token number">192.68</span>.100.1 <span class="token punctuation">[</span>00:11:22:33:44:01<span class="token punctuation">]</span>  <span class="token number">1</span>.233ms
+Sent <span class="token number">2</span> probes <span class="token punctuation">(</span><span class="token number">1</span> broadcast<span class="token punctuation">(</span>s<span class="token punctuation">))</span>
+Received <span class="token number">4</span> response<span class="token punctuation">(</span>s<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以发现，<code>arping</code>工具发送了2个ARP请求，成功地收到了4次ARP应答，这表明ARP双发功能正常。两次请求中，第一次是广播请求，可以模拟第一次学习MAC地址时的场景，第二次时单播请求，可以模拟已有MAC后的确认场景，尝试抓包，也是可以看到结果是符合预期的：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># sudo tcpdump -i eth0 arp -nnn</span>
+dropped privs to tcpdump
+tcpdump: verbose output suppressed, use -v<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">..</span>. <span class="token keyword">for</span> full protocol decode
+listening on eth0, link-type EN10MB <span class="token punctuation">(</span>Ethernet<span class="token punctuation">)</span>, snapshot length <span class="token number">262144</span> bytes
+
+<span class="token number">20</span>:16:03.982709 ARP, Request who-has <span class="token number">192.68</span>.100.1 <span class="token punctuation">(</span>ff:ff:ff:ff:ff:ff<span class="token punctuation">)</span> tell <span class="token number">192.68</span>.100.21, length <span class="token number">28</span>
+<span class="token number">20</span>:16:03.983231 ARP, Reply <span class="token number">192.68</span>.100.1 is-at 00:11:22:33:44:01, length <span class="token number">46</span>
+<span class="token number">20</span>:16:03.983298 ARP, Reply <span class="token number">192.68</span>.100.1 is-at 00:11:22:33:44:01, length <span class="token number">46</span>
+<span class="token number">20</span>:16:04.982738 ARP, Request who-has <span class="token number">192.68</span>.100.1 <span class="token punctuation">(</span>00:11:22:33:44:01<span class="token punctuation">)</span> tell <span class="token number">192.68</span>.100.21, length <span class="token number">28</span>
+<span class="token number">20</span>:16:04.983343 ARP, Reply <span class="token number">192.68</span>.100.1 is-at 00:11:22:33:44:01, length <span class="token number">46</span>
+<span class="token number">20</span>:16:04.983412 ARP, Reply <span class="token number">192.68</span>.100.1 is-at 00:11:22:33:44:01, length <span class="token number">46</span>
+
+<span class="token number">6</span> packets captured
+<span class="token number">6</span> packets received by filter
+<span class="token number">0</span> packets dropped by kernel<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="ND双发检测"><a href="#ND双发检测" class="headerlink" title="ND双发检测"></a>ND双发检测</h2><p>接下来轮到IPv6的ND报文了，这里介绍一个工具包<a target="_blank" rel="noopener" href="https://www.remlab.net/ndisc6/">NDisc6</a>，可以部分替代<code>arping</code>的功能，为什么是部分替代呢？因为和<code>arping</code>不同，<code>ndisc6</code>不支持发送单播NS报文，只支持发送组播报文，这样就只能模拟第一次学习的情况，没办法模拟后续了，我们先用这个工具模拟一下组播的场景：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># sudo ndisc6 2408:fffe::1 eth0 -m</span>
+Soliciting <span class="token number">2408</span>:fffe::1 <span class="token punctuation">(</span><span class="token number">2408</span>:fffe::1<span class="token punctuation">)</span> on eth0<span class="token punctuation">..</span>.
+Target link-layer address: 00:10:00:54:00:24
+ from <span class="token number">2408</span>:fffe::1
+Target link-layer address: 00:10:00:54:00:24
+ from <span class="token number">2408</span>:fffe::1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到发送一个NS，收到两个NA，说明ND双发功能也是正常的。尝试抓包，也是可以看到结果是符合预期的：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># sudo tcpdump -i eth0 icmp6 -nnn</span>
+dropped privs to tcpdump
+tcpdump: verbose output suppressed, use -v<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">..</span>. <span class="token keyword">for</span> full protocol decode
+listening on eth0, link-type EN10MB <span class="token punctuation">(</span>Ethernet<span class="token punctuation">)</span>, snapshot length <span class="token number">262144</span> bytes
+
+<span class="token number">20</span>:18:18.959590 IP6 fe80::f816:3eff:fefa:556f <span class="token operator">></span> ff02::1:ff00:1: ICMP6, neighbor solicitation, <span class="token function">who</span> has <span class="token number">2408</span>:fffe::1, length <span class="token number">32</span>
+<span class="token number">20</span>:18:18.961594 IP6 <span class="token number">2408</span>:fffe::1 <span class="token operator">></span> fe80::f816:3eff:fefa:556f: ICMP6, neighbor advertisement, tgt is <span class="token number">2408</span>:fffe::1, length <span class="token number">32</span>
+<span class="token number">20</span>:18:18.962687 IP6 <span class="token number">2408</span>:fffe::1 <span class="token operator">></span> fe80::f816:3eff:fefa:556f: ICMP6, neighbor advertisement, tgt is <span class="token number">2408</span>:fffe::1, length <span class="token number">32</span>
+
+<span class="token number">3</span> packets captured
+<span class="token number">3</span> packets received by filter
+<span class="token number">0</span> packets dropped by kernel<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>那单播NS报文怎么办呢？因为没找到合适的工具，因此还是借助AI自己实现了一个脚本来完成这个任务：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment">#!/usr/bin/env python3</span>
+<span class="token triple-quoted-string string">"""
+IPv6邻居发现工具 - 类似arping的NS/NA实现
+使用Scapy发送和接收ICMPv6邻居发现报文
+"""</span>
+
+<span class="token keyword">import</span> argparse
+<span class="token keyword">import</span> time
+<span class="token keyword">from</span> scapy<span class="token punctuation">.</span><span class="token builtin">all</span> <span class="token keyword">import</span> Ether<span class="token punctuation">,</span> IPv6<span class="token punctuation">,</span> ICMPv6ND_NS<span class="token punctuation">,</span> ICMPv6ND_NA<span class="token punctuation">,</span> srp<span class="token punctuation">,</span> get_if_list
+
+<span class="token keyword">def</span> <span class="token function">send_ns</span><span class="token punctuation">(</span>target_ip<span class="token punctuation">,</span> iface<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span> timeout<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> retry<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> verbose<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">,</span> dst_mac<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""
+    发送一个NS报文并等待所有NA响应
+    :param target_ip: 目标IPv6地址
+    :param iface: 网络接口名称
+    :param timeout: 超时时间(秒)
+    :param retry: 重试次数(仅在没有收到任何响应时重试)
+    :param verbose: 详细输出模式
+    :param dst_mac: 目标MAC地址(单播模式)
+    :return: 响应列表 [(src_ip, src_mac), ...] 或 []
+    """</span>
+    <span class="token keyword">if</span> iface <span class="token keyword">and</span> iface <span class="token keyword">not</span> <span class="token keyword">in</span> get_if_list<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"警告: 接口 </span><span class="token interpolation"><span class="token punctuation">&#123;</span>iface<span class="token punctuation">&#125;</span></span><span class="token string"> 不存在"</span></span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+    dst_mac <span class="token operator">=</span> dst_mac <span class="token keyword">if</span> dst_mac <span class="token keyword">else</span> <span class="token string">"33:33:ff:00:00:00"</span>
+    ns_pkt <span class="token operator">=</span> Ether<span class="token punctuation">(</span>dst<span class="token operator">=</span>dst_mac<span class="token punctuation">)</span> <span class="token operator">/</span> \
+             IPv6<span class="token punctuation">(</span>dst<span class="token operator">=</span>target_ip<span class="token punctuation">)</span> <span class="token operator">/</span> \
+             ICMPv6ND_NS<span class="token punctuation">(</span>tgt<span class="token operator">=</span>target_ip<span class="token punctuation">)</span>
+    
+    <span class="token keyword">if</span> verbose<span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"发送NS报文:"</span><span class="token punctuation">)</span>
+        ns_pkt<span class="token punctuation">.</span>show<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    all_responses <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    
+    <span class="token keyword">for</span> attempt <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>retry<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> verbose<span class="token punctuation">:</span>
+            <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"尝试 </span><span class="token interpolation"><span class="token punctuation">&#123;</span>attempt<span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">&#125;</span></span><span class="token string">/</span><span class="token interpolation"><span class="token punctuation">&#123;</span>retry<span class="token punctuation">&#125;</span></span><span class="token string">..."</span></span><span class="token punctuation">)</span>
+        
+        <span class="token comment"># 发送一个NS报文并收集所有响应，在超时时间内持续监听</span>
+        answered<span class="token punctuation">,</span> unanswered <span class="token operator">=</span> srp<span class="token punctuation">(</span>ns_pkt<span class="token punctuation">,</span> iface<span class="token operator">=</span>iface<span class="token punctuation">,</span> timeout<span class="token operator">=</span>timeout<span class="token punctuation">,</span> verbose<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">,</span> multi<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+        
+        <span class="token comment"># 处理所有收到的响应</span>
+        <span class="token keyword">for</span> sent<span class="token punctuation">,</span> received <span class="token keyword">in</span> answered<span class="token punctuation">:</span>
+            <span class="token keyword">if</span> received<span class="token punctuation">.</span>haslayer<span class="token punctuation">(</span>ICMPv6ND_NA<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                src_ip <span class="token operator">=</span> received<span class="token punctuation">[</span>IPv6<span class="token punctuation">]</span><span class="token punctuation">.</span>src
+                src_mac <span class="token operator">=</span> received<span class="token punctuation">[</span>Ether<span class="token punctuation">]</span><span class="token punctuation">.</span>src
+                response_info <span class="token operator">=</span> <span class="token punctuation">(</span>src_ip<span class="token punctuation">,</span> src_mac<span class="token punctuation">)</span>
+                all_responses<span class="token punctuation">.</span>append<span class="token punctuation">(</span>response_info<span class="token punctuation">)</span>
+                <span class="token keyword">if</span> verbose<span class="token punctuation">:</span>
+                    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"收到NA响应 #</span><span class="token interpolation"><span class="token punctuation">&#123;</span><span class="token builtin">len</span><span class="token punctuation">(</span>all_responses<span class="token punctuation">)</span><span class="token punctuation">&#125;</span></span><span class="token string">:"</span></span><span class="token punctuation">)</span>
+                    received<span class="token punctuation">.</span>show<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        
+        <span class="token comment"># 如果收到了响应，就不再重试</span>
+        <span class="token keyword">if</span> all_responses<span class="token punctuation">:</span>
+            <span class="token keyword">if</span> verbose<span class="token punctuation">:</span>
+                <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"收到 </span><span class="token interpolation"><span class="token punctuation">&#123;</span><span class="token builtin">len</span><span class="token punctuation">(</span>all_responses<span class="token punctuation">)</span><span class="token punctuation">&#125;</span></span><span class="token string"> 个NA响应，停止重试"</span></span><span class="token punctuation">)</span>
+            <span class="token keyword">break</span>
+        <span class="token keyword">elif</span> verbose<span class="token punctuation">:</span>
+            <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"本轮未收到响应"</span><span class="token punctuation">)</span>
+    
+    <span class="token keyword">return</span> all_responses
+
+<span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    parser <span class="token operator">=</span> argparse<span class="token punctuation">.</span>ArgumentParser<span class="token punctuation">(</span>description<span class="token operator">=</span><span class="token string">"IPv6邻居发现工具"</span><span class="token punctuation">)</span>
+    parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">"target"</span><span class="token punctuation">,</span> <span class="token builtin">help</span><span class="token operator">=</span><span class="token string">"目标IPv6地址"</span><span class="token punctuation">)</span>
+    parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">"-i"</span><span class="token punctuation">,</span> <span class="token string">"--iface"</span><span class="token punctuation">,</span> <span class="token builtin">help</span><span class="token operator">=</span><span class="token string">"网络接口名称"</span><span class="token punctuation">)</span>
+    parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">"-t"</span><span class="token punctuation">,</span> <span class="token string">"--timeout"</span><span class="token punctuation">,</span> <span class="token builtin">type</span><span class="token operator">=</span><span class="token builtin">int</span><span class="token punctuation">,</span> default<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span>
+                       <span class="token builtin">help</span><span class="token operator">=</span><span class="token string">"超时时间(秒)"</span><span class="token punctuation">)</span>
+    parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">"-c"</span><span class="token punctuation">,</span> <span class="token string">"--count"</span><span class="token punctuation">,</span> <span class="token builtin">type</span><span class="token operator">=</span><span class="token builtin">int</span><span class="token punctuation">,</span> default<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span>
+                       <span class="token builtin">help</span><span class="token operator">=</span><span class="token string">"重试次数(默认1次，仅在无响应时重试)"</span><span class="token punctuation">)</span>
+    parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">"-v"</span><span class="token punctuation">,</span> <span class="token string">"--verbose"</span><span class="token punctuation">,</span> action<span class="token operator">=</span><span class="token string">"store_true"</span><span class="token punctuation">,</span>
+                       <span class="token builtin">help</span><span class="token operator">=</span><span class="token string">"详细输出模式"</span><span class="token punctuation">)</span>
+    parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">"-m"</span><span class="token punctuation">,</span> <span class="token string">"--mac"</span><span class="token punctuation">,</span>
+                       <span class="token builtin">help</span><span class="token operator">=</span><span class="token string">"指定目标MAC地址(单播模式)"</span><span class="token punctuation">)</span>
+    args <span class="token operator">=</span> parser<span class="token punctuation">.</span>parse_args<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">if</span> args<span class="token punctuation">.</span>verbose<span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"可用网络接口:"</span><span class="token punctuation">,</span> <span class="token string">", "</span><span class="token punctuation">.</span>join<span class="token punctuation">(</span>get_if_list<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    results <span class="token operator">=</span> send_ns<span class="token punctuation">(</span>args<span class="token punctuation">.</span>target<span class="token punctuation">,</span> args<span class="token punctuation">.</span>iface<span class="token punctuation">,</span> args<span class="token punctuation">.</span>timeout<span class="token punctuation">,</span>
+                     args<span class="token punctuation">.</span>count<span class="token punctuation">,</span> args<span class="token punctuation">.</span>verbose<span class="token punctuation">,</span> args<span class="token punctuation">.</span>mac<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> results<span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"\n收到 </span><span class="token interpolation"><span class="token punctuation">&#123;</span><span class="token builtin">len</span><span class="token punctuation">(</span>results<span class="token punctuation">)</span><span class="token punctuation">&#125;</span></span><span class="token string"> 个NA响应:"</span></span><span class="token punctuation">)</span>
+        <span class="token keyword">for</span> i<span class="token punctuation">,</span> <span class="token punctuation">(</span>ip<span class="token punctuation">,</span> mac<span class="token punctuation">)</span> <span class="token keyword">in</span> <span class="token builtin">enumerate</span><span class="token punctuation">(</span>results<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"  </span><span class="token interpolation"><span class="token punctuation">&#123;</span>i<span class="token punctuation">&#125;</span></span><span class="token string">. </span><span class="token interpolation"><span class="token punctuation">&#123;</span>args<span class="token punctuation">.</span>target<span class="token punctuation">&#125;</span></span><span class="token string"> 的MAC地址是 </span><span class="token interpolation"><span class="token punctuation">&#123;</span>mac<span class="token punctuation">&#125;</span></span><span class="token string"> (来自 </span><span class="token interpolation"><span class="token punctuation">&#123;</span>ip<span class="token punctuation">&#125;</span></span><span class="token string">)"</span></span><span class="token punctuation">)</span>
+    <span class="token keyword">else</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"\n无法获取 </span><span class="token interpolation"><span class="token punctuation">&#123;</span>args<span class="token punctuation">.</span>target<span class="token punctuation">&#125;</span></span><span class="token string"> 的MAC地址"</span></span><span class="token punctuation">)</span>
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    main<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>借助这个脚本，就可以实现发送单播NS，并收集所有的ND返回：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># sudo python3 ip6ndisc.py 2408:fffe::1 -m 00:10:00:54:00:24</span>
+
+收到 <span class="token number">2</span> 个NA响应:
+  <span class="token number">1</span>. <span class="token number">2408</span>:fffe::1 的MAC地址是 00:10:00:54:00:24 <span class="token punctuation">(</span>来自 <span class="token number">2408</span>:fffe::1<span class="token punctuation">)</span>
+  <span class="token number">2</span>. <span class="token number">2408</span>:fffe::1 的MAC地址是 00:10:00:54:00:24 <span class="token punctuation">(</span>来自 <span class="token number">2408</span>:fffe::1<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>抓包也符合预期：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># sudo tcpdump -i eth0 icmp6 -nnn</span>
+dropped privs to tcpdump
+tcpdump: verbose output suppressed, use -v<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">..</span>. <span class="token keyword">for</span> full protocol decode
+listening on eth0, link-type EN10MB <span class="token punctuation">(</span>Ethernet<span class="token punctuation">)</span>, snapshot length <span class="token number">262144</span> bytes
+<span class="token number">14</span>:27:25.782766 IP6 <span class="token number">2408</span>:fffe::21:1 <span class="token operator">></span> <span class="token number">2408</span>:fffe::1: ICMP6, neighbor solicitation, <span class="token function">who</span> has <span class="token number">2408</span>:fffe::1, length <span class="token number">24</span>
+<span class="token number">14</span>:27:25.784537 IP6 <span class="token number">2408</span>:fffe::1 <span class="token operator">></span> <span class="token number">2408</span>:fffe::21:1: ICMP6, neighbor advertisement, tgt is <span class="token number">2408</span>:fffe::1, length <span class="token number">32</span>
+<span class="token number">14</span>:27:25.784739 IP6 <span class="token number">2408</span>:fffe::1 <span class="token operator">></span> <span class="token number">2408</span>:fffe::21:1: ICMP6, neighbor advertisement, tgt is <span class="token number">2408</span>:fffe::1, length <span class="token number">32</span>
+
+<span class="token number">3</span> packets captured
+<span class="token number">3</span> packets received by filter
+<span class="token number">0</span> packets dropped by kernel<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="陈孚 wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/ARP%E5%8F%8C%E5%8F%91/" rel="tag"># ARP双发</a>
+              <a href="/tags/%E5%8D%95%E6%92%ADND%E6%8A%A5%E6%96%87/" rel="tag"># 单播ND报文</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/07/18/broadcast-arp-and-nd-on-hw-offloaded-bonding/" rel="prev" title="硬件Bonding卸载场景下的ARP&#x2F;ND双发">
+                  <i class="fa fa-angle-left"></i> 硬件Bonding卸载场景下的ARP/ND双发
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">陈孚</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js" defer></script>
+
+</body>
+</html>

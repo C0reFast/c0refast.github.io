@@ -14,10 +14,10 @@
 
 
 
-<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.36/dist/fancybox/fancybox.css" integrity="sha256-zM8WXtG4eUn7dKKNMTuoWZub++VnSfaOpA/8PJfvTBo=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.0.17/dist/fancybox/fancybox.css" integrity="sha256-yE0aDX61mjiw8FoDuGetFttFoGJMeWsU/iYEFOfpMhA=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism-vsc-dark-plus","dark":"prism-vsc-dark-plus"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="本文是A leap year check in three instructions的翻译，前两天在HackerNews上看到这篇文章，闰年的判断方法，从一开始学编程就是一个经典的练习题，但是深挖下去，作者只用了三条指令就能实现闰年的判断，感觉还挺有意思的，所以就翻译分享一下。 省流不看版（基于DeepSeek总结）：文章介绍了一种使用大约3个CPU指令实现快速闰年检查的方法。这种方法不同于标准算">
 <meta property="og:type" content="article">
@@ -28,7 +28,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://www.ichenfu.com/images/bit_ranges.png">
 <meta property="article:published_time" content="2025-05-29T12:29:37.000Z">
-<meta property="article:modified_time" content="2025-05-29T02:03:24.534Z">
+<meta property="article:modified_time" content="2025-06-25T06:00:01.251Z">
 <meta property="article:author" content="陈孚">
 <meta property="article:tag" content="闰年">
 <meta property="article:tag" content="位操作">
@@ -60,10 +60,10 @@
 
   
   <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
-  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.36/dist/fancybox/fancybox.umd.js" integrity="sha256-hiUEBwFEpLF6DlB8sGXlKo4kPZ46Ui4qGpd0vrVkOm4=" crossorigin="anonymous" defer></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.0.17/dist/fancybox/fancybox.umd.js" integrity="sha256-32A/chfN6JgQkwK/QFZY8siVcOZj3LUt1vSKIcDvshM=" crossorigin="anonymous" defer></script>
 <script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
 
-  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous" defer></script>
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
 <script src="/js/third-party/search/local-search.js" defer></script>
 
 
@@ -184,7 +184,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">106</span>
+          <span class="site-state-item-count">109</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -195,7 +195,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">235</span>
+        <span class="site-state-item-count">243</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -284,13 +284,6 @@
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2025年5月29日 10:03 10:03:24" itemprop="dateModified" datetime="2025-05-29T10:03:24+08:00">2025年5月29日 10:03</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
       </span>
       <span class="post-meta-item-text">分类于</span>
@@ -331,7 +324,7 @@
     <span class="token keyword">return</span> false<span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>我们使用的是<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Proleptic_Gregorian_calendar">前推格里高利历</a>，它将格里高利历从1582年引入的时间向前延伸，并包含0年。因此，我们无需对1582年之前的年份做特殊处理。为简化起见，我们忽略负数年份，使用无符号年份。</p>
-<h2 id="标准方法的优化"><a href="#标准方法的优化" class="headerlink" title="标准方法的优化"></a>标准方法的优化</h2><p>我们先做一些简单的加速，以便获得一个良好的基准线。我不确定应该把功劳归给谁，这些技巧可能已经被独立实现很多次了。<br>我们可以将<code>(y % 100) != 0</code>替换为<code>(y % 25) != 0</code>：我们已经知道<code>y</code>是<code>2²</code>的倍数，所以如果它也是<code>5²</code>的倍数，它就是<code>2² * 5² = 100</code>的倍数。类似地，我们可以将<code>(y % 400) == 0</code>替换为<code>(y % 16) == 0</code>：我们已经知道<code>y</code>是<code>5²</code>的倍数，所以如果它也是<code>2⁴</code>的倍数，它就是<code>5² * 2⁴ = 400</code>的倍数：</p>
+<h2 id="标准方法的优化"><a href="#标准方法的优化" class="headerlink" title="标准方法的优化"></a>标准方法的优化</h2><p>我们先做一些简单的优化，以便获得一个良好的基准线。我不确定应该把功劳归给谁，这些技巧可能已经被独立实现很多次了。<br>我们可以将<code>(y % 100) != 0</code>替换为<code>(y % 25) != 0</code>：我们已经知道<code>y</code>是<code>2²</code>的倍数，所以如果它也是<code>5²</code>的倍数，它就是<code>2² * 5² = 100</code>的倍数。类似地，我们可以将<code>(y % 400) == 0</code>替换为<code>(y % 16) == 0</code>：我们已经知道<code>y</code>是<code>5²</code>的倍数，所以如果它也是<code>2⁴</code>的倍数，它就是<code>5² * 2⁴ = 400</code>的倍数：</p>
 <pre class="line-numbers language-c" data-language="c"><code class="language-c">bool <span class="token function">is_leap_year1</span><span class="token punctuation">(</span><span class="token class-name">uint32_t</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
     <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">%</span> <span class="token number">4</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> false<span class="token punctuation">;</span>
     <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">%</span> <span class="token number">25</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> true<span class="token punctuation">;</span>
@@ -465,7 +458,7 @@ active <span class="token operator">=</span> <span class="token builtin">set</sp
 <p> 这也同样解释了为什么100的倍数是可以的：对于100的倍数，7y mod 100 是 0，所以 6.999969482421875y mod 100 会稍微小于 100，并且只有在 y &#x3D; (100 − 96.875) &#x2F; (7 − 6.999969482421875) &#x3D; 102400 之后才会降到 96.875 以下。</p>
 <p> 为了理解在我们序列中出现的其他数字，让我们首先考虑如果我们在不等式中是整数 7，解会是什么：<br>7y mod 100 ≥ 96.875 ⇔ 7y mod 100 ∈ {97, 98, 99}。</p>
 <p>为了找到这个解，我们首先需要 7 mod 100 的模逆元，也就是说，一个数字 x 使得 7x mod 100 &#x3D; 1。我们可以使用扩展欧几里德算法计算它，或者直接使用<a target="_blank" rel="noopener" href="https://www.wolframalpha.com/input?i=modular+inverse+of+7+modulo+100">在线计算器</a>，它会告诉我们结果是 43。那么解就是 43 * 97 (mod 100)，43 * 98 (mod 100)，以及 43 * 99 (mod 100)，结果分别为 71、14 和 57 (mod 100)。这解释了为什么我们最初会看到 *14、*57 和 *71 形式的数字。这也解释了为什么我们在 4071 之后不再看到 *71 等数字：虽然 7 * 4171 &#x3D; 29197，但我们有 6.999969482421875 * 4171 &#x3D; 29196.872711181640625，它（模 100）小于 96.875。类似地，32843 出现是因为累积误差 (7 − 6.999969482421875) * 32843 &#x3D; 1.002288818359375 超过了1。再花一些精力，我们就可以手动重现上面的 Python 程序的输出，并检查这些数字中没有任何一个是4的倍数。</p>
-<h2 id="扩展到其他比特位"><a href="#扩展到其他比特位" class="headerlink" title="扩展到其他比特位"></a>扩展到其他比特位</h2><p>现在我们理解了这个技巧的工作原理，我们可以尝试为其他比特位寻找参数，可变部分是区块B，以及 f &amp; D 中100的小数部分部分：</p>
+<h2 id="扩展到其他比特位"><a href="#扩展到其他比特位" class="headerlink" title="扩展到其他比特位"></a>扩展到其他比特位</h2><p>现在我们理解了这个技巧的工作原理，我们可以尝试为其他比特位寻找参数，可变部分是区块B，以及 f &amp; D 中100的小数部分：</p>
 <pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token class-name">uint64_t</span> <span class="token function">score</span><span class="token punctuation">(</span><span class="token class-name">uint64_t</span> f<span class="token punctuation">,</span> <span class="token class-name">uint64_t</span> m<span class="token punctuation">,</span> <span class="token class-name">uint64_t</span> t<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
       <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token class-name">uint64_t</span> y <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token punctuation">;</span> y<span class="token operator">++</span><span class="token punctuation">)</span>
           <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">*</span> f<span class="token punctuation">)</span> <span class="token operator">&amp;</span> m<span class="token punctuation">)</span> <span class="token operator">&lt;=</span> t<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token function">is_leap_year</span><span class="token punctuation">(</span>y<span class="token punctuation">)</span><span class="token punctuation">)</span>
@@ -558,6 +551,9 @@ active <span class="token operator">=</span> <span class="token builtin">set</sp
                 </a>
             </div>
             <div class="post-nav-item">
+                <a href="/2025/06/08/yolo11-on-wslg-docker/" rel="next" title="“无限”套娃，在WSL的Docker中使用YOLOv11做目标检测">
+                  “无限”套娃，在WSL的Docker中使用YOLOv11做目标检测 <i class="fa fa-angle-right"></i>
+                </a>
             </div>
           </div>
     </footer>

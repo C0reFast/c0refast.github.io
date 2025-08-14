@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/favicon-orgin.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/favicon/favicon-orgin.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.0.17/dist/fancybox/fancybox.css" integrity="sha256-yE0aDX61mjiw8FoDuGetFttFoGJMeWsU/iYEFOfpMhA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism-vsc-dark-plus","dark":"prism-vsc-dark-plus"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="前几天偶然发现，Windows 11的WSL2可以通过WSLg来无缝使用GUI应用。类似推理&#x2F;训练等任务，都不在话下，这瞬间勾起了我的好奇心，决定试试微软提供的这个神奇功能。其实微软在2021年就发布了WSLg，现在已经是2025年了，刚刚开始折腾也算是后知后觉了。 WSL支持GUI应用只能算是WSLg的一个最简单的功能了，当涉及模型训练或者GPU加速时，GPU驱动还有CUDA等等相关的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="“无限”套娃，在WSL的Docker中使用YOLOv11做目标检测">
+<meta property="og:url" content="https://www.ichenfu.com/2025/06/08/yolo11-on-wslg-docker/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="前几天偶然发现，Windows 11的WSL2可以通过WSLg来无缝使用GUI应用。类似推理&#x2F;训练等任务，都不在话下，这瞬间勾起了我的好奇心，决定试试微软提供的这个神奇功能。其实微软在2021年就发布了WSLg，现在已经是2025年了，刚刚开始折腾也算是后知后觉了。 WSL支持GUI应用只能算是WSLg的一个最简单的功能了，当涉及模型训练或者GPU加速时，GPU驱动还有CUDA等等相关的">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.ichenfu.com/images/yolo11-on-wslg-docker/xcalc.png">
+<meta property="og:image" content="https://www.ichenfu.com/images/yolo11-on-wslg-docker/yolo-zidane.png">
+<meta property="og:image" content="https://www.ichenfu.com/images/yolo11-on-wslg-docker/yolo-car.png">
+<meta property="og:image" content="https://www.ichenfu.com/images/yolo11-on-wslg-docker/gpu-usage.png">
+<meta property="article:published_time" content="2025-06-08T11:34:23.000Z">
+<meta property="article:modified_time" content="2025-06-25T06:00:01.251Z">
+<meta property="article:author" content="陈孚">
+<meta property="article:tag" content="Docker">
+<meta property="article:tag" content="WSL">
+<meta property="article:tag" content="YOLOv11">
+<meta property="article:tag" content="WSLg">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.ichenfu.com/images/yolo11-on-wslg-docker/xcalc.png">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2025/06/08/yolo11-on-wslg-docker/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2025/06/08/yolo11-on-wslg-docker/","path":"2025/06/08/yolo11-on-wslg-docker/","title":"“无限”套娃，在WSL的Docker中使用YOLOv11做目标检测"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>“无限”套娃，在WSL的Docker中使用YOLOv11做目标检测 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?50e2a95e85fdbe38e53b7aaba8c6cfe1"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.0.17/dist/fancybox/fancybox.umd.js" integrity="sha256-32A/chfN6JgQkwK/QFZY8siVcOZj3LUt1vSKIcDvshM=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A1%AE%E8%AE%A4WSLg%E7%9A%84%E6%AD%A3%E7%A1%AE%E5%AE%89%E8%A3%85"><span class="nav-number">1.</span> <span class="nav-text">确认WSLg的正确安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85NVIDIA%E7%9A%84%E5%AE%B9%E5%99%A8%E8%BF%90%E8%A1%8C%E7%8E%AF%E5%A2%83"><span class="nav-number">2.</span> <span class="nav-text">安装NVIDIA的容器运行环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%A8Docker%E9%87%8C%E4%BD%BF%E7%94%A8YOLOv11"><span class="nav-number">3.</span> <span class="nav-text">在Docker里使用YOLOv11</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E6%97%B6%E8%A7%86%E9%A2%91%E6%A3%80%E6%B5%8B"><span class="nav-number">4.</span> <span class="nav-text">实时视频检测</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">陈孚</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">109</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">243</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/C0reFast" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;C0reFast" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chenfu@ichenfu.com" title="E-Mail → mailto:chenfu@ichenfu.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/c0refast" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;c0refast" rel="noopener me" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/06/08/yolo11-on-wslg-docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="“无限”套娃，在WSL的Docker中使用YOLOv11做目标检测 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          “无限”套娃，在WSL的Docker中使用YOLOv11做目标检测
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年6月8日 19:34 19:34:23" itemprop="dateCreated datePublished" datetime="2025-06-08T19:34:23+08:00">2025年6月8日 19:34</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>前几天偶然发现，Windows 11的WSL2可以通过WSLg来无缝使用GUI应用。类似推理&#x2F;训练等任务，都不在话下，这瞬间勾起了我的好奇心，决定试试微软提供的这个神奇功能。其实微软在2021年就发布了WSLg，现在已经是2025年了，刚刚开始折腾也算是后知后觉了。</p>
+<p>WSL支持GUI应用只能算是WSLg的一个最简单的功能了，当涉及模型训练或者GPU加速时，GPU驱动还有CUDA等等相关的配置就会变得复杂起来。我并不希望因为“折腾”这么一下，就把我的WSL环境搞得一团糟，这时候，Docker的价值就体现出来了。利用Docker，可以在不修改现有WSL环境的情况下，快速搭建一个隔离的环境来做些简单的测试。我决定使用YOLO作为测试对象，看看在WSL+WSLg+Docker的场景下，YOLO还能不能很好的工作，正确使用我的GPU进行加速。</p>
+<span id="more"></span>
+
+<h2 id="确认WSLg的正确安装"><a href="#确认WSLg的正确安装" class="headerlink" title="确认WSLg的正确安装"></a>确认WSLg的正确安装</h2><p>理论上，WSLg是WSL默认启用的功能，当你安装完成WSL2，并且安装了Ubuntu等Linux发行版后，就可以直接使用GUI应用了。具体的安装方法，这里就不多说了，毕竟微软的文档<a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/wsl/tutorials/gui-apps">在适用于 Linux 的 Windows 子系统上运行 Linux GUI 应用</a>写的非常的详细：</p>
+<p>安装完成后，如果WSLg被正确启用的话，应该就可以看到：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># mount|grep wslg</span>
+none on /mnt/wslg <span class="token builtin class-name">type</span> tmpfs <span class="token punctuation">(</span>rw,relatime<span class="token punctuation">)</span>
+/dev/sdc on /mnt/wslg/distro <span class="token builtin class-name">type</span> ext4 <span class="token punctuation">(</span>ro,relatime,discard,errors<span class="token operator">=</span>remount-ro,data<span class="token operator">=</span>ordered<span class="token punctuation">)</span>
+none on /mnt/wslg/versions.txt <span class="token builtin class-name">type</span> overlay <span class="token punctuation">(</span>rw,relatime,lowerdir<span class="token operator">=</span>/systemvhd,upperdir<span class="token operator">=</span>/system/rw/upper,workdir<span class="token operator">=</span>/system/rw/work<span class="token punctuation">)</span>
+none on /mnt/wslg/doc <span class="token builtin class-name">type</span> overlay <span class="token punctuation">(</span>rw,relatime,lowerdir<span class="token operator">=</span>/systemvhd,upperdir<span class="token operator">=</span>/system/rw/upper,workdir<span class="token operator">=</span>/system/rw/work<span class="token punctuation">)</span>
+tmpfs on /mnt/wslg/run/user/1000 <span class="token builtin class-name">type</span> tmpfs <span class="token punctuation">(</span>rw,nosuid,nodev,relatime,size<span class="token operator">=</span>809692k,nr_inodes<span class="token operator">=</span><span class="token number">202423</span>,mode<span class="token operator">=</span><span class="token number">700</span>,uid<span class="token operator">=</span><span class="token number">1000</span>,gid<span class="token operator">=</span><span class="token number">1000</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>与此同时，在不用安装任何Linux版本GPU驱动的情况下，应该也可以正确识别到GPU设备：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># which nvidia-smi</span>
+/usr/lib/wsl/lib/nvidia-smi
+<span class="token comment"># nvidia-smi</span>
+Sun Jun  <span class="token number">8</span> <span class="token number">19</span>:59:36 <span class="token number">2025</span>
++-----------------------------------------------------------------------------------------+
+<span class="token operator">|</span> NVIDIA-SMI <span class="token number">560.35</span>.02              Driver Version: <span class="token number">560.94</span>         CUDA Version: <span class="token number">12.6</span>     <span class="token operator">|</span>
+<span class="token operator">|</span>-----------------------------------------+------------------------+----------------------+
+<span class="token operator">|</span> GPU  Name                 Persistence-M <span class="token operator">|</span> Bus-Id          Disp.A <span class="token operator">|</span> Volatile Uncorr. ECC <span class="token operator">|</span>
+<span class="token operator">|</span> Fan  Temp   Perf          Pwr:Usage/Cap <span class="token operator">|</span>           Memory-Usage <span class="token operator">|</span> GPU-Util  Compute M. <span class="token operator">|</span>
+<span class="token operator">|</span>                                         <span class="token operator">|</span>                        <span class="token operator">|</span>               MIG M. <span class="token operator">|</span>
+<span class="token operator">|</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">=</span><span class="token operator">+=</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">=</span><span class="token operator">+=</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">=</span><span class="token operator">|</span>
+<span class="token operator">|</span>   <span class="token number">0</span>  NVIDIA GeForce RTX <span class="token number">4070</span> <span class="token punctuation">..</span>.    On  <span class="token operator">|</span>   00000000:2B:00.0  On <span class="token operator">|</span>                  N/A <span class="token operator">|</span>
+<span class="token operator">|</span>  <span class="token number">0</span>%   45C    P8              7W /  285W <span class="token operator">|</span>     895MiB /  16376MiB <span class="token operator">|</span>      <span class="token number">4</span>%      Default <span class="token operator">|</span>
+<span class="token operator">|</span>                                         <span class="token operator">|</span>                        <span class="token operator">|</span>                  N/A <span class="token operator">|</span>
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+<span class="token operator">|</span> Processes:                                                                              <span class="token operator">|</span>
+<span class="token operator">|</span>  GPU   GI   CI        PID   Type   Process name                              GPU Memory <span class="token operator">|</span>
+<span class="token operator">|</span>        ID   ID                                                               Usage      <span class="token operator">|</span>
+<span class="token operator">|</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">=</span><span class="token operator">|</span>
+<span class="token operator">|</span>    <span class="token number">0</span>   N/A  N/A        <span class="token number">25</span>      G   /Xwayland                                   N/A      <span class="token operator">|</span>
++-----------------------------------------------------------------------------------------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>以我的这台主机为例，可以看到<code>nvidia-smi</code>可以正常识别到GPU（甚至nvidia-smi也不是我安装的，微软直接帮我挂载了）</p>
+<p>再试试运行一个GUI应用：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># sudo apt install -y x11-apps</span>
+<span class="token comment"># /usr/bin/xcalc</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p><img src="/images/yolo11-on-wslg-docker/xcalc.png" alt="xcalc"></p>
+<h2 id="安装NVIDIA的容器运行环境"><a href="#安装NVIDIA的容器运行环境" class="headerlink" title="安装NVIDIA的容器运行环境"></a>安装NVIDIA的容器运行环境</h2><p>由于要使用Docker并且还需要在Docker里使用GPU，Docker的安装比较简单，在Ubuntu里，直接<code>sudo apt install -y docker.io</code>即可，而对于我的NVIDIA显卡来说，还需要安装NVIDIA的容器运行环境，这里可以参考NVIDIA的文档<a target="_blank" rel="noopener" href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html">Installing the NVIDIA Container Toolkit</a>进行安装，安装完成之后，可以跑一个简单的测试，确认一下安装是否成功，以及容器里是否可以正确识别并调用到GPU：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># sudo docker run --gpus all --runtime=nvidia nvcr.io/nvidia/k8s/cuda-sample:nbody nbody -gpu -benchmark</span>
+Run <span class="token string">"nbody -benchmark [-numbodies=&lt;numBodies>]"</span> to measure performance.
+        <span class="token parameter variable">-fullscreen</span>       <span class="token punctuation">(</span>run n-body simulation <span class="token keyword">in</span> fullscreen mode<span class="token punctuation">)</span>
+        <span class="token parameter variable">-fp64</span>             <span class="token punctuation">(</span>use double precision floating point values <span class="token keyword">for</span> simulation<span class="token punctuation">)</span>
+        <span class="token parameter variable">-hostmem</span>          <span class="token punctuation">(</span>stores simulation data <span class="token keyword">in</span> <span class="token function">host</span> memory<span class="token punctuation">)</span>
+        <span class="token parameter variable">-benchmark</span>        <span class="token punctuation">(</span>run benchmark to measure performance<span class="token punctuation">)</span>
+        <span class="token parameter variable">-numbodies</span><span class="token operator">=</span><span class="token operator">&lt;</span>N<span class="token operator">></span>    <span class="token punctuation">(</span>number of bodies <span class="token punctuation">(</span><span class="token operator">>=</span> <span class="token number">1</span><span class="token punctuation">)</span> to run <span class="token keyword">in</span> simulation<span class="token punctuation">)</span>
+        <span class="token parameter variable">-device</span><span class="token operator">=</span><span class="token operator">&lt;</span>d<span class="token operator">></span>       <span class="token punctuation">(</span>where <span class="token assign-left variable">d</span><span class="token operator">=</span><span class="token number">0,1</span>,2<span class="token punctuation">..</span><span class="token punctuation">..</span> <span class="token keyword">for</span> the CUDA device to use<span class="token punctuation">)</span>
+        <span class="token parameter variable">-numdevices</span><span class="token operator">=</span><span class="token operator">&lt;</span>i<span class="token operator">></span>   <span class="token punctuation">(</span>where <span class="token assign-left variable">i</span><span class="token operator">=</span><span class="token punctuation">(</span>number of CUDA devices <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> to use <span class="token keyword">for</span> simulation<span class="token punctuation">)</span>
+        <span class="token parameter variable">-compare</span>          <span class="token punctuation">(</span>compares simulation results running once on the default GPU and once on the CPU<span class="token punctuation">)</span>
+        <span class="token parameter variable">-cpu</span>              <span class="token punctuation">(</span>run n-body simulation on the CPU<span class="token punctuation">)</span>
+        <span class="token parameter variable">-tipsy</span><span class="token operator">=</span><span class="token operator">&lt;</span>file.bin<span class="token operator">></span> <span class="token punctuation">(</span>load a tipsy model <span class="token function">file</span> <span class="token keyword">for</span> simulation<span class="token punctuation">)</span>
+
+NOTE: The CUDA Samples are not meant <span class="token keyword">for</span> performance measurements. Results may vary when GPU Boost is enabled.
+
+<span class="token operator">></span> Windowed mode
+<span class="token operator">></span> Simulation data stored <span class="token keyword">in</span> video memory
+<span class="token operator">></span> Single precision floating point simulation
+<span class="token operator">></span> <span class="token number">1</span> Devices used <span class="token keyword">for</span> simulation
+MapSMtoCores <span class="token keyword">for</span> SM <span class="token number">8.9</span> is undefined.  Default to use <span class="token number">128</span> Cores/SM
+MapSMtoArchName <span class="token keyword">for</span> SM <span class="token number">8.9</span> is undefined.  Default to use Ampere
+GPU Device <span class="token number">0</span>: <span class="token string">"Ampere"</span> with compute capability <span class="token number">8.9</span>
+
+<span class="token operator">></span> Compute <span class="token number">8.9</span> CUDA device: <span class="token punctuation">[</span>NVIDIA GeForce RTX <span class="token number">4070</span> Ti SUPER<span class="token punctuation">]</span>
+<span class="token number">67584</span> bodies, total <span class="token function">time</span> <span class="token keyword">for</span> <span class="token number">10</span> iterations: <span class="token number">41.515</span> ms
+<span class="token operator">=</span> <span class="token number">1100.228</span> billion interactions per second
+<span class="token operator">=</span> <span class="token number">22004.559</span> single-precision GFLOP/s at <span class="token number">20</span> flops per interaction<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到在容器里看到并且使用了我的GPU。</p>
+<h2 id="在Docker里使用YOLOv11"><a href="#在Docker里使用YOLOv11" class="headerlink" title="在Docker里使用YOLOv11"></a>在Docker里使用YOLOv11</h2><p>接下来就可以在Docker里使用YOLOv11了。由于官方已经给我们打好了<a target="_blank" rel="noopener" href="https://hub.docker.com/r/ultralytics/ultralytics">Docker镜像</a>，所以只需要拉取镜像并运行即可，因为我还想能将推理结果实时的显示出来，所以还需要处理一些显示相关的环境变量，需要注意的是，虽然YOLO的文档里也有在Docker中使用GUI的说明，但这里需要参考WSLg的文档<a target="_blank" rel="noopener" href="https://github.com/microsoft/wslg/blob/main/samples/container/Containers.md">Containerizing GUI applications with WSLg</a>来启动容器：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># sudo docker run -it -v /tmp/.X11-unix:/tmp/.X11-unix -v /mnt/wslg:/mnt/wslg -e DISPLAY=$DISPLAY -e WAYLAND_DISPLAY=$WAYLAND_DISPLAY -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR -e PULSE_SERVER=$PULSE_SERVER --net=host --ipc=host --gpus all ultralytics/ultralytics:latest</span>
+root@DESKTOP:/ultralytics<span class="token comment"># yolo predict model=yolo11n.pt show=True</span>
+WARNING ⚠️ <span class="token string">'source'</span> argument is missing. Using default <span class="token string">'source=/ultralytics/ultralytics/assets'</span><span class="token builtin class-name">.</span>
+WARNING ⚠️ Environment does not support cv2.imshow<span class="token punctuation">(</span><span class="token punctuation">)</span> or PIL Image.show<span class="token punctuation">(</span><span class="token punctuation">)</span>
+OpenCV<span class="token punctuation">(</span><span class="token number">4.11</span>.0<span class="token punctuation">)</span> /io/opencv/modules/highgui/src/window.cpp:1301: error: <span class="token punctuation">(</span>-2:Unspecified error<span class="token punctuation">)</span> The <span class="token keyword">function</span> is not implemented. Rebuild the library with Windows, GTK+ <span class="token number">2</span>.x or Cocoa support. If you are on Ubuntu or Debian, <span class="token function">install</span> libgtk2.0-dev and pkg-config, <span class="token keyword">then</span> re-run cmake or configure script <span class="token keyword">in</span> <span class="token keyword">function</span> <span class="token string">'cvShowImage'</span>
+
+Ultralytics <span class="token number">8.3</span>.151 🚀 Python-3.11.12 torch-2.7.0+cu126 CUDA:0 <span class="token punctuation">(</span>NVIDIA GeForce RTX <span class="token number">4070</span> Ti SUPER, 16376MiB<span class="token punctuation">)</span>
+YOLO11n summary <span class="token punctuation">(</span>fused<span class="token punctuation">)</span>: <span class="token number">100</span> layers, <span class="token number">2,616</span>,248 parameters, <span class="token number">0</span> gradients, <span class="token number">6.5</span> GFLOPs
+
+image <span class="token number">1</span>/2 /ultralytics/ultralytics/assets/bus.jpg: 640x480 <span class="token number">4</span> persons, <span class="token number">1</span> bus, <span class="token number">47</span>.2ms
+image <span class="token number">2</span>/2 /ultralytics/ultralytics/assets/zidane.jpg: 384x640 <span class="token number">2</span> persons, <span class="token number">1</span> tie, <span class="token number">41</span>.1ms
+Speed: <span class="token number">5</span>.1ms preprocess, <span class="token number">44</span>.2ms inference, <span class="token number">93</span>.1ms postprocess per image at shape <span class="token punctuation">(</span><span class="token number">1</span>, <span class="token number">3</span>, <span class="token number">384</span>, <span class="token number">640</span><span class="token punctuation">)</span>
+Results saved to /ultralytics/runs/detect/predict
+💡 Learn <span class="token function">more</span> at https://docs.ultralytics.com/modes/predict<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>发现出了点小问题，虽然可以正确调用到GPU，但是没办法实时显示推理结果，从日志上看，有一条报错：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">OpenCV<span class="token punctuation">(</span><span class="token number">4.11</span>.0<span class="token punctuation">)</span> /io/opencv/modules/highgui/src/window.cpp:1301: error: <span class="token punctuation">(</span>-2:Unspecified error<span class="token punctuation">)</span> The <span class="token keyword">function</span> is not implemented. Rebuild the library with Windows, GTK+ <span class="token number">2</span>.x or Cocoa support. If you are on Ubuntu or Debian, <span class="token function">install</span> libgtk2.0-dev and pkg-config, <span class="token keyword">then</span> re-run cmake or configure script <span class="token keyword">in</span> <span class="token keyword">function</span> <span class="token string">'cvShowImage'</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>看起来是opencv出现了一些兼容性的问题，经过一番搜索，发现了一个<a target="_blank" rel="noopener" href="https://github.com/opencv/opencv-python/issues/18">issue</a>，也是同样的问题，因为默认<code>ultralytics/ultralytics:latest</code>镜像里安装了<code>opencv-python-headless</code>，并没有对GUI的支持，因此需要重新安装一下<code>opencv-python</code>：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@DESKTOP:/ultralytics<span class="token comment"># pip uninstall opencv-python-headless opencv-python -y</span>
+Found existing installation: opencv-python-headless <span class="token number">4.11</span>.0.86
+Uninstalling opencv-python-headless-4.11.0.86:
+  Successfully uninstalled opencv-python-headless-4.11.0.86
+Found existing installation: opencv-python <span class="token number">4.11</span>.0.86
+Uninstalling opencv-python-4.11.0.86:
+  Successfully uninstalled opencv-python-4.11.0.86
+root@DESKTOP:/ultralytics<span class="token comment"># pip install opencv-python==4.11.0.86</span>
+Collecting opencv-python<span class="token operator">==</span><span class="token number">4.11</span>.0.86
+  Downloading opencv_python-4.11.0.86-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata <span class="token punctuation">(</span><span class="token number">20</span> kB<span class="token punctuation">)</span>
+Requirement already satisfied: numpy<span class="token operator">>=</span><span class="token number">1.21</span>.2 <span class="token keyword">in</span> /opt/conda/lib/python3.11/site-packages <span class="token punctuation">(</span>from opencv-python<span class="token operator">==</span><span class="token number">4.11</span>.0.86<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token number">2.1</span>.3<span class="token punctuation">)</span>
+Downloading opencv_python-4.11.0.86-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl <span class="token punctuation">(</span><span class="token number">63.0</span> MB<span class="token punctuation">)</span>
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ <span class="token number">63.0</span>/63.0 MB <span class="token number">753.5</span> kB/s eta <span class="token number">0</span>:00:00
+Installing collected packages: opencv-python
+Successfully installed opencv-python-4.11.0.86<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>重新安装完成后，再次运行YOLO的推理命令：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@DESKTOP:/ultralytics<span class="token comment"># yolo predict model=yolo11n.pt show=True</span>
+WARNING ⚠️ <span class="token string">'source'</span> argument is missing. Using default <span class="token string">'source=/ultralytics/ultralytics/assets'</span><span class="token builtin class-name">.</span>
+Ultralytics <span class="token number">8.3</span>.151 🚀 Python-3.11.12 torch-2.7.0+cu126 CUDA:0 <span class="token punctuation">(</span>NVIDIA GeForce RTX <span class="token number">4070</span> Ti SUPER, 16376MiB<span class="token punctuation">)</span>
+YOLO11n summary <span class="token punctuation">(</span>fused<span class="token punctuation">)</span>: <span class="token number">100</span> layers, <span class="token number">2,616</span>,248 parameters, <span class="token number">0</span> gradients, <span class="token number">6.5</span> GFLOPs
+
+image <span class="token number">1</span>/2 /ultralytics/ultralytics/assets/bus.jpg: 640x480 <span class="token number">4</span> persons, <span class="token number">1</span> bus, <span class="token number">51</span>.1ms
+image <span class="token number">2</span>/2 /ultralytics/ultralytics/assets/zidane.jpg: 384x640 <span class="token number">2</span> persons, <span class="token number">1</span> tie, <span class="token number">41</span>.6ms
+Speed: <span class="token number">4</span>.1ms preprocess, <span class="token number">46</span>.3ms inference, <span class="token number">72</span>.4ms postprocess per image at shape <span class="token punctuation">(</span><span class="token number">1</span>, <span class="token number">3</span>, <span class="token number">384</span>, <span class="token number">640</span><span class="token punctuation">)</span>
+Results saved to /ultralytics/runs/detect/predict2
+💡 Learn <span class="token function">more</span> at https://docs.ultralytics.com/modes/predict<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这次没有报错了，并且可以看到一闪而过的推理结果窗口：</p>
+<p><img src="/images/yolo11-on-wslg-docker/yolo-zidane.png" alt="yolo11-predict-zidane"><br>嘿嘿，效果不错。</p>
+<h2 id="实时视频检测"><a href="#实时视频检测" class="headerlink" title="实时视频检测"></a>实时视频检测</h2><p>从网上找一段视频，再看看实时推理的效果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@DESKTOP:/ultralytics<span class="token comment"># yolo predict model=yolo11n.pt show=True source=car.mp4</span>
+Ultralytics <span class="token number">8.3</span>.151 🚀 Python-3.11.12 torch-2.7.0+cu126 CUDA:0 <span class="token punctuation">(</span>NVIDIA GeForce RTX <span class="token number">4070</span> Ti SUPER, 16376MiB<span class="token punctuation">)</span>
+YOLO11n summary <span class="token punctuation">(</span>fused<span class="token punctuation">)</span>: <span class="token number">100</span> layers, <span class="token number">2,616</span>,248 parameters, <span class="token number">0</span> gradients, <span class="token number">6.5</span> GFLOPs
+
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">1</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">2</span> persons, <span class="token number">14</span> cars, <span class="token number">2</span> buss, <span class="token number">1</span> truck, <span class="token number">44</span>.8ms
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">2</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">2</span> persons, <span class="token number">14</span> cars, <span class="token number">2</span> buss, <span class="token number">1</span> truck, <span class="token number">14</span>.5ms
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">3</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">2</span> persons, <span class="token number">14</span> cars, <span class="token number">2</span> buss, <span class="token number">1</span> truck, <span class="token number">32</span>.5ms
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">4</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">2</span> persons, <span class="token number">14</span> cars, <span class="token number">2</span> buss, <span class="token number">1</span> truck, <span class="token number">19</span>.3ms
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">5</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">2</span> persons, <span class="token number">14</span> cars, <span class="token number">2</span> buss, <span class="token number">1</span> truck, <span class="token number">14</span>.5ms
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">6</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">2</span> persons, <span class="token number">14</span> cars, <span class="token number">2</span> buss, <span class="token number">1</span> truck, <span class="token number">13</span>.2ms
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">7</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">3</span> persons, <span class="token number">13</span> cars, <span class="token number">2</span> buss, <span class="token number">2</span> trucks, <span class="token number">12</span>.0ms
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">8</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">3</span> persons, <span class="token number">13</span> cars, <span class="token number">2</span> buss, <span class="token number">2</span> trucks, <span class="token number">12</span>.3ms
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">9</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">3</span> persons, <span class="token number">14</span> cars, <span class="token number">1</span> bus, <span class="token number">2</span> trucks, <span class="token number">14</span>.2ms
+<span class="token punctuation">..</span>.
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">613</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">12</span> cars, <span class="token number">2</span> buss, <span class="token number">4</span> trucks, <span class="token number">24</span>.0ms
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">614</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">14</span> cars, <span class="token number">2</span> buss, <span class="token number">3</span> trucks, <span class="token number">24</span>.2ms
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">615</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">14</span> cars, <span class="token number">2</span> buss, <span class="token number">4</span> trucks, <span class="token number">28</span>.3ms
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">616</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">13</span> cars, <span class="token number">2</span> buss, <span class="token number">3</span> trucks, <span class="token number">25</span>.6ms
+video <span class="token number">1</span>/1 <span class="token punctuation">(</span>frame <span class="token number">617</span>/617<span class="token punctuation">)</span> /ultralytics/car.mp4: 384x640 <span class="token number">12</span> cars, <span class="token number">2</span> buss, <span class="token number">3</span> trucks, <span class="token number">1</span> traffic light, <span class="token number">22</span>.4ms
+Speed: <span class="token number">2</span>.7ms preprocess, <span class="token number">16</span>.9ms inference, <span class="token number">2</span>.7ms postprocess per image at shape <span class="token punctuation">(</span><span class="token number">1</span>, <span class="token number">3</span>, <span class="token number">384</span>, <span class="token number">640</span><span class="token punctuation">)</span>
+Results saved to /ultralytics/runs/detect/predict4
+💡 Learn <span class="token function">more</span> at https://docs.ultralytics.com/modes/predict<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>性能还不错，毕竟也算是比较强力的显卡了，与此同时，还可以可以看到在任务管理器里的GPU使用率：</p>
+<div class="group-picture"><div class="group-picture-row"><div class="group-picture-column"><img src="/images/yolo11-on-wslg-docker/yolo-car.png" alt="yolo11-predict-car"></div><div class="group-picture-column"><img src="/images/yolo11-on-wslg-docker/gpu-usage.png" alt="yolo11-predict-gpuusage"></div></div></div>
+
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>确实有够折腾的，Windows + WSL + WSLg + Docker + YOLOv11的”无限”套娃组合，无痛的跑起来了YOLO的推理，理论上来说，包括当前LLM等等各种AI应用，都可以在这套体系下很好的工作，Windows不愧是“最好的”Linux发型版。微软还是牛逼啊。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="陈孚 wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Docker/" rel="tag"># Docker</a>
+              <a href="/tags/WSL/" rel="tag"># WSL</a>
+              <a href="/tags/YOLOv11/" rel="tag"># YOLOv11</a>
+              <a href="/tags/WSLg/" rel="tag"># WSLg</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/05/29/a-leap-year-check-in-three-instructions/" rel="prev" title="在三条指令内实现闰年判断">
+                  <i class="fa fa-angle-left"></i> 在三条指令内实现闰年判断
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/07/18/broadcast-arp-and-nd-on-hw-offloaded-bonding/" rel="next" title="硬件Bonding卸载场景下的ARP&#x2F;ND双发">
+                  硬件Bonding卸载场景下的ARP/ND双发 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">陈孚</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js" defer></script>
+
+</body>
+</html>
