@@ -174,7 +174,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">109</span>
+          <span class="site-state-item-count">110</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -185,7 +185,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">243</span>
+        <span class="site-state-item-count">246</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -231,6 +231,93 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/12/28/qemu-kvm-fake-cpuid/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/28/qemu-kvm-fake-cpuid/" class="post-title-link" itemprop="url">Qemu-KVM的CPUID初始化和自定义CPU Model显示</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020年12月28日 20:07 20:07:58" itemprop="dateCreated datePublished" datetime="2020-12-28T20:07:58+08:00">2020年12月28日 20:07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Virtualization/" itemprop="url" rel="index"><span itemprop="name">Virtualization</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>在上一篇Blog：<a href="https://www.ichenfu.com/2020/12/17/cpuinfo-model-name/">&#x2F;proc&#x2F;cpuinfo里的CPU型号怎么来的？</a>里，可以知道Linux系统是根据CPUID指令来显示具体的CPU型号的。所以很自然的一个想法：是不是可以自定义显示的内容呢？</p>
+<p>答案显而易见，必然是可以的。但是如果要改物理CPU的寄存器，那确实会有些困难，不过没关系，我们还有虚拟机嘛，理论上虚拟机可以虚拟这些东西，那改动起来应该也是比较方便的。</p>
+<p>想要修改这些寄存器，首先得先看看CPUID指令在Qemu里是怎么处理的：
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/12/28/qemu-kvm-fake-cpuid/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1029,93 +1116,6 @@ mount: wrong fs type, bad option, bad superblock on mon1.ichenfu.com:6789,mon2.i
 <p>只需要根据情况，填写MAC地址和名字就可以了。另外，针对已有的网络配置，如CentOS下<code>/etc/sysconfig/network-scripts/</code>底下的那些ifcfg-xxxx配置文件，也需要针对性的进行修改。修改完成后重启机器即可生效。</p>
 <p>针对udev规则，还有很多可以MATCH和修改的地方，可以实现很多复杂功能，具体的这里就不赘述了，感兴趣的可以参考一下<a target="_blank" rel="noopener" href="https://wiki.archlinux.org/index.php/Udev">udev - ArchWiki</a>，或者其他udev相关的文章。</p>
 
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2020/05/07/intel-x700-i40e-do-not-receive-LLDP-frames/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="陈孚">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | C0reFast记事本">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/05/07/intel-x700-i40e-do-not-receive-LLDP-frames/" class="post-title-link" itemprop="url">Intel X700系列网卡（i40e驱动）收不到LLDP包问题</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2020年5月7日 21:32 21:32:54" itemprop="dateCreated datePublished" datetime="2020-05-07T21:32:54+08:00">2020年5月7日 21:32</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Linux-Kernel/" itemprop="url" rel="index"><span itemprop="name">Linux Kernel</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在我们的机房服务器上，启用了LLDPD服务，通过LLDP协议实现网络层的自动发现，从而根据收到的消息绘制网络拓扑关系。</p>
-<p>之前的大部分机器一直工作正常，也没有多关注，然而今天突然发现有一批机器工作不太正常，因为后期的工作依赖这个拓扑关系，如果关系不正确，后面的工作就没办法进行，所以遇到不正常的机器还是需要具体分析一下为什么。</p>
-<p>正常情况下，启动<code>lldpd</code>服务，并调用<code>lldpctl</code>可以看到网卡连接到的交换机信息：</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/05/07/intel-x700-i40e-do-not-receive-LLDP-frames/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
       
     </div>
 

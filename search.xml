@@ -12516,7 +12516,7 @@ Unicast reply from <span class="token number">192.68</span>.100.1 <span class="t
 Unicast reply from <span class="token number">192.68</span>.100.1 <span class="token punctuation">[</span>00:11:22:33:44:01<span class="token punctuation">]</span>  <span class="token number">1</span>.233ms
 Sent <span class="token number">2</span> probes <span class="token punctuation">(</span><span class="token number">1</span> broadcast<span class="token punctuation">(</span>s<span class="token punctuation">))</span>
 Received <span class="token number">4</span> response<span class="token punctuation">(</span>s<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>可以发现，<code>arping</code>工具发送了2个ARP请求，成功地收到了4次ARP应答，这表明ARP双发功能正常。两次请求中，第一次是广播请求，可以模拟第一次学习MAC地址时的场景，第二次时单播请求，可以模拟已有MAC后的确认场景，尝试抓包，也是可以看到结果是符合预期的：</p>
+<p>可以发现，<code>arping</code>工具发送了2个ARP请求，成功地收到了4次ARP应答，这表明ARP双发功能正常。两次请求中，第一次是广播请求，可以模拟第一次学习MAC地址时的场景，第二次是单播请求，可以模拟已有MAC后的确认场景，尝试抓包，也是可以看到结果是符合预期的：</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># sudo tcpdump -i eth0 arp -nnn</span>
 dropped privs to tcpdump
 tcpdump: verbose output suppressed, use -v<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">..</span>. <span class="token keyword">for</span> full protocol decode
@@ -13464,6 +13464,44 @@ Results saved to /ultralytics/runs/detect/predict4
         <tag>WSL</tag>
         <tag>YOLOv11</tag>
         <tag>WSLg</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>一个Solidigm P41 Plus的冷数据问题</title>
+    <url>/2025/08/25/solidigm-p41-plus-cold-data-problem/</url>
+    <content><![CDATA[<p>现在用的笔记本电脑是公司去年发的HP EliteBook 640 G10，机器自带了一块Solidigm的SSD，从型号上应该就是P41 Plus的OEM版本，最近使用中发现机器越来越慢了，一开始以为是内存用的多，直到有一次重启发现了一些异常，这机器重启竟然需要20分钟的时间！重启进入桌面之后，系统也非常卡顿，完全没办法使用，好不容易打开任务管理器，发现磁盘一直100%占用，响应时间已经飙上了天。很显然，磁盘遇到问题了。</p>
+<span id="more"></span>
+
+<h2 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h2><p>由于和磁盘相关，赶紧用<a href="https://crystalmark.info/en/software/crystaldiskinfo/">CrystalDiskInfo</a>看看是不是出现<code>0E</code>错误了，之前三星还有其他品牌的SSD，出现0E问题的案例不少，要是有问题，我就赶紧备份数据准备报修换盘了。</p>
+<p>但是看了SMART信息，发现并没有什么异常，所有的数值都在正常范围内，连警告都没有，写入量也很低，不到30T：<br><img src="/images/solidigm-p41-plus/cdi-info.png"></p>
+<p>从数据上看一切正常，但实际表现呢？肯定还是有问题的，这时候开始怀疑是有些冷数据的问题，毕竟这块盘一开始使用的时候是没有问题的，现在使用了将近1年时间，刚好又是QLC颗粒，如果颗粒漏电导致需要ECC纠错的情况还是有可能的。</p>
+<h2 id="拷贝测试"><a href="#拷贝测试" class="headerlink" title="拷贝测试"></a>拷贝测试</h2><p>尝试找了一个大文件，进行拷贝测试，看看实际的读写速度如何。<br><img src="/images/solidigm-p41-plus/copy-file.png"><br><img src="/images/solidigm-p41-plus/copy-perfermance.png"></p>
+<p>看起来确实有点问题，一方面在拷贝过程中，速度会降到十几M&#x2F;s，另外一方面，从任务管理器看磁盘的性能数据，延迟已经接近1s了，这个性能数据对于一块PCIe 4.0的NVMe SSD来说，实在是太差了。现在的性能基本就是一个大号U盘的水平了。</p>
+<h2 id="底层读取测试"><a href="#底层读取测试" class="headerlink" title="底层读取测试"></a>底层读取测试</h2><p>感觉已经找到了问题，但还是有点不放心，比较拷贝文件这个动作，和文件系统，还有cache以及磁盘写入性能等等都相关，有没有什么工具可以绕过文件系统，直接读原始磁盘，并且不写入磁盘呢？这样可以更好的反映SSD本身的性能了，Linux下有个非常好用的工具<code>fio</code>，专门用于做类似的事情，不过使用起来有点麻烦，于是又想到另外一个工具：<code>dd</code>。相比<code>fio</code>来说，<code>dd</code>本身也不是一个磁盘测试工具，只能进行简单的读写操作，功能上也差距很大，但架不住简单啊，针对当前的需求，也够用了。</p>
+<p>于是就找到了一个<a href="http://www.chrysocome.net/dd">DD for Windows</a>，使用管理员权限的Powershell执行一下：</p>
+<pre class="line-numbers language-powershell" data-language="powershell"><code class="language-powershell"><span class="token function">PS</span> C:\WINDOWS\system32> dd<span class="token punctuation">.</span>exe <span class="token keyword">if</span>=\\<span class="token punctuation">.</span>\PhysicalDrive0 of=<span class="token operator">/</span>dev/null bs=1M <span class="token operator">--</span>progress
+rawwrite dd <span class="token keyword">for</span> windows version 0<span class="token punctuation">.</span>6beta3<span class="token punctuation">.</span>
+Written by John Newbigin &lt;jn@it<span class="token punctuation">.</span>swin<span class="token punctuation">.</span>edu<span class="token punctuation">.</span>au>
+This program is covered by terms of the GPL Version 2<span class="token punctuation">.</span>
+
+202<span class="token punctuation">,</span>227M<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>执行过程中再看看任务管理器的性能数据：<br><img src="/images/solidigm-p41-plus/dd-perfermance.png"></p>
+<p>可以看到在纯读的场景，性能依然是非常不稳定的，一方面读取速度和过山车一样，忽高忽低，另外一方面，延迟也是接近100ms，虽然相比拷贝文件时的延迟好一点，但依然不是一块NVMe的正常性能。</p>
+<h2 id="网络案例和报修"><a href="#网络案例和报修" class="headerlink" title="网络案例和报修"></a>网络案例和报修</h2><p>又尝试搜索了一下网络上的案例，也许是这块盘用的人确实不多的原因，几乎没找到有人明确反馈类似的问题，最后找到一个帖子：<a href="https://post.smzdm.com/p/a0x62gez/">NVMe P41PL NVMe SOLIDIGM 512GB也有“SSD冷数据门”问题</a>。这个帖子里说的是DELL的机器，也是<code>P41 Plus</code>这块盘，只不过是DELL的OEM版本。不过问题确实也是类似的，开机慢，读取慢。概率也不是很高，大概也就5%的样子。看来不是我一个人的问题啊，既然这样，还是尝试找下机器的售后吧，希望能给我换一块盘才是最好的。<br>可惜经过了一番和HP售后的强力对线，HP的售后依然没办法以性能相关的问题给我换盘，只能当磁盘出现0E或者其他告警时，才能走换盘流程😂。</p>
+<h2 id="DiskFresh"><a href="#DiskFresh" class="headerlink" title="DiskFresh"></a>DiskFresh</h2><p>既然售后不给换盘，我也没什么更好的办法了，只能给HP打差评了。<br>好在上面的帖子里说了一个工具<a href="https://www.puransoftware.com/DiskFresh.html">DiskFresh</a>，可以用来复写一下磁盘。理论上如果因为NAND漏电，冷数据会出现读取问题，但是对于新写入的数据，这个问题不应该存在，<code>DiskFresh</code>就是这样一个工具，它可以读取所有扇区的数据，并且写回源扇区，将“老”数据变成“新”数据，从而解决类似冷数据的问题。对于SSD来说，即使写入时扇区号是一样的，但是由于磨损均衡等等算法，新写的数据极大概率已经不在原始的NAND块上了。应该可以解决遇到的问题。</p>
+<p>虽然这个工具是2013年的，距离现在已经十几年了，不过值得一试！使用也非常简单，直接选择全盘Refresh就行了：</p>
+<p><img src="/images/solidigm-p41-plus/diskfresh.png"></p>
+<p>经过漫长的时间（真的很慢😫），终于完成重写入：</p>
+<p><img src="/images/solidigm-p41-plus/good-perfermance.png"></p>
+<p>再尝试dd一下，发现读取速度立马接近1G&#x2F;s了。延迟也降到了900us，性能恢复了。只是不知道这个性能能够坚持多久，毕竟本质上还是由于NAND体质问题影响了数据，重新写入的数据很快又会经历漏电变冷的过程，只能到时再继续刷新了。</p>
+]]></content>
+      <categories>
+        <category>日常折腾</category>
+      </categories>
+      <tags>
+        <tag>QLC</tag>
+        <tag>冷数据</tag>
+        <tag>DiskFresh</tag>
       </tags>
   </entry>
 </search>
