@@ -452,15 +452,6 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2019/07/18/linux-rlimits/</loc>
-    
-    <lastmod>2020-10-12</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://www.ichenfu.com/2018/05/15/linux-timezone/</loc>
     
     <lastmod>2020-10-12</lastmod>
@@ -470,7 +461,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2019/09/07/mount-cephfs-no-such-process/</loc>
+    <loc>https://www.ichenfu.com/2019/07/18/linux-rlimits/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -488,7 +479,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2020/09/04/mount-cephfs-wrong-fs-type/</loc>
+    <loc>https://www.ichenfu.com/2019/09/07/mount-cephfs-no-such-process/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -506,7 +497,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2016/12/04/openbasedir-lstat/</loc>
+    <loc>https://www.ichenfu.com/2020/09/04/mount-cephfs-wrong-fs-type/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -515,7 +506,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2017/05/24/openstack-swift-object-replicator-source-code/</loc>
+    <loc>https://www.ichenfu.com/2016/12/04/openbasedir-lstat/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -534,6 +525,15 @@
   
   <url>
     <loc>https://www.ichenfu.com/2018/09/09/packet-flow-in-netfilter/</loc>
+    
+    <lastmod>2020-10-12</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/2017/05/24/openstack-swift-object-replicator-source-code/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -587,6 +587,15 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/2018/11/08/python-generate-random-string/</loc>
+    
+    <lastmod>2020-10-12</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/2017/07/12/python-context-managers/</loc>
     
     <lastmod>2020-10-12</lastmod>
@@ -596,7 +605,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2018/11/08/python-generate-random-string/</loc>
+    <loc>https://www.ichenfu.com/2016/10/14/remove-thunderbird-signature-separator/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -615,15 +624,6 @@
   
   <url>
     <loc>https://www.ichenfu.com/2018/10/09/resolv-conf-desc/</loc>
-    
-    <lastmod>2020-10-12</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/2016/10/14/remove-thunderbird-signature-separator/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -677,7 +677,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2016/12/04/ure/</loc>
+    <loc>https://www.ichenfu.com/2017/02/20/xfs-per-directory-quota/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -686,7 +686,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2017/02/20/xfs-per-directory-quota/</loc>
+    <loc>https://www.ichenfu.com/2016/12/04/ure/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -722,6 +722,24 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/2017/02/07/ceph-monitor-manual-deployment/</loc>
+    
+    <lastmod>2020-10-12</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/2017/02/09/ceph-osd-manual-deployment/</loc>
+    
+    <lastmod>2020-10-12</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/2017/04/23/building-a-consistent-hashing-ring-3-5/</loc>
     
     <lastmod>2020-10-12</lastmod>
@@ -731,7 +749,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2017/02/07/ceph-monitor-manual-deployment/</loc>
+    <loc>https://www.ichenfu.com/2017/04/25/cgroups-pids-controller/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -758,16 +776,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2017/04/25/cgroups-pids-controller/</loc>
-    
-    <lastmod>2020-10-12</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/2017/02/09/ceph-osd-manual-deployment/</loc>
+    <loc>https://www.ichenfu.com/2018/01/23/cni-bridge-host-local/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -821,15 +830,6 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2018/01/23/cni-bridge-host-local/</loc>
-    
-    <lastmod>2020-10-12</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://www.ichenfu.com/2017/01/13/decode-hex-string/</loc>
     
     <lastmod>2020-10-12</lastmod>
@@ -857,15 +857,6 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2014/11/20/hello-world/</loc>
-    
-    <lastmod>2020-10-12</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://www.ichenfu.com/2018/03/19/go-http-timeouts/</loc>
     
     <lastmod>2020-10-12</lastmod>
@@ -884,15 +875,6 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2020/05/07/intel-x700-i40e-do-not-receive-LLDP-frames/</loc>
-    
-    <lastmod>2020-10-12</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://www.ichenfu.com/2019/11/03/interpreting-the-output-of-lspci/</loc>
     
     <lastmod>2020-10-12</lastmod>
@@ -902,7 +884,34 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/2014/11/20/hello-world/</loc>
+    
+    <lastmod>2020-10-12</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/2020/05/07/intel-x700-i40e-do-not-receive-LLDP-frames/</loc>
+    
+    <lastmod>2020-10-12</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/2019/04/09/istio-inbond-interception-and-linux-transparent-proxy/</loc>
+    
+    <lastmod>2020-10-12</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/2017/01/16/kernel-sock-client-example/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -929,7 +938,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2017/01/16/kernel-sock-client-example/</loc>
+    <loc>https://www.ichenfu.com/2019/02/11/kubelet-boot-id/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -965,7 +974,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2019/02/11/kubelet-boot-id/</loc>
+    <loc>https://www.ichenfu.com/2020/07/24/achieve-one-core-turbo/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -974,7 +983,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2020/07/24/achieve-one-core-turbo/</loc>
+    <loc>https://www.ichenfu.com/2017/02/15/apache-no-space-left-on-device-couldnt-create-accept-lock/</loc>
     
     <lastmod>2020-10-12</lastmod>
     
@@ -1010,15 +1019,6 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/2017/02/15/apache-no-space-left-on-device-couldnt-create-accept-lock/</loc>
-    
-    <lastmod>2020-10-12</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://www.ichenfu.com/2017/04/17/building-a-consistent-hashing-ring-1-2/</loc>
     
     <lastmod>2020-10-12</lastmod>
@@ -1035,6 +1035,20 @@
     <priority>1.0</priority>
   </url>
 
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/CPU/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/%E5%8D%95%E6%A0%B8%E7%9D%BF%E9%A2%91/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
   
   <url>
     <loc>https://www.ichenfu.com/tags/%E9%97%B0%E5%B9%B4/</loc>
@@ -1058,14 +1072,14 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/CPU/</loc>
+    <loc>https://www.ichenfu.com/tags/B550M-Mortar/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/%E5%8D%95%E6%A0%B8%E7%9D%BF%E9%A2%91/</loc>
+    <loc>https://www.ichenfu.com/tags/5600X/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1073,6 +1087,20 @@
   
   <url>
     <loc>https://www.ichenfu.com/tags/Apache/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/AcceptLock/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/Semaphores/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1087,34 +1115,6 @@
   
   <url>
     <loc>https://www.ichenfu.com/tags/htpasswd/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/nettrace/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/irqoff/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/B550M-Mortar/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/5600X/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1157,20 +1157,6 @@
   
   <url>
     <loc>https://www.ichenfu.com/tags/ipset/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/AcceptLock/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/Semaphores/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1289,6 +1275,20 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/tags/nettrace/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/irqoff/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/tags/Ceph/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -1324,7 +1324,35 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/tags/OSD/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/tags/OSD-DOWN/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/cgroups/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/pids/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/%E8%BF%9B%E7%A8%8B%E6%95%B0%E9%87%8F%E9%99%90%E5%88%B6/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1367,34 +1395,6 @@
   
   <url>
     <loc>https://www.ichenfu.com/tags/%E6%95%B0%E6%8D%AE%E4%B8%8D%E5%87%86%E7%A1%AE/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/cgroups/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/pids/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/%E8%BF%9B%E7%A8%8B%E6%95%B0%E9%87%8F%E9%99%90%E5%88%B6/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/OSD/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1478,6 +1478,20 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/tags/cpuinfo/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/cpuid/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/tags/CVE-2016-3714/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -1493,20 +1507,6 @@
   
   <url>
     <loc>https://www.ichenfu.com/tags/RTLD-DEEPBIND/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/cpuinfo/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/cpuid/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1541,6 +1541,20 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/tags/NAS/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/%E9%BB%91%E7%BE%A4%E6%99%96/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/tags/SSD/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -1562,20 +1576,6 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/NAS/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/%E9%BB%91%E7%BE%A4%E6%99%96/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
     <loc>https://www.ichenfu.com/tags/TSC-Virtualization/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -1584,20 +1584,6 @@
   
   <url>
     <loc>https://www.ichenfu.com/tags/TSC%E7%9B%B4%E9%80%9A/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/PHP/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/%E5%8A%A8%E6%80%81%E6%89%A9%E5%B1%95/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1619,6 +1605,20 @@
   
   <url>
     <loc>https://www.ichenfu.com/tags/%E6%97%B6%E9%92%9F%E6%BA%90/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/PHP/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/%E5%8A%A8%E6%80%81%E6%89%A9%E5%B1%95/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1674,6 +1674,34 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/tags/authenticating-proxy/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/kubectl-token/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/RBAC/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/LSPCI/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/tags/X722/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -1695,28 +1723,21 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/LSPCI/</loc>
+    <loc>https://www.ichenfu.com/tags/%E4%BA%AC%E4%B8%9C%E4%BA%91/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/authenticating-proxy/</loc>
+    <loc>https://www.ichenfu.com/tags/%E8%99%9A%E6%8B%9F%E6%9C%BA/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/kubectl-token/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/RBAC/</loc>
+    <loc>https://www.ichenfu.com/tags/LNMP/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1772,35 +1793,21 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/%E4%BA%AC%E4%B8%9C%E4%BA%91/</loc>
+    <loc>https://www.ichenfu.com/tags/leader-elect-resource-lock/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/%E8%99%9A%E6%8B%9F%E6%9C%BA/</loc>
+    <loc>https://www.ichenfu.com/tags/endpoints/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/LNMP/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/dnsPolicy/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/CronJob/</loc>
+    <loc>https://www.ichenfu.com/tags/leases/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1828,21 +1835,28 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/leader-elect-resource-lock/</loc>
+    <loc>https://www.ichenfu.com/tags/dnsPolicy/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/endpoints/</loc>
+    <loc>https://www.ichenfu.com/tags/CronJob/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/leases/</loc>
+    <loc>https://www.ichenfu.com/tags/Kubelet/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/BootID/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1857,27 +1871,6 @@
   
   <url>
     <loc>https://www.ichenfu.com/tags/specification/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/Kubelet/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/Terminating/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/kubectl/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -1912,6 +1905,20 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/tags/Timezone/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/Localtime/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/tags/setrlimit/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -1933,27 +1940,6 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/Timezone/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/Localtime/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/BootID/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
     <loc>https://www.ichenfu.com/tags/LSI/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -1968,21 +1954,14 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/meminfo/</loc>
+    <loc>https://www.ichenfu.com/tags/Git/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/SReclaimable/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/available-memory/</loc>
+    <loc>https://www.ichenfu.com/tags/%E5%90%88%E5%B9%B6commits/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2003,14 +1982,28 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/Git/</loc>
+    <loc>https://www.ichenfu.com/tags/Terminating/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/%E5%90%88%E5%B9%B6commits/</loc>
+    <loc>https://www.ichenfu.com/tags/kubectl/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/libguestfs/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/qcow2/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2032,20 +2025,6 @@
   
   <url>
     <loc>https://www.ichenfu.com/tags/elrepo/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/rp-filter/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/%E7%AD%96%E7%95%A5%E8%B7%AF%E7%94%B1/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2080,49 +2059,14 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/NetworkManager/</loc>
+    <loc>https://www.ichenfu.com/tags/rp-filter/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/CentOS-8/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/nmcli/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/libguestfs/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/qcow2/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/Interrupt/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/hardirq/</loc>
+    <loc>https://www.ichenfu.com/tags/%E7%AD%96%E7%95%A5%E8%B7%AF%E7%94%B1/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2150,14 +2094,21 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/Openstack-Swift/</loc>
+    <loc>https://www.ichenfu.com/tags/meminfo/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/object-replicator/</loc>
+    <loc>https://www.ichenfu.com/tags/SReclaimable/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/available-memory/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2172,6 +2123,69 @@
   
   <url>
     <loc>https://www.ichenfu.com/tags/%E5%87%BD%E6%95%B0%E4%BC%AA%E5%AE%9E%E7%8E%B0/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/Interrupt/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/hardirq/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/netfilter/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/conntrack/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/Openstack-Swift/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/object-replicator/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/NetworkManager/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/CentOS-8/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/nmcli/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2193,20 +2207,6 @@
   
   <url>
     <loc>https://www.ichenfu.com/tags/ChatGPT/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/netfilter/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/conntrack/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2269,6 +2269,13 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/tags/Random-String/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/tags/python/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -2283,98 +2290,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/Random-String/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/Qemu/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/KVM/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/CPUID/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
     <loc>https://www.ichenfu.com/tags/RaspberryPi/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/perf/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/rpmbuild/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/strip/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/DNS/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/resolv-conf/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/DPDK/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/RSS/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/IPIP/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/rte-flow/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2396,6 +2312,34 @@
   
   <url>
     <loc>https://www.ichenfu.com/tags/%E5%88%86%E5%89%B2%E7%AC%A6/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/%E7%BD%91%E5%8D%A1%E9%87%8D%E5%91%BD%E5%90%8D/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/rpmbuild/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/strip/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/perf/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2444,28 +2388,35 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/tags/DPDK/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/RSS/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/IPIP/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/rte-flow/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/tags/UEFI/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/PXE/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/HTTP-Boot/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/%E7%BD%91%E5%8D%A1%E9%87%8D%E5%91%BD%E5%90%8D/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2479,14 +2430,49 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/SR-IOV/</loc>
+    <loc>https://www.ichenfu.com/tags/PXE/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/Udev-Rules/</loc>
+    <loc>https://www.ichenfu.com/tags/DNS/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/resolv-conf/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/Qemu/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/KVM/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/CPUID/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/HTTP-Boot/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2521,21 +2507,14 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/SPDK/</loc>
+    <loc>https://www.ichenfu.com/tags/SR-IOV/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/Reduce/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/bdev-reduce/</loc>
+    <loc>https://www.ichenfu.com/tags/Udev-Rules/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2556,28 +2535,21 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/syslog%E5%8D%8F%E8%AE%AE/</loc>
+    <loc>https://www.ichenfu.com/tags/QLC/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/Facility/</loc>
+    <loc>https://www.ichenfu.com/tags/%E5%86%B7%E6%95%B0%E6%8D%AE/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/Severity/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/PRI/</loc>
+    <loc>https://www.ichenfu.com/tags/DiskFresh/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2612,6 +2584,62 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/tags/%E5%8D%95%E6%92%ADND%E6%8A%A5%E6%96%87/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/SPDK/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/Reduce/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/bdev-reduce/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/syslog%E5%8D%8F%E8%AE%AE/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/Facility/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/Severity/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/PRI/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/tags/TCP-Nalge/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -2626,28 +2654,7 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/%E5%8D%95%E6%92%ADND%E6%8A%A5%E6%96%87/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
     <loc>https://www.ichenfu.com/tags/URE/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/virtio/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/UFO/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2675,6 +2682,27 @@
   </url>
   
   <url>
+    <loc>https://www.ichenfu.com/tags/XFS/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/Directory-Quota/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.ichenfu.com/tags/Project-Quota/</loc>
+    <lastmod>2025-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>https://www.ichenfu.com/tags/MTBF/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -2696,21 +2724,14 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/XFS/</loc>
+    <loc>https://www.ichenfu.com/tags/virtio/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/tags/Directory-Quota/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/Project-Quota/</loc>
+    <loc>https://www.ichenfu.com/tags/UFO/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2737,38 +2758,17 @@
     <priority>0.2</priority>
   </url>
   
-  <url>
-    <loc>https://www.ichenfu.com/tags/QLC/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/%E5%86%B7%E6%95%B0%E6%8D%AE/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.ichenfu.com/tags/DiskFresh/</loc>
-    <lastmod>2025-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
 
   
   <url>
-    <loc>https://www.ichenfu.com/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <loc>https://www.ichenfu.com/categories/Linux/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/categories/Linux/</loc>
+    <loc>https://www.ichenfu.com/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -2824,14 +2824,14 @@
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/categories/PHP-Zend/</loc>
+    <loc>https://www.ichenfu.com/categories/Linux-Kernel/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://www.ichenfu.com/categories/Linux-Kernel/</loc>
+    <loc>https://www.ichenfu.com/categories/PHP-Zend/</loc>
     <lastmod>2025-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
