@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/favicon-orgin.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/favicon/favicon-orgin.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.25.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism-vsc-dark-plus","dark":"prism-vsc-dark-plus"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文是Use One Big Server的翻译，前两天在HackerNews上看到这篇文章，虽然是2022年的（文章刚出时，也引起了不少的讨论，不知道怎么现在又被挖了出来），但是也引发了很多热议。 行业内一直有不少关于“单体与微服务”架构的争论，但这场争论背后的真正问题是分布式系统架构是否值得花费开发者时间和成本开销。通过对系统的实际运行情况进行分析，可以深入了解大多数情况下我们是否真的需要分布">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用单台高配服务器（部署你的业务）">
+<meta property="og:url" content="https://www.ichenfu.com/2025/09/08/use-one-big-server/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="本文是Use One Big Server的翻译，前两天在HackerNews上看到这篇文章，虽然是2022年的（文章刚出时，也引起了不少的讨论，不知道怎么现在又被挖了出来），但是也引发了很多热议。 行业内一直有不少关于“单体与微服务”架构的争论，但这场争论背后的真正问题是分布式系统架构是否值得花费开发者时间和成本开销。通过对系统的实际运行情况进行分析，可以深入了解大多数情况下我们是否真的需要分布">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.ichenfu.com/images/use-one-big-server/microsoft-azure-hosting-node.jpg">
+<meta property="article:published_time" content="2025-09-08T12:48:26.000Z">
+<meta property="article:modified_time" content="2025-09-08T03:16:48.463Z">
+<meta property="article:author" content="陈孚">
+<meta property="article:tag" content="Serverless">
+<meta property="article:tag" content="微服务">
+<meta property="article:tag" content="单体应用">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.ichenfu.com/images/use-one-big-server/microsoft-azure-hosting-node.jpg">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2025/09/08/use-one-big-server/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2025/09/08/use-one-big-server/","path":"2025/09/08/use-one-big-server/","title":"使用单台高配服务器（部署你的业务）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>使用单台高配服务器（部署你的业务） | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?50e2a95e85fdbe38e53b7aaba8c6cfe1"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://fastly.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%A4%E8%AF%86%E4%BD%A0%E7%9A%84%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">1.</span> <span class="nav-text">认识你的服务器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E5%8F%B0%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E8%83%BD%E5%8A%9B"><span class="nav-number">1.1.</span> <span class="nav-text">一台服务器的能力</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E5%8F%B0%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E6%88%90%E6%9C%AC"><span class="nav-number">1.2.</span> <span class="nav-text">一台服务器的成本</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9%E4%BA%8E%E4%BA%91%E6%9C%8D%E5%8A%A1%E7%9A%84%E6%80%9D%E8%80%83"><span class="nav-number">2.</span> <span class="nav-text">对于云服务的思考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E5%8F%B0%E6%9C%8D%E5%8A%A1%E5%99%A8%EF%BC%88%E5%8A%A0%E4%B8%8A%E5%A4%87%E4%BB%BD%EF%BC%89%E9%80%9A%E5%B8%B8%E5%B0%B1%E8%B6%B3%E5%A4%9F%E4%BA%86"><span class="nav-number">2.1.</span> <span class="nav-text">一台服务器（加上备份）通常就足够了</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%AB%98%E6%AF%94%E5%A4%9A%E5%A5%BD"><span class="nav-number">2.2.</span> <span class="nav-text">高比多好</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%AB%98%E9%85%8D%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%92%8C%E5%8F%AF%E7%94%A8%E6%80%A7"><span class="nav-number">2.3.</span> <span class="nav-text">高配服务器和可用性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E4%BA%91%EF%BC%8C%E4%BD%86%E4%B8%8D%E8%A6%81%E8%BF%87%E4%BA%8E%E2%80%9C%E4%BA%91%E5%8C%96%E2%80%9D"><span class="nav-number">3.</span> <span class="nav-text">使用云，但不要过于“云化”</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BA%94%E8%AF%A5%E4%B8%BA%E5%B3%B0%E5%80%BC%E8%B4%9F%E8%BD%BD%E4%BB%98%E8%B4%B9%EF%BC%9F"><span class="nav-number">3.1.</span> <span class="nav-text">为什么应该为峰值负载付费？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E2%80%9C%E4%BA%91%E5%8C%96%E2%80%9D%E9%9C%80%E8%A6%81%E8%8A%B1%E5%A4%9A%E5%B0%91%E9%92%B1%EF%BC%9F"><span class="nav-number">3.2.</span> <span class="nav-text">“云化”需要花多少钱？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9%E4%BA%8E%E4%BD%BF%E7%94%A8%E5%8D%95%E5%8F%B0%E9%AB%98%E9%85%8D%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E5%8F%8D%E5%AF%B9%E6%84%8F%E8%A7%81"><span class="nav-number">4.</span> <span class="nav-text">对于使用单台高配服务器的反对意见</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E6%9E%9C%E6%88%91%E4%BD%BF%E7%94%A8%E4%BA%91%E6%9E%B6%E6%9E%84%EF%BC%8C%E6%88%91%E5%B0%B1%E4%B8%8D%E9%9C%80%E8%A6%81%E4%B8%93%E9%97%A8%E7%9A%84%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86%E5%91%98%E4%BA%86"><span class="nav-number">4.1.</span> <span class="nav-text">如果我使用云架构，我就不需要专门的系统管理员了</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E6%9E%9C%E6%88%91%E4%BD%BF%E7%94%A8%E4%BA%91%E6%9E%B6%E6%9E%84%EF%BC%8C%E6%88%91%E5%B0%B1%E4%B8%8D%E5%BF%85%E8%BF%9B%E8%A1%8C%E5%AE%89%E5%85%A8%E6%9B%B4%E6%96%B0%E4%BA%86"><span class="nav-number">4.2.</span> <span class="nav-text">如果我使用云架构，我就不必进行安全更新了</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E6%9E%9C%E6%88%91%E4%BD%BF%E7%94%A8%E4%BA%91%E6%9E%B6%E6%9E%84%EF%BC%8C%E6%88%91%E5%B0%B1%E4%B8%8D%E5%BF%85%E6%8B%85%E5%BF%83%E5%AE%83%E4%BC%9A%E5%AE%95%E6%9C%BA%E4%BA%86"><span class="nav-number">4.3.</span> <span class="nav-text">如果我使用云架构，我就不必担心它会宕机了</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%86%E6%98%AF%E5%A6%82%E6%9E%9C%E6%88%91%E4%BD%BF%E7%94%A8%E4%BA%91%E6%9E%B6%E6%9E%84%EF%BC%8C%E6%88%91%E5%8F%AF%E4%BB%A5%E5%BC%80%E5%8F%91%E5%BE%97%E6%9B%B4%E5%BF%AB"><span class="nav-number">4.4.</span> <span class="nav-text">但是如果我使用云架构，我可以开发得更快</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%88%91%E7%9A%84%E5%B7%A5%E4%BD%9C%E8%B4%9F%E8%BD%BD%E7%9C%9F%E7%9A%84%E5%BE%88%E7%AA%81%E5%8F%91"><span class="nav-number">4.5.</span> <span class="nav-text">我的工作负载真的很突发</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CDN-%E5%91%A2%EF%BC%9F"><span class="nav-number">4.6.</span> <span class="nav-text">CDN 呢？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%92%8C%E5%8D%95%E4%BD%93%E6%9E%B6%E6%9E%84%E7%9A%84%E4%B8%80%E4%BA%9B%E8%AF%B4%E6%98%8E"><span class="nav-number">5.</span> <span class="nav-text">关于微服务架构和单体架构的一些说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA"><span class="nav-number">6.</span> <span class="nav-text">结论</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">陈孚</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">111</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">249</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/C0reFast" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;C0reFast" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chenfu@ichenfu.com" title="E-Mail → mailto:chenfu@ichenfu.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/c0refast" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;c0refast" rel="noopener me" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/09/08/use-one-big-server/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="使用单台高配服务器（部署你的业务） | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          使用单台高配服务器（部署你的业务）
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年9月8日 20:48 20:48:26" itemprop="dateCreated datePublished" datetime="2025-09-08T20:48:26+08:00">2025年9月8日 20:48</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>本文是<a target="_blank" rel="noopener" href="https://specbranch.com/posts/one-big-server/">Use One Big Server</a>的翻译，前两天在<a target="_blank" rel="noopener" href="https://news.ycombinator.com/item?id=45085029">HackerNews</a>上看到这篇文章，虽然是2022年的（文章刚出时，也引起了不少的讨论，不知道怎么现在又被挖了出来），但是也引发了很多热议。</p>
+<p>行业内一直有不少关于“单体与微服务”架构的争论，但这场争论背后的真正问题是分布式系统架构是否值得花费开发者时间和成本开销。通过对系统的实际运行情况进行分析，可以深入了解大多数情况下我们是否真的需要分布式系统。</p>
+<p>我们已经对虚拟化以及软件和运行软件的服务器之间的抽象变得如此熟悉。如今，“Serverless”计算风靡一时，甚至“裸金属”也成为了一种虚拟机。然而，每一段软件都运行在一台服务器上。由于我们现在生活在一个虚拟化的世界里，大多数这些服务器比我们实际认为的要大得多、便宜得多。</p>
+<span id="more"></span>
+
+<h2 id="认识你的服务器"><a href="#认识你的服务器" class="headerlink" title="认识你的服务器"></a>认识你的服务器</h2><p><img src="/images/use-one-big-server/microsoft-azure-hosting-node.jpg"><br>这是一张微软 Azure 使用 AMD CPU 的服务器图片。从左边开始，左侧的大金属固定装置（带有铜管）是散热器，铜管连接的金属盒是每个 CPU 上的热交换器。这些 CPU 是 AMD 的第三代服务器 CPU，每个 CPU 都拥有：</p>
+<ul>
+<li>64 核</li>
+<li>128 线程</li>
+<li>约 2-2.5 GHz 主频</li>
+<li>核心每时钟周期可处理 4-6 条指令</li>
+<li>256 MB L3 缓存</li>
+</ul>
+<p>这台服务器总共有 128 个核心和 256 个并发线程。所有核心协同工作时，这台服务器能够达到 4 TFLOPs 的峰值双精度计算性能。这台服务器如果放在 2000 年初将位居 top500 超级计算机榜首。直到 2007 年，这台服务器才跌出 top500 榜单。每个 CPU 核心都比 10 年前的单个核心强大得多，并拥有更宽的计算流水线。</p>
+<p>CPU 的上方和下方是内存：每个CPU有 16 个 DDR4-3200 RAM 插槽。目前“性价比”最好的内存是单根 64 GB。考虑到性价比，这台服务器可以容纳 1 TB 内存。如果配置专用的高容量 DIMM（通常比小容量 DIMM 慢），这台服务器最大可支持高达 8 TB 内存。在 DDR4-3200 的速度下，总共有 16 个内存通道，这台服务器的所有核心可能会看到约 200 GBps 的内存吞吐量。 在 I&#x2F;O 方面，每个 CPU 提供 64 个 PCIe gen 4 通道。总共有 128 个 PCIe 通道，这台服务器能够支持 30 个 NVMe SSD 和一张网卡。一般典型的服务器将提供大约 16 个 SSD 或磁盘的插槽。我想在这张图中指出的最后一点是右上角的网卡。这台服务器可能配备了 50-100 Gbps 的网络连接。</p>
+<h3 id="一台服务器的能力"><a href="#一台服务器的能力" class="headerlink" title="一台服务器的能力"></a>一台服务器的能力</h3><p>对于今天的一台服务器，可以做到：</p>
+<ul>
+<li>以 400 Gbps（现在是 800 Gbps）的速度提供视频文件</li>
+<li>在 NoSQL 数据库上实现 100 万 IOPS</li>
+<li>在 PostgreSQL 中实现 7 万 IOPS</li>
+<li>每秒处理 50 万个 Nginx 请求</li>
+<li>在 20 秒内编译 Linux 内核</li>
+<li>以 75 FPS 的速度使用 x264 渲染 4K 视频</li>
+</ul>
+<p>除此以外，现在还有很多其他公开的基准测试，如果你了解自己的业务情况，也可能会找到类似场景的基准测试。</p>
+<h3 id="一台服务器的成本"><a href="#一台服务器的成本" class="headerlink" title="一台服务器的成本"></a>一台服务器的成本</h3><p>在大型托管服务提供商 OVHCloud 中，可以租用一台 HGR-HCI-6 服务器，其规格与上述类似，拥有 128 个物理核心（256 个线程）、512 GB 内存和 50 Gbps 带宽，每月费用为 1,318 美元。</p>
+<p>换到 Hetzner，你可以租用一台较小的服务器，拥有 32 个物理核心和 128 GB RAM，每月约 140.00 欧元。这比 OVHCloud 的服务器小（四分之一），但它可以让你对托管服务提供商之间的价格差异有所了解。 在 AWS 中，你可以租用的最大服务器之一是 m6a.metal 服务器。它提供 50 Gbps 网络带宽、192 个虚拟 CPU（96 个物理核心）和 768 GB 内存，在美国东部地区每小时成本为 8.2944 美元。每月合计 6,055 美元。看来云服务的溢价是真实存在的！</p>
+<p>一台类似的服务器，拥有 128 个物理核心和 512 GB 内存（以及相应的网卡、SSD 和支持合同），可以从戴尔网站上以大约 40,000 美元的价格购买。但是，如果你打算花这么多钱买一台服务器的话，那就应该单独与销售人员沟通，从而获得更好的折扣。除了买硬件的钱之外，你还需要支付服务器托管费和网络带宽的费用。 </p>
+<p>相比之下，与使用云服务器相比，购买服务器大约需要 8 个月才能实现收支平衡，而与租服务器相比需要 30 个月才能实现收支平衡。当然，无论是直接买服务器或者租服务器，相比使用云来说，还是有很多缺点得，所以接下来，我们将思考一下“云服务溢价”以及是否应该支付它（剧透警告：答案是“可以支付，但不必支付云公司希望的那么多”）。</p>
+<h2 id="对于云服务的思考"><a href="#对于云服务的思考" class="headerlink" title="对于云服务的思考"></a>对于云服务的思考</h2><p>“云时代”在 2010 年左右正式开始。当时最先进的 CPU 是 8 核的 Intel Nehalem CPU。超线程刚刚开始，所以那颗 8 核 CPU 提供了高达 16 个线程。AES 加密的硬件加速即将到来，向量宽度为 128 位。最强的 CPU 有 24 MB 缓存，服务器可以安装高达 256 GB 的 DDR3-1066 内存。如果想存储数据，希捷刚刚开始提供 3 TB 容量的硬盘。每个CPU核心每周期可以计算 4 FLOPs，这意味着 8 核服务器以 2.5 GHz 运行可提供惊人的 80 GFLOPs算力。</p>
+<p>分布式计算的繁荣正是乘着这股浪潮：如果想做任何涉及数据检索的事情，就需要大量的磁盘才能获得所需的存储吞吐量。如果想进行大型计算，那通常需要大量的 CPU。这意味着需要协调大量的 CPU 才能完成大多数事情。 </p>
+<p>而从那时起，服务器的能力已经大大提升了，SSD 的 IOPS 增加了至少 100 倍，但主流虚拟机和容器的尺寸并没有增加多少，我们仍然使用性能更像HDD而不是 SSD 的虚拟化磁盘（尽管这个差距正在缩小）。</p>
+<h3 id="一台服务器（加上备份）通常就足够了"><a href="#一台服务器（加上备份）通常就足够了" class="headerlink" title="一台服务器（加上备份）通常就足够了"></a>一台服务器（加上备份）通常就足够了</h3><p>如果你正在做除了视频流之外的任何事情，并且 QPS 小于 1 万，那么对于大多数 Web 服务来说，一台服务器通常就够了。对于一些非常简单的服务，一台服务器甚至可以达到大约 100 万 QPS。很少有 Web 服务能获得如此大的流量。即使你正在提供视频服务，针对控制平面只运行一台服务器也是非常合理的。基准测试，或者使用类似应用程序的常见基准测试，可以帮助你确定需要的机器配置。</p>
+<h3 id="高比多好"><a href="#高比多好" class="headerlink" title="高比多好"></a>高比多好</h3><p>当需要一个计算机集群时，如果一台服务器不够用，使用少量高配置服务器通常会比使用大量低配置机器更好。协调集群中的机器会产生一些开销开销，并且这些开销通常在每台服务器上是 O(n)。为了减少这种开销，通常应该选择使用几台高配服务器，而不是许多低配置服务器。在使用Serverless计算等情况下，分配微小的短生命周期容器，这种开销占使用成本的很大一部分。对于另外一个极端，只有一台机器的集群，那协调的开销是微不足道的。</p>
+<h3 id="高配服务器和可用性"><a href="#高配服务器和可用性" class="headerlink" title="高配服务器和可用性"></a>高配服务器和可用性</h3><p>使用一台高配服务器的主要缺点是可用性。服务器需要停机维护，并且也会出现故障。通常情况下，在不同的数据中心运行一台主服务器和一台备份服务器就足够了。即使是偏执狂，2x2 的配置也应该让人满意了：主数据中心（或云提供商）中的两台服务器和备份数据中心中的两台服务器可以提供极大的冗余。如果还想要第三个备份部署，通常也可以使其比主部署和次要部署小。</p>
+<p>无论如何，批次性的硬件故障还是需要关心一下的。硬盘（现在是 SSD）偶尔会出现批次性故障：如果一个磁盘出现了故障，并且磁盘都来自同一批次，那么在恢复过程中，是很有可能遇到第二次故障的。像 Backblaze 这样的服务通过使用来自多个制造商的许多不同型号的磁盘来克服这个问题。Hacker news 最近也遇到主服务器和备份服务器同时宕机的问题，因此也吸取了类似的教训。</p>
+<p>如果你使用的是托管服务提供商出租的设备，那么在主数据中心和备份数据中心租用两种不同类型的服务器是明智之举。这应该可以避免现代系统中几乎所有的故障模式。</p>
+<h2 id="使用云，但不要过于“云化”"><a href="#使用云，但不要过于“云化”" class="headerlink" title="使用云，但不要过于“云化”"></a>使用云，但不要过于“云化”</h2><p>可用性和易用性的结合是我（和大多数其他工程师）喜欢云计算的主要原因之一。是的，你需要支付高额溢价来租用云上的机器，但云提供商在构建服务器方面经验丰富，你甚至感受不到大多数故障，对于其他故障，你也可以通过从他们几乎无限的计算资源池中租用新机器来快速恢复服务。确保机器不间断运行是他们的工作，虽然他们不总是做得完美，但他们做得相当好。</p>
+<p>一些服务器托管服务提供商是云的便宜替代，但这些提供商可能不了解网络配置和相关硬件故障等问题。此外，从当前租用的一台服务器迁移到另一台高配服务器比直接调整云虚拟机的规格要麻烦得多。云服务器溢价是有道理的。 </p>
+<p>当你和云打交道时，云的销售人员通常会推动你采用“云原生”架构。包括自动伸缩虚拟机中的微服务、组件间的负载均衡，还有一些增加云绑定的产品，如Serverless计算服务和RDS。这些销售推动“云架构”是有充分理由的，毕竟这对他们更有利！</p>
+<p>一般来说，使用云架构是好的，毕竟云可以毫不费力地扩展。但需要明白一点，需要为很多人提供服务，并不是必须使用云原生架构的理由：毕竟大多数服务可以用一台服务器同时为数百万人提供服务，并且永远不会出现突然的的五位数账单。</p>
+<h3 id="为什么应该为峰值负载付费？"><a href="#为什么应该为峰值负载付费？" class="headerlink" title="为什么应该为峰值负载付费？"></a>为什么应该为峰值负载付费？</h3><p>对于“使用一台高配服务器”的一个常见批评是，这样意味着会一直为峰值负载付费，而不是按需付费。因为Serverless计算或微服务+虚拟机更能使云的消费与利润保持一致。</p>
+<p>不幸的是，由于最终所有服务都会运行在服务器上（不管你喜不喜欢），整个链条中的某人一定会根据他们的峰值负载向你收费。负载均衡、Serverless计算服务和低配虚拟机的“云溢价”的一部分就是基于云需要构建多少额外容量才能处理他们的峰值负载。无论如何，你都在为某个人的峰值负载买单！ 如果你的工作负载是特别突发的——比如一个需要运行一次然后永远关闭的模拟器——那就应该优先选择“云”解决方案，但如果你的工作负载不是那么突发，那选择少数几台高配服务器通常会更便宜（也更容易维护）。如果你的云提供商的使用情况比你的更突发，你将白白支付这笔溢价。</p>
+<p>这种溢价同样也适用于虚拟机，而不仅仅是某些云服务。比如，如果你一直需要一台虚拟机，就可以使用包年包月的计价模式，或者你的需求足够的大，一般也可以与销售人员协商来避免支付“峰值负载溢价”。 一般来说，流量突发突发越高，架构就应该越“云化”。</p>
+<h3 id="“云化”需要花多少钱？"><a href="#“云化”需要花多少钱？" class="headerlink" title="“云化”需要花多少钱？"></a>“云化”需要花多少钱？</h3><p>“云化”是昂贵的。一般来说，我预计从云公司购买的服务会有 5-30 倍的价格溢价，具体取决于所购买的产品和基线。不是 5-30%，而是 5 到 30 倍的系数。</p>
+<p>这是 AWS Lambda 的定价：每 100 万个请求 0.20 美元 + 每 GB&#x2F;秒 RAM 0.0000166667 美元。我这里使用的是 x86 CPU 的定价，以与我们上面看到的 m6a.metal 实例保持一致。对于ARM架构的服务器和Serverless计算服务会更便宜点。</p>
+<p>假设你的服务器每小时成本为 8.2944 美元，并且能够以 768 GB RAM 实现 1k QPS的性能：</p>
+<ul>
+<li>每秒 1000 个请求，相当于每分钟6W个请求，每小时360W个请求</li>
+<li>平摊一下，每个请求使用0.768 GB*秒的RAM</li>
+<li>同样的流量如果使用Serverless服务的话，每小时将花费约 46 美元</li>
+</ul>
+<p>Serverless服务相对于裸金属的溢价是 5.5 倍。如果你能将裸金属服务器的利用率保持在 20% 以上，那么就会比使用Serverless服务更便宜。这还不包括你还可以针对裸金属服务做一些成本优化——如果你可以从市场租用服务器，或者通过包年包月获取1年的折扣价，如果这么计算，那么云的溢价率甚至更高。 <strong>如果你将 AWS Lambda 的价格与 OVHCloud 租用服务器的价格进行比较，那溢价率将会是 25 倍</strong>。</p>
+<p>如果你正在考虑从低成本托管服务提供商租用服务器或使用 AWS Lambda，假如你能让服务器利用率超过 5% 的话，那就应该优先选择托管服务提供商！ 另外也需要注意，实际的 QPS 数字无关紧要：如果每小时 8.2944 美元的服务器可以支撑 100k QPS，单次请求所消耗的内存时间可能只有100分之1或者更低，这意味着你将获得相同的 5.5 倍（或 25 倍）溢价。无论如何，你都应该根据你的应用程序调整服务器的配置。</p>
+<h2 id="对于使用单台高配服务器的反对意见"><a href="#对于使用单台高配服务器的反对意见" class="headerlink" title="对于使用单台高配服务器的反对意见"></a>对于使用单台高配服务器的反对意见</h2><p>如果你建议使用一台高配服务器部署业务，那通常会遇到来自更习惯云、更喜欢时尚或有其他合理担忧的人的反对意见。因此在评估时需要仔细判断，大多数人其实都大大低估了“云架构”与底层计算相比的实际成本。以下是一些常见的反对意见：</p>
+<h3 id="如果我使用云架构，我就不需要专门的系统管理员了"><a href="#如果我使用云架构，我就不需要专门的系统管理员了" class="headerlink" title="如果我使用云架构，我就不需要专门的系统管理员了"></a>如果我使用云架构，我就不需要专门的系统管理员了</h3><p>不，你仍然需要。一方面他们现在被称为“云运维”了，归属于不同的管理部门。另一方面，能够解读云公司深奥的文档并跟上相应的大量更新和弃用趋势的能力的人，很可能会比系统管理员贵 5 倍。</p>
+<h3 id="如果我使用云架构，我就不必进行安全更新了"><a href="#如果我使用云架构，我就不必进行安全更新了" class="headerlink" title="如果我使用云架构，我就不必进行安全更新了"></a>如果我使用云架构，我就不必进行安全更新了</h3><p>不，你仍然需要。可能需要做的事情变少了，但那些省掉的更新是很容易自动化的。那些省不掉的，比如审计所使用的库以及确保所有配置都安全的工作，依然会让人痛苦。</p>
+<h3 id="如果我使用云架构，我就不必担心它会宕机了"><a href="#如果我使用云架构，我就不必担心它会宕机了" class="headerlink" title="如果我使用云架构，我就不必担心它会宕机了"></a>如果我使用云架构，我就不必担心它会宕机了</h3><p>使用云和微服务架构带来的“高可用性”，仅仅是弥补了架构的复杂而导致的脆弱性。一般来说，如果你使用两个不同的云区域或两个云提供商，就可以认为这足以避免服务宕机。况且，云提供商过去经常发生全球性中断，没有理由认为云数据中心的宕机频率会低于你的一台服务器。<br>请记住，我们在努力避免发生批次性故障。但实际上云的数据中心中有很多部件可能发生批次性的故障。托管服务提供商的这些部件要少得多。同样，复杂的云服务，如RDS，比一些简单的服务（虚拟机）有更多的故障场景。</p>
+<h3 id="但是如果我使用云架构，我可以开发得更快"><a href="#但是如果我使用云架构，我可以开发得更快" class="headerlink" title="但是如果我使用云架构，我可以开发得更快"></a>但是如果我使用云架构，我可以开发得更快</h3><p>那就去用云，只是需要多关注账单，并考虑什么时间点值得切换。这个理由可能是支持使用云架构的最有力论据。然而，如果你在成长过程中不更多地思考，你很可能会在需要切换到更“无趣”的方案之后，在云架构上浪费大量金钱。</p>
+<h3 id="我的工作负载真的很突发"><a href="#我的工作负载真的很突发" class="headerlink" title="我的工作负载真的很突发"></a>我的工作负载真的很突发</h3><p>那就拥抱云吧。这是使用Serverless服务等工具的绝佳理由。云架构的一大优点是它能很好地向下缩减。如果你的工作负载长时间处于空闲状态，然后突然出现大量不可预测的活动，那么云架构应该会非常适合你。</p>
+<h3 id="CDN-呢？"><a href="#CDN-呢？" class="headerlink" title="CDN 呢？"></a>CDN 呢？</h3><p>通过一台高配服务器，不可能获得 CDN 的优势，包括延迟改善和带宽节省。对于其他需要分布式部署的系统，如备份，情况也是如此。幸运的是，CDN 和备份是竞争激烈的市场，相对便宜。这些都是值得购买而不是自行构建的东西。</p>
+<h2 id="关于微服务架构和单体架构的一些说明"><a href="#关于微服务架构和单体架构的一些说明" class="headerlink" title="关于微服务架构和单体架构的一些说明"></a>关于微服务架构和单体架构的一些说明</h2><p>说起“使用一台高配服务器”这个话题，自然地就会与单体架构联系起来。然而，你不必使用单体架构才能使用一台服务器。你可以在一台高配服务器上运行许多容器，每个容器一个微服务。但是，当你在一台高配服务器上运行微服务架构时，通常会给整个系统带来大量开销，而获得的收益却值得怀疑。</p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>当你遇到增长瓶颈，接近当前服务器的极限时，如今的传统观念是采用分片和横向扩展，或者使用能“免费”提供横向扩展能力的云架构。然而，通常垂直扩展会更容易、更高效。使用一台高配服务器相对便宜，能将开销降到最低，而且如果你注意预防一些批次性的硬件故障，它实际上拥有相当好的可用性保障。它不那么光鲜亮丽，也无助于你的简历，但一台高配服务器将很好地为你服务。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="陈孚 wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Serverless/" rel="tag"># Serverless</a>
+              <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag"># 微服务</a>
+              <a href="/tags/%E5%8D%95%E4%BD%93%E5%BA%94%E7%94%A8/" rel="tag"># 单体应用</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/08/25/solidigm-p41-plus-cold-data-problem/" rel="prev" title="一个Solidigm P41 Plus的冷数据问题">
+                  <i class="fa fa-angle-left"></i> 一个Solidigm P41 Plus的冷数据问题
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">陈孚</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js" defer></script>
+
+</body>
+</html>
