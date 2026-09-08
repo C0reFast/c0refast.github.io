@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/favicon-orgin.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/favicon/favicon-orgin.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.1.14/dist/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism-vsc-dark-plus","dark":"prism-vsc-dark-plus"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="经历了十几年的运营，SinaAppEngine 终于要走完一个产品的一生，即将下线并永久终止服务了。SAE 是我很早就接触过的平台，也是我人生中的第一份工作。借此契机，回忆一下我在 SAE 期间的一些工作，谨以此文，悼念我心中永远的 SinaAppEngine。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="怀念 SinaAppEngine">
+<meta property="og:url" content="https://www.ichenfu.com/2026/09/08/rip-sina-app-engine/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="经历了十几年的运营，SinaAppEngine 终于要走完一个产品的一生，即将下线并永久终止服务了。SAE 是我很早就接触过的平台，也是我人生中的第一份工作。借此契机，回忆一下我在 SAE 期间的一些工作，谨以此文，悼念我心中永远的 SinaAppEngine。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-08T11:06:26.000Z">
+<meta property="article:modified_time" content="2026-09-08T12:10:31.015Z">
+<meta property="article:author" content="陈孚">
+<meta property="article:tag" content="SAE">
+<meta property="article:tag" content="SinaAppEngine">
+<meta property="article:tag" content="停服">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2026/09/08/rip-sina-app-engine/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2026/09/08/rip-sina-app-engine/","path":"2026/09/08/rip-sina-app-engine/","title":"怀念 SinaAppEngine"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>怀念 SinaAppEngine | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?50e2a95e85fdbe38e53b7aaba8c6cfe1"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.1.14/dist/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9D%E8%A7%81"><span class="nav-number">1.</span> <span class="nav-text">初见</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%A5%E8%81%8C"><span class="nav-number">2.</span> <span class="nav-text">入职</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PHP-%E8%BF%90%E8%A1%8C%E7%8E%AF%E5%A2%83%EF%BC%81"><span class="nav-number">3.</span> <span class="nav-text">PHP 运行环境！</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RDS%EF%BC%88%E6%89%98%E7%AE%A1%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9C%8D%E5%8A%A1%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">RDS（托管式数据库服务）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%AD%BB%E5%B1%80"><span class="nav-number">5.</span> <span class="nav-text">死局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B2%A1%E6%9C%89%E5%A6%82%E6%9E%9C%E7%9A%84%E5%A6%82%E6%9E%9C"><span class="nav-number">6.</span> <span class="nav-text">没有如果的如果</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">陈孚</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">113</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">257</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/C0reFast" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;C0reFast" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chenfu@ichenfu.com" title="E-Mail → mailto:chenfu@ichenfu.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/c0refast" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;c0refast" rel="noopener me" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+<div class="sidebar-inner sidebar-blogroll">
+  <div class="links-of-blogroll animated">
+    <div class="links-of-blogroll-title">
+      赞助商
+    </div>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9413546783705149" crossorigin="anonymous"></script>
+      <!-- Siderbar广告 -->
+    <ins class="adsbygoogle"
+      style="display:block"
+      data-ad-client="ca-pub-9413546783705149"
+      data-ad-slot="7305543550"
+      data-ad-format="auto"
+      data-full-width-responsive="true"></ins>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2026/09/08/rip-sina-app-engine/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="怀念 SinaAppEngine | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          怀念 SinaAppEngine
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026年9月8日 19:06 19:06:26" itemprop="dateCreated datePublished" datetime="2026-09-08T19:06:26+08:00">2026年9月8日 19:06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>经历了十几年的运营，SinaAppEngine 终于要走完一个产品的一生，即将下线并永久终止服务了。SAE 是我很早就接触过的平台，也是我人生中的第一份工作。借此契机，回忆一下我在 SAE 期间的一些工作，谨以此文，悼念我心中永远的 SinaAppEngine。</p>
+<span id="more"></span>
+<h2 id="初见"><a href="#初见" class="headerlink" title="初见"></a>初见</h2><p>第一次接触 SAE 应该是在大二下学期吧。在那个时代，最火的 CMS 还是 WordPress，那时的我也在折腾着 LAMP&#x2F;WAMP 的本地运行环境，以及淘宝购买的便宜的虚拟主机，差不多几十块钱一年吧。可想而知，这类便宜虚拟主机的体验其实非常不好，基本上三天两头就会出现问题，不是打不开了，就是数据库满了，即便是服务正常的时候，网络速度也是不敢恭维的，当时虚拟主机几乎也不会有现在 BGP 的网络，大多也还是双线或者多线的接入，但实际体验下来会发现，不管是哪个接入，它的速度都是特别慢，毕竟超售太严重了。也就是在这个时间点，我发现了 SAE 这么一个东西，发现原来在 SAE 上运行 WordPress，速度可以这么快，原来 WordPress 一点也不慢，页面也可以秒开，这对于当时一直在折腾追主机的我来说，是一个巨大的震撼。</p>
+<p>不过在试用了一段时间之后，发现 SAE 还是有一些问题的。以 WordPress 为例，在 SAE 的应用商店里面是有一个定制版的 WordPress，直接可以一键安装的，但是如果想在 SAE 上去跑一个标准版的 WordPress，就会发现实际它是没有办法正常运行的，这与 SAE 的分布式、无状态运行环境有关。应用实例无法依赖一个持久且可共享的本地文件系统，而标准版 WordPress 默认依赖本地文件写入，因此无法直接运行。另外就针对这个 WordPress 的一些插件，也或多或少需要进行修改后才能运行。虽然 SAE 的分布式环境让性能有了非常大的提升，但是因为这个架构的变化，导致了很多应用其实不能百分之百地直接运行。在这个 SAE 之上，不仅是 WordPress，还有当时一些比较火的一些框架和项目，如 ThinkPHP、Discuz! 等等, 这些都没办法直接运行在 SAE 上，都需要额外的一些修改，可以说，这也是 SAE 最终不敌其他产品、走向关停的重要原因之一。</p>
+<h2 id="入职"><a href="#入职" class="headerlink" title="入职"></a>入职</h2><p>说起来入职 SAE 的经历，也是很神奇，在大四的时候，那时还没有现在那种暑期找实习的概念，当时我大学也是名不见经传，也没有什么很大的公司到学校进行校园招聘，所以很轻松的，我就错过了上学期的秋招。不过我当时也是参加了考研，也是稀里糊涂过了国家线，所以当时其实也没那么着急，当然最后确实考研也考上了，只是后来没去上学，这都是后话了。</p>
+<p>到了第二年春天的时候，突然的机会，发现了 SAE 的微博发了招聘信息，当时也没多想，也就发了简历，本来也不报任何希望，没想到居然收到了面试通知。面试也是很神奇，一开始约了某天的电话面试，但是到了约定的时间，也没接到电话，一开始还在想是怎么回事，是不是已经招到人了。后来我又尝试性地问了一下，结果是当时的面试官出差，给忘了。好在又重新约了面试时间。一面之后，想着是否还会有技术的二面，结果直接就跳到了 HR 的面试了，一番交流之后，最终还是收到了 SAE 的 Offer，当然也是校招的 Offer，只能说错过了秋招的大巴，没想到又赶上了校招的末班车。</p>
+<h2 id="PHP-运行环境！"><a href="#PHP-运行环境！" class="headerlink" title="PHP 运行环境！"></a>PHP 运行环境！</h2><p>入职经历了一个稍显平淡的适应期后。我迎来了第一个挑战，给 SAE 的 PHP 运行环境升级 PHP 的版本，彼时的 SAE，PHP 的运行环境下，只支持5.3的版本，而5.3版本已经是一个比较老的版本了，最新的版本已经来到了 PHP 5.6。虽然当时 PHP 升级带来的各项提升都不大，但是一个云平台，一直停留在5.3的这个版本，肯定是不太合适的。</p>
+<p>但升级 PHP 版本并不是一件容易的事情。SAE 的架构非常的独特，简单来说，它把所有用户的所有代码，都看成是一个巨大无比的网站，想象一下，你维护了一个网站，这个网站有几十万个域名，代码容量超过1TB，而且由于 SAE 是公有云，各个租户之间的隔离需求，以及租户和平台之间的隔离需求，是需要以最高优先级考虑的，在这样的背景下，传统的基于 vhost 的方式根本行不通，因此，SAE 的 PHP 运行环境，对 PHP Zend 引擎，PHP 的扩展，PHP 的日志等等各个方面都做了大量的定制，甚至在语法层面也做了修改，从而可以实现对海量用户代码的高效运行，这么做的好处不用说了，即使在现在看来，SAE 的 PHP 运行环境依然是独树一帜的，真正意义上做到零访问的情况下零资源占用（当然有代码的存储成本）。任意访问零预热时间，单单从效率这方面，这玩意比后来的基于容器的或者其他方案的 PaaS 平台高到不知道哪里去了。甚至对比很多 Serverless 平台，也毫不逊色。</p>
+<p>但很明显，当前这种魔改 PHP 方法带来的问题也是巨大的，PHP 运行环境变得不太好维护了，上一次升级，仅仅是将 PHP 从5.3.3升级到5.3.29，一个补丁版本的升级，就花费了差不多半年时间。因此，我们一开始预估 PHP 5.6 运行环境的适配周期至少需要半年，实际可能还会更久。</p>
+<p>当然这也就是我开动小脑筋的时候了，我问了自己一个问题，如果现在不考虑以前的方案，从零开始，应该怎么做呢？当然，这次必须额外考虑一个需求，那就是在保证高效运行的前提下，PHP 的升级和维护必须变得更加容易，最好是能够形成一套方法，针对当前的5.6版本，以及未来更新的版本都能以类似的方法快速适配。最终，我把老 PHP 运行环境里每个修改的部分都研究了一遍，做了一遍逆向，反推出当时修改的原因，并基于这些需求，再确认哪些是必须保留的特性，哪些是必须通过修改 PHP 源码本身才能实现的特性，以及哪些是可以通过其他方式实现的特性，从而形成了一套相对完整的升级方案。</p>
+<p>好在 PHP 引擎整体的架构设计得相当灵活，大概95%的需求，都可以通过扩展注入的方式实现，这就意味着可以在不修改 PHP 源码的情况下，可以直接通过扩展来修改 PHP 本身的行为，做到对 PHP 版本的解耦，而剩下的5%的需求，依然还是需要对 PHP 的源码进行修改，而这次，会使用一个聪明的办法来实现，将所有的修改都放到单独的文件里，这样当 PHP 源码变化很小时，Patch 可以被直接 Apply。</p>
+<p>最后呢，PHP5.6的升级项目大大快于预期，差不多只用了3个月的时间就完成了，而且在后续的升级中，非常的顺利，后来即使是 PHP7.0（Zend 大改版）的适配时间也没有超过1个月。</p>
+<p>关于 PHP 运行环境，还有很多故事可以说，后面再慢慢总结吧。</p>
+<h2 id="RDS（托管式数据库服务）"><a href="#RDS（托管式数据库服务）" class="headerlink" title="RDS（托管式数据库服务）"></a>RDS（托管式数据库服务）</h2><p>SAE 一直是有数据库服务的，之前 SAE 支持的数据库服务叫 RDC（Relational Database Cluster），但是呢，这玩意的实现是一个共享的模式，也就是说，会有一堆人，一堆应用共享一个 MySQL 的端口，而在当时，一方面，MySQL 本身还不是非常的成熟，大部分的 MySQL 表使用的还是 MyISAM 引擎，另外一方面，硬件上 SSD 还没完全普及，导致数据库的性能并不理想。于是，冲突就产生了，如果不加限制，会很容易出现某个用户或者某个应用因为不规范的使用数据库，导致把整个数据库端口拖垮，从而影响在这个端口上所有的其他用户，甚至有可能影响到整个平台，这在要求多租户强隔离的云计算场景下是完全不能接受的。因此为了解决多租户隔离的问题，RDC 对用户使用做了非常多的限制，包括但不限于单表行数限制，单 SQL 扫描行数限制，数据库容量限制，索引限制等等，这些限制一方面在 RDC 架构层面必须存在，无法解决，另一方面对于用户来说是实实在在的障碍，导致了 SAE 对于用户门槛的进一步提高，更关键的是，PaaS 化的数据库服务，在云计算平台中，绝对是溢价最高的服务之一，对于整体的营收和利润帮助巨大。</p>
+<p>基于这些因素，SAE 需要一个对于应用或者用户级别独享的、基于 CPU&#x2F;内存&#x2F;存储等底层资源限制，而不是基于业务层面限制的数据库服务，这也就是后来的 RDS 独享数据库服务。其实在当时 RDS 服务并不罕见，不说 AWS，就说当时的阿里云，就早早的推出了 RDS 服务。而 SAE 的 RDS 服务，也是瞄准了阿里云的 RDS，一开始就希望可以把产品追平阿里云，但不得不说，在整体的投入上，SAE 和阿里云有着很大的差距，特别是阿里云有相对成熟的 VM 虚拟化层做支撑，而我们并没有类似的技术，这方面的劣势是巨大的，甚至对我个人而言，这几乎成了当时的心病，拥有一套成熟的 IaaS 体系，对于一个云计算平台来说，实在是太重要了。</p>
+<p>RDS 服务算是我人生中第一个经历完整研发流程的项目，从开始的产品调研，到需求评审，再到设计、开发、测试，最后上线运营，整个过程都参与其中，这让我对一个完整的产品生命周期有了深刻的理解和体会。甚至后来很多年都很少有类似的机会，可以真正意义上的按照类似的生命周期去参与一个产品的开发。虽然当时的 SAE 是个不算特别大的团队，但是针对这个项目，表现出整体的专业性也是比很多草台班子要强得多的。</p>
+<p>当然在研发过程中，特别是后端的开发过程中，也是遇到了太多的问题，一开始我们期望使用 Docker 来实现隔离，我们算是国内较早接触并在生产环境中使用 Docker 的团队之一，在那个 Docker 刚刚出现，连 OS 都还没完全准备好的时候，我们就已经开始尝试在生产环境中使用它，这带来了巨大的挑战。不过今天肯定也不会聊太多的技术内容了，和 PHP 运行环境一样，留给后面的文章吧。</p>
+<h2 id="死局"><a href="#死局" class="headerlink" title="死局"></a>死局</h2><p>在16年初的时候，SAE 迎来了一次巨大的调整，整体人员规模缩减到了原来的1&#x2F;3，也许是因为当前不挣钱，也许是因为想达到挣钱的预期投入太高了，高层们的决策逻辑无从考究，但无论如何，SAE 持续投入的基础没有了。</p>
+<p>这几乎是必然的，公有云 PaaS，特别是像 SAE 这样的公有云纯 PaaS 平台，面向的市场实在太小了。PaaS 平台都会宣传（至少 SAE 是这样宣传的）自己可以无限自动扩展，没有流量不花钱，但为了达到这样的目的，必然有额外的代价，PHP Runtime 和 RDC 的例子就在这里，其他的服务也是会有各种各样的限制，也就是说，你的应用，必须首先满足某些严苛的要求，才能支持在 PaaS 平台上运行，这个要求，一下子就拦住了大部分的开发者，在一个公司内部，这样的开发规范是完全没问题的，因此 PaaS 平台在某个公司内部，作为同一个运行平台是非常合适的，但是如果把 PaaS 拉到公有云平台，要求你的客户，特别是个人开发者去为你一个平台去做改造，除非你的平台有着无可比拟的优势，否则这是一个非常不现实的事情。</p>
+<p>除了平台限制和改造成本，还有个必须要面对的问题，虽然 PaaS 平台宣传上都可以做到无限自动扩展，但很显然这在技术上不可能行得通，随着流量的增大，架构必须要持续的演化，因此，当公司规模增大之后，一定会产生一些平台无法满足的需求，从而催生着公司的架构远离这个平台，曾经创业初期的滴滴，就是运行在 SAE 上的，但是很快地，架构都切回到自建了。当一个公司需要更加灵活的算力时，你却没有，这时候 SAE 没有 IaaS 能力的劣势就变得巨大无比。而且对云厂商而言，toB 业务通常更容易形成稳定的现金流和利润，没有 toB 的业务，也就没有了持续增长的可能。</p>
+<p>最后，SAE 这种纯 PaaS 平台，就变得一根筋两头堵了，针对个人开发者，门槛高，限制多，也不一定便宜，更不一定挣钱，而面对企业级客户，架构不够灵活，没有 IaaS 层，没办法针对客户业务做针对性优化，企业想花钱也花不了，注定是个死局。</p>
+<h2 id="没有如果的如果"><a href="#没有如果的如果" class="headerlink" title="没有如果的如果"></a>没有如果的如果</h2><p>从16年死局确定，到现在，10年时间，有了很多的变化，从19年开始，曾经 SAE 最缺失的 IaaS 层最终还是被我做出来了，经过这几年的迭代发展，可以说在技术上也不输公有云的 IaaS 服务，也在和公有云的正面竞争中获得了不少的份额，但毕竟当前的这个 IaaS 服务自始至终都是面向私有云场景设计并开发，和公有云对于 IaaS 服务的要求还是有一些差距的，虽然这些差距在一定的投入下还是可以弥补的，只是不知道是否真的有机会看到这个平台推向市场的那一天了。</p>
+<p>从23年开始的 AI 大爆发，给了云计算市场巨大的增长潜力和机会，截至最近的一次财报，微软，谷歌，AWS 的云计算服务，都迎来了爆炸式的增长，在 AI 应用还没有实现大规模盈利的时代，起码这些出售算力和基础设施的云厂商已经赚的盆满钵满了。每次遇到一些 AI 产品部署相关的需求，我都会不由自主地想起 SAE，在 AI 的时代，编码不再是瓶颈，原型需要快速部署，不访问时没有基础消耗，这些特性实在是太适合 SAE 了，可以说，SAE 对应用改造要求较高这一劣势 AI 时代被大大削弱了，SAE 的很多优势，恰好契合了当前 AI 应用原型快速部署、按需运行的需求。<br>我时不时得还会忍不住问自己，如果10年前的 SAE 破除了死局，坚持到今天的话，是否也能赶上 AI 的浪潮呢？只可惜，这个问题，再也不会有答案了。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="陈孚 wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/SinaAppEngine/" rel="tag"># SinaAppEngine</a>
+              <a href="/tags/SAE/" rel="tag"># SAE</a>
+              <a href="/tags/%E5%81%9C%E6%9C%8D/" rel="tag"># 停服</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/12/30/virtio-blk-io-size/" rel="prev" title="一个virtio-blk设备IO大小的问题">
+                  <i class="fa fa-angle-left"></i> 一个virtio-blk设备IO大小的问题
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">陈孚</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js" defer></script>
+
+</body>
+</html>

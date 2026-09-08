@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/favicon-orgin.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/favicon/favicon-orgin.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.1.14/dist/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism-vsc-dark-plus","dark":"prism-vsc-dark-plus"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta property="og:type" content="website">
+<meta property="og:title" content="C0reFast记事本">
+<meta property="og:url" content="https://www.ichenfu.com/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:author" content="陈孚">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":true,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"index.html","title":""}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?50e2a95e85fdbe38e53b7aaba8c6cfe1"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.1.14/dist/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">C0reFast记事本</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">陈孚</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">113</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">257</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/C0reFast" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;C0reFast" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chenfu@ichenfu.com" title="E-Mail → mailto:chenfu@ichenfu.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/c0refast" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;c0refast" rel="noopener me" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+<div class="sidebar-inner sidebar-blogroll">
+  <div class="links-of-blogroll animated">
+    <div class="links-of-blogroll-title">
+      赞助商
+    </div>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9413546783705149" crossorigin="anonymous"></script>
+      <!-- Siderbar广告 -->
+    <ins class="adsbygoogle"
+      style="display:block"
+      data-ad-client="ca-pub-9413546783705149"
+      data-ad-slot="7305543550"
+      data-ad-format="auto"
+      data-full-width-responsive="true"></ins>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2026/09/08/rip-sina-app-engine/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/09/08/rip-sina-app-engine/" class="post-title-link" itemprop="url">怀念 SinaAppEngine</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026年9月8日 19:06 19:06:26" itemprop="dateCreated datePublished" datetime="2026-09-08T19:06:26+08:00">2026年9月8日 19:06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>经历了十几年的运营，SinaAppEngine 终于要走完一个产品的一生，即将下线并永久终止服务了。SAE 是我很早就接触过的平台，也是我人生中的第一份工作。借此契机，回忆一下我在 SAE 期间的一些工作，谨以此文，悼念我心中永远的 SinaAppEngine。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2026/09/08/rip-sina-app-engine/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/12/30/virtio-blk-io-size/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/12/30/virtio-blk-io-size/" class="post-title-link" itemprop="url">一个virtio-blk设备IO大小的问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年12月30日 21:26 21:26:48" itemprop="dateCreated datePublished" datetime="2025-12-30T21:26:48+08:00">2025年12月30日 21:26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>最近在测试我们的VM时，发现了一个比较奇怪的现象：对于同样的一个IO压力，当IO设备是<code>NVMe</code>或者<code>virtio-blk</code>时，行为有一些不太一样，具体表现在IOPS上，而且差距非常大，同样是1GB&#x2F;s左右的IO，两个不同设备的IOPS差了接近4倍：</p>
+<p><img src="/images/virtio-blk-io-size/iops.png"></p>
+<h3 id="更多的测试"><a href="#更多的测试" class="headerlink" title="更多的测试"></a>更多的测试</h3><p>一般来说，NVMe设备，单个IO的最大大小是<code>128KB</code>，那对于1GB&#x2F;s的吞吐来说，当前的IOPS是一个合理的值，那问题很显然出在了<code>virtio-blk</code>设备上，可以确定地是，在<code>virtio-blk</code>设备上的IO被切分了。简单除一下，可以大致得到设备层的IO大小大致在<code>30KB</code>附近，按照常理，<code>virtio-blk</code>设备的最大IO大小可不止这点。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/12/30/virtio-blk-io-size/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/09/08/use-one-big-server/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/09/08/use-one-big-server/" class="post-title-link" itemprop="url">使用单台高配服务器（部署你的业务）</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年9月8日 20:48 20:48:26" itemprop="dateCreated datePublished" datetime="2025-09-08T20:48:26+08:00">2025年9月8日 20:48</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>本文是<a target="_blank" rel="noopener" href="https://specbranch.com/posts/one-big-server/">Use One Big Server</a>的翻译，前两天在<a target="_blank" rel="noopener" href="https://news.ycombinator.com/item?id=45085029">HackerNews</a>上看到这篇文章，虽然是2022年的（文章刚出时，也引起了不少的讨论，不知道怎么现在又被挖了出来），但是也引发了很多热议。</p>
+<p>行业内一直有不少关于“单体与微服务”架构的争论，但这场争论背后的真正问题是分布式系统架构是否值得花费开发者时间和成本开销。通过对系统的实际运行情况进行分析，可以深入了解大多数情况下我们是否真的需要分布式系统。</p>
+<p>我们已经对虚拟化以及软件和运行软件的服务器之间的抽象变得如此熟悉。如今，“Serverless”计算风靡一时，甚至“裸金属”也成为了一种虚拟机。然而，每一段软件都运行在一台服务器上。由于我们现在生活在一个虚拟化的世界里，大多数这些服务器比我们实际认为的要大得多、便宜得多。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/09/08/use-one-big-server/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/08/25/solidigm-p41-plus-cold-data-problem/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/08/25/solidigm-p41-plus-cold-data-problem/" class="post-title-link" itemprop="url">一个Solidigm P41 Plus的冷数据问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年8月25日 19:35 19:35:02" itemprop="dateCreated datePublished" datetime="2025-08-25T19:35:02+08:00">2025年8月25日 19:35</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>现在用的笔记本电脑是公司去年发的HP EliteBook 640 G10，机器自带了一块Solidigm的SSD，从型号上应该就是P41 Plus的OEM版本，最近使用中发现机器越来越慢了，一开始以为是内存用的多，直到有一次重启发现了一些异常，这机器重启竟然需要20分钟的时间！重启进入桌面之后，系统也非常卡顿，完全没办法使用，好不容易打开任务管理器，发现磁盘一直100%占用，响应时间已经飙上了天。很显然，磁盘遇到问题了。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/08/25/solidigm-p41-plus-cold-data-problem/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/08/14/testing-broadcast-arp-and-nd/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/08/14/testing-broadcast-arp-and-nd/" class="post-title-link" itemprop="url">测试ARP/ND双发效果的小工具</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年8月14日 20:30 20:30:24" itemprop="dateCreated datePublished" datetime="2025-08-14T20:30:24+08:00">2025年8月14日 20:30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%99%9A%E6%8B%9F%E5%8C%96/" itemprop="url" rel="index"><span itemprop="name">虚拟化</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>在<a href="/2025/07/18/broadcast-arp-and-nd-on-hw-offloaded-bonding/">上一篇Blog</a>里说了一下关于ARP&#x2F;ND双发的实现，但是还遗留了一个小问题，就是如何测试最终的效果，毕竟正常情况下，ARP还有ND相关的报文，都是由内核协议栈根据需要发出的，不太稳定，总不能一直抓包等着内核发包吧？所以还是需要借助一些工具来实现。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/08/14/testing-broadcast-arp-and-nd/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/07/18/broadcast-arp-and-nd-on-hw-offloaded-bonding/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/07/18/broadcast-arp-and-nd-on-hw-offloaded-bonding/" class="post-title-link" itemprop="url">硬件Bonding卸载场景下的ARP/ND双发</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年7月18日 19:58 19:58:08" itemprop="dateCreated datePublished" datetime="2025-07-18T19:58:08+08:00">2025年7月18日 19:58</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%99%9A%E6%8B%9F%E5%8C%96/" itemprop="url" rel="index"><span itemprop="name">虚拟化</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>大约在2019年的时候，公司的服务器接入网络架构开始向双上联去堆叠方向迁移，相比于之前老的接入网络而言，新的网络架构在各方面的提升都非常明显，尤其是在带宽利用率和冗余性方面，关于网络架构的部分，这里暂时就不多做介绍了，具体的可以参考京东以及H3C的相关分享和文档：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/62024674">异构去堆叠 | 一种完美提升网络高可用SLA的方案
+</a>，<a target="_blank" rel="noopener" href="https://www.h3c.com/cn/Service/Document_Software/Document_Center/Home/Switches/00-Public/Configure/Practice/H3C_S_MLAG-BP_Long/">H3C数据中心交换机S-MLAG最佳实践</a>。</p>
+<p>在新的网络架构中，我们的方案是通过ARP转主机路由方式来实现网络层面的负载均衡和高可用的，这个方案有个依赖，需要主机实现ARP&#x2F;ND相关协议包的双发。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/07/18/broadcast-arp-and-nd-on-hw-offloaded-bonding/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/06/08/yolo11-on-wslg-docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/08/yolo11-on-wslg-docker/" class="post-title-link" itemprop="url">“无限”套娃，在WSL的Docker中使用YOLOv11做目标检测</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年6月8日 19:34 19:34:23" itemprop="dateCreated datePublished" datetime="2025-06-08T19:34:23+08:00">2025年6月8日 19:34</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%97%A5%E5%B8%B8%E6%8A%98%E8%85%BE/" itemprop="url" rel="index"><span itemprop="name">日常折腾</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>前几天偶然发现，Windows 11的WSL2可以通过WSLg来无缝使用GUI应用。类似推理&#x2F;训练等任务，都不在话下，这瞬间勾起了我的好奇心，决定试试微软提供的这个神奇功能。其实微软在2021年就发布了WSLg，现在已经是2025年了，刚刚开始折腾也算是后知后觉了。</p>
+<p>WSL支持GUI应用只能算是WSLg的一个最简单的功能了，当涉及模型训练或者GPU加速时，GPU驱动还有CUDA等等相关的配置就会变得复杂起来。我并不希望因为“折腾”这么一下，就把我的WSL环境搞得一团糟，这时候，Docker的价值就体现出来了。利用Docker，可以在不修改现有WSL环境的情况下，快速搭建一个隔离的环境来做些简单的测试。我决定使用YOLO作为测试对象，看看在WSL+WSLg+Docker的场景下，YOLO还能不能很好的工作，正确使用我的GPU进行加速。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/06/08/yolo11-on-wslg-docker/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/05/29/a-leap-year-check-in-three-instructions/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/05/29/a-leap-year-check-in-three-instructions/" class="post-title-link" itemprop="url">在三条指令内实现闰年判断</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年5月29日 20:29 20:29:37" itemprop="dateCreated datePublished" datetime="2025-05-29T20:29:37+08:00">2025年5月29日 20:29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">源码分析</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>本文是<a target="_blank" rel="noopener" href="https://hueffner.de/falk/blog/a-leap-year-check-in-three-instructions.html">A leap year check in three instructions</a>的翻译，前两天在<a target="_blank" rel="noopener" href="https://news.ycombinator.com/item?id=43999748">HackerNews</a>上看到这篇文章，闰年的判断方法，从一开始学编程就是一个经典的练习题，但是深挖下去，作者只用了三条指令就能实现闰年的判断，感觉还挺有意思的，所以就翻译分享一下。</p>
+<p>省流不看版（基于DeepSeek总结）：<br>文章介绍了一种使用大约3个CPU指令实现快速闰年检查的方法。这种方法不同于标准算法（涉及模运算和分支），而是利用位操作和魔法数字，将闰年规则（能被4整除，但不能被100整除，除非能被400整除）巧妙地映射到对年份乘以一个常数后的结果进行位范围检查。这种位操作方法对于随机年份输入表现出显著的速度提升，并且针对特定范围已证明是最优解。这项优化技术涉及复杂的位运算细节。</p>
+<p>以下是原文的翻译：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/05/29/a-leap-year-check-in-three-instructions/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/05/10/a-network-latency-problem/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/05/10/a-network-latency-problem/" class="post-title-link" itemprop="url">一个中断关闭时间太长导致的网络延迟问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年5月10日 11:15 11:15:50" itemprop="dateCreated datePublished" datetime="2025-05-10T11:15:50+08:00">2025年5月10日 11:15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>近期线上出现了一个问题，现象是有一台机器，网络出现了不定时的延迟：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># ping -i 0.05 192.168.0.5</span>
+<span class="token comment">#...</span>
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">673</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.203</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">674</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.210</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">675</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.218</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">676</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.233</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">677</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">406</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">678</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">354</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">679</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">302</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">680</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">251</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">681</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">199</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">682</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">147</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">683</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">94.8</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">684</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">43.0</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">685</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.216</span> ms
+<span class="token number">64</span> bytes from <span class="token number">192.168</span>.0.5: <span class="token assign-left variable">icmp_seq</span><span class="token operator">=</span><span class="token number">686</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">63</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.248</span> ms
+<span class="token comment">#...</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>以50ms为间隔ping，发现概率性的会出现超过400ms的延迟，但是并没有丢包的现象发生。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/05/10/a-network-latency-problem/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/04/23/new-kernel-showing-interrupt-cpu-usage/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/04/23/new-kernel-showing-interrupt-cpu-usage/" class="post-title-link" itemprop="url">一个Linux新老内核对于硬件中断的统计差异</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年4月23日 20:18 20:18:10" itemprop="dateCreated datePublished" datetime="2025-04-23T20:18:10+08:00">2025年4月23日 20:18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>最近接到一个客户反馈，说他们的机器，遇到了top命令中，hardirq的值特别高的问题。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">top</span> - <span class="token number">15</span>:27:37 up <span class="token number">43</span> days,  <span class="token number">3</span>:42,  <span class="token number">1</span> user,  load average: <span class="token number">44.75</span>, <span class="token number">53.47</span>, <span class="token number">51.66</span>
+Tasks: <span class="token number">244</span> total,   <span class="token number">1</span> running, <span class="token number">243</span> sleeping,   <span class="token number">0</span> stopped,   <span class="token number">0</span> zombie
+%Cpu0  <span class="token builtin class-name">:</span> <span class="token number">10.3</span> us, <span class="token number">19.8</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">39.7</span> id,  <span class="token number">0.4</span> wa, <span class="token number">28.2</span> hi,  <span class="token number">1.6</span> si,  <span class="token number">0.0</span> st
+%Cpu1  <span class="token builtin class-name">:</span> <span class="token number">10.7</span> us, <span class="token number">21.3</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">40.7</span> id,  <span class="token number">0.4</span> wa, <span class="token number">26.1</span> hi,  <span class="token number">0.8</span> si,  <span class="token number">0.0</span> st
+%Cpu2  <span class="token builtin class-name">:</span> <span class="token number">10.0</span> us, <span class="token number">19.1</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">41.4</span> id,  <span class="token number">0.4</span> wa, <span class="token number">27.9</span> hi,  <span class="token number">1.2</span> si,  <span class="token number">0.0</span> st
+%Cpu3  <span class="token builtin class-name">:</span> <span class="token number">10.4</span> us, <span class="token number">20.7</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">40.2</span> id,  <span class="token number">0.4</span> wa, <span class="token number">26.7</span> hi,  <span class="token number">1.6</span> si,  <span class="token number">0.0</span> st
+%Cpu4  <span class="token builtin class-name">:</span> <span class="token number">10.4</span> us, <span class="token number">15.5</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">45.4</span> id,  <span class="token number">0.4</span> wa, <span class="token number">28.3</span> hi,  <span class="token number">0.0</span> si,  <span class="token number">0.0</span> st
+%Cpu5  <span class="token builtin class-name">:</span> <span class="token number">10.8</span> us, <span class="token number">21.9</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">39.4</span> id,  <span class="token number">0.4</span> wa, <span class="token number">27.1</span> hi,  <span class="token number">0.4</span> si,  <span class="token number">0.0</span> st
+%Cpu6  <span class="token builtin class-name">:</span> <span class="token number">10.1</span> us, <span class="token number">18.6</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">41.7</span> id,  <span class="token number">0.4</span> wa, <span class="token number">28.7</span> hi,  <span class="token number">0.4</span> si,  <span class="token number">0.0</span> st
+%Cpu7  <span class="token builtin class-name">:</span> <span class="token number">10.6</span> us, <span class="token number">25.2</span> sy,  <span class="token number">0.0</span> ni, <span class="token number">36.6</span> id,  <span class="token number">0.0</span> wa, <span class="token number">26.4</span> hi,  <span class="token number">1.2</span> si,  <span class="token number">0.0</span> st<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>从<code>top</code>命令输出可以看到，<code>hardirq</code>的值特别高，超过了25%。这导致了idle的下降，触发了监控的频繁报警。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/04/23/new-kernel-showing-interrupt-cpu-usage/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+  <nav class="pagination">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/12/">12</a><a class="extend next" rel="next" title="下一页" aria-label="下一页" href="/page/2/"><i class="fa fa-angle-right"></i></a>
+  </nav>
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">陈孚</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js" defer></script>
+
+</body>
+</html>

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/favicon-orgin.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/favicon/favicon-orgin.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.1.14/dist/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.ichenfu.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism-vsc-dark-plus","dark":"prism-vsc-dark-plus"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="最近在测试我们的VM时，发现了一个比较奇怪的现象：对于同样的一个IO压力，当IO设备是NVMe或者virtio-blk时，行为有一些不太一样，具体表现在IOPS上，而且差距非常大，同样是1GB&#x2F;s左右的IO，两个不同设备的IOPS差了接近4倍：  更多的测试一般来说，NVMe设备，单个IO的最大大小是128KB，那对于1GB&#x2F;s的吞吐来说，当前的IOPS是一个合理的值，那问题很">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一个virtio-blk设备IO大小的问题">
+<meta property="og:url" content="https://www.ichenfu.com/2025/12/30/virtio-blk-io-size/index.html">
+<meta property="og:site_name" content="C0reFast记事本">
+<meta property="og:description" content="最近在测试我们的VM时，发现了一个比较奇怪的现象：对于同样的一个IO压力，当IO设备是NVMe或者virtio-blk时，行为有一些不太一样，具体表现在IOPS上，而且差距非常大，同样是1GB&#x2F;s左右的IO，两个不同设备的IOPS差了接近4倍：  更多的测试一般来说，NVMe设备，单个IO的最大大小是128KB，那对于1GB&#x2F;s的吞吐来说，当前的IOPS是一个合理的值，那问题很">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.ichenfu.com/images/virtio-blk-io-size/iops.png">
+<meta property="article:published_time" content="2025-12-30T13:26:48.000Z">
+<meta property="article:modified_time" content="2026-09-08T12:10:31.015Z">
+<meta property="article:author" content="陈孚">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="NVMe">
+<meta property="article:tag" content="Virtio">
+<meta property="article:tag" content="VirtioBlk">
+<meta property="article:tag" content="max_sectors_kb">
+<meta property="article:tag" content="max_segment_size">
+<meta property="article:tag" content="max_segments">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.ichenfu.com/images/virtio-blk-io-size/iops.png">
+
+
+<link rel="canonical" href="https://www.ichenfu.com/2025/12/30/virtio-blk-io-size/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.ichenfu.com/2025/12/30/virtio-blk-io-size/","path":"2025/12/30/virtio-blk-io-size/","title":"一个virtio-blk设备IO大小的问题"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>一个virtio-blk设备IO大小的问题 | C0reFast记事本</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47062085-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-47062085-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?50e2a95e85fdbe38e53b7aaba8c6cfe1"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://fastly.jsdelivr.net/npm/@fancyapps/ui@6.1.14/dist/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://fastly.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="C0reFast记事本" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">C0reFast记事本</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">to inspire confidence in somebody.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9B%B4%E5%A4%9A%E7%9A%84%E6%B5%8B%E8%AF%95"><span class="nav-number">1.</span> <span class="nav-text">更多的测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%BE%E5%A4%87%E7%9A%84%E9%99%90%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">设备的限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E4%BC%98%E5%8C%96"><span class="nav-number">3.</span> <span class="nav-text">参数优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OneMoreThing"><span class="nav-number">4.</span> <span class="nav-text">OneMoreThing</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">陈孚</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">113</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">257</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/C0reFast" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;C0reFast" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chenfu@ichenfu.com" title="E-Mail → mailto:chenfu@ichenfu.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/c0refast" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;c0refast" rel="noopener me" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+<div class="sidebar-inner sidebar-blogroll">
+  <div class="links-of-blogroll animated">
+    <div class="links-of-blogroll-title">
+      赞助商
+    </div>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9413546783705149" crossorigin="anonymous"></script>
+      <!-- Siderbar广告 -->
+    <ins class="adsbygoogle"
+      style="display:block"
+      data-ad-client="ca-pub-9413546783705149"
+      data-ad-slot="7305543550"
+      data-ad-format="auto"
+      data-full-width-responsive="true"></ins>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://www.aikaiyuan.com/" title="https:&#x2F;&#x2F;www.aikaiyuan.com&#x2F;" rel="noopener" target="_blank">爱开源</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.yiranzai.top/" title="https:&#x2F;&#x2F;blog.yiranzai.top&#x2F;" rel="noopener" target="_blank">一冉再</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://www.cnblogs.com/pikachuworld/" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;pikachuworld&#x2F;" rel="noopener" target="_blank">PikachuWorld</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.ichenfu.com/2025/12/30/virtio-blk-io-size/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="陈孚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="一个virtio-blk设备IO大小的问题 | C0reFast记事本">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          一个virtio-blk设备IO大小的问题
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025年12月30日 21:26 21:26:48" itemprop="dateCreated datePublished" datetime="2025-12-30T21:26:48+08:00">2025年12月30日 21:26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>最近在测试我们的VM时，发现了一个比较奇怪的现象：对于同样的一个IO压力，当IO设备是<code>NVMe</code>或者<code>virtio-blk</code>时，行为有一些不太一样，具体表现在IOPS上，而且差距非常大，同样是1GB&#x2F;s左右的IO，两个不同设备的IOPS差了接近4倍：</p>
+<p><img src="/images/virtio-blk-io-size/iops.png"></p>
+<h3 id="更多的测试"><a href="#更多的测试" class="headerlink" title="更多的测试"></a>更多的测试</h3><p>一般来说，NVMe设备，单个IO的最大大小是<code>128KB</code>，那对于1GB&#x2F;s的吞吐来说，当前的IOPS是一个合理的值，那问题很显然出在了<code>virtio-blk</code>设备上，可以确定地是，在<code>virtio-blk</code>设备上的IO被切分了。简单除一下，可以大致得到设备层的IO大小大致在<code>30KB</code>附近，按照常理，<code>virtio-blk</code>设备的最大IO大小可不止这点。</p>
+<span id="more"></span>
+
+<p>为了收集更多的信息，还是多做一些测试，看看设备在不同的IO模型下的具体的表现。使用<code>fio</code>给设备加上一个固定的IO：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># fio -filename=/dev/vdb -direct=1 -iodepth 1 -thread -rw=read -ioengine=libaio -rate_iops=200 -bs=4K -size=200G -numjobs=1 -runtime=5 -group_reporting -name=test</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>然后再使用<code>iostat -x 1</code>命令观察设备层的IO情况，然后就是把<code>-bs=4K</code>参数换成不同的IO大小就行了：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># iostat -x 1</span>
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz
+vdb            <span class="token number">200.00</span>    <span class="token number">800.00</span>     <span class="token number">0.00</span>   <span class="token number">0.00</span>    <span class="token number">0.07</span>     <span class="token number">4.00</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>可以看到当<code>bs=4K</code>时，数据是符合预期的，从设备层也观察到了<code>200 r/s</code>的IOPS，平均的IO大小<code>rareq-sz</code>也是<code>4.0K</code>。</p>
+<p>下面是不同IO大小下的监控数据整理表：</p>
+<table>
+<thead>
+<tr>
+<th align="center">IO大小 (K)</th>
+<th align="center">r&#x2F;s</th>
+<th align="center">rkB&#x2F;s</th>
+<th align="center">rareq-sz</th>
+<th align="center">放大倍数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">4</td>
+<td align="center">200.00</td>
+<td align="center">800.00</td>
+<td align="center">4.00</td>
+<td align="center">1.00</td>
+</tr>
+<tr>
+<td align="center">8</td>
+<td align="center">200.00</td>
+<td align="center">1600.00</td>
+<td align="center">8.00</td>
+<td align="center">1.00</td>
+</tr>
+<tr>
+<td align="center">16</td>
+<td align="center">200.00</td>
+<td align="center">3200.00</td>
+<td align="center">16.00</td>
+<td align="center">1.00</td>
+</tr>
+<tr>
+<td align="center">32</td>
+<td align="center">400.00</td>
+<td align="center">6400.00</td>
+<td align="center">16.00</td>
+<td align="center">2.00</td>
+</tr>
+<tr>
+<td align="center">64</td>
+<td align="center">600.00</td>
+<td align="center">12800.00</td>
+<td align="center">21.33</td>
+<td align="center">3.00</td>
+</tr>
+<tr>
+<td align="center">128</td>
+<td align="center">1000.00</td>
+<td align="center">25600.00</td>
+<td align="center">25.60</td>
+<td align="center">5.00</td>
+</tr>
+<tr>
+<td align="center">256</td>
+<td align="center">2000.00</td>
+<td align="center">51200.00</td>
+<td align="center">25.60</td>
+<td align="center">10.00</td>
+</tr>
+<tr>
+<td align="center">512</td>
+<td align="center">3800.00</td>
+<td align="center">102400.00</td>
+<td align="center">26.95</td>
+<td align="center">19.00</td>
+</tr>
+</tbody></table>
+<p>可以发现，当前只要超过<code>32K</code>的IO请求，都会被拆成更小的IO，从数据看不难看出设备能接受的最大IO应该在[26.95K 32K)的范围内。</p>
+<p>在<a target="_blank" rel="noopener" href="https://github.com/iovisor/bcc/tree/master">BCC</a>项目里，提供了一个工具<code>biosnoop</code>，使用这个工具可以抓出来每个提交到设备的请求，尝试使用一下，看看能不能找到一些有用的信息，使用第一个开始拆分的<code>bs=32K</code>进行测试的同时抓取一下IO的提交情况：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># /usr/share/bcc/tools/biosnoop -d /dev/vdb</span>
+TIME<span class="token punctuation">(</span>s<span class="token punctuation">)</span>     COMM           PID     DISK      T SECTOR     BYTES  LAT<span class="token punctuation">(</span>ms<span class="token punctuation">)</span>
+<span class="token number">0.000000</span>    fio            <span class="token number">46743</span>   vdb       R <span class="token number">56</span>         <span class="token number">4096</span>      <span class="token number">0.18</span>
+<span class="token number">0.000103</span>    fio            <span class="token number">46743</span>   vdb       R <span class="token number">0</span>          <span class="token number">28672</span>     <span class="token number">0.29</span>
+
+<span class="token number">0.004934</span>    fio            <span class="token number">46743</span>   vdb       R <span class="token number">120</span>        <span class="token number">4096</span>      <span class="token number">0.14</span>
+<span class="token number">0.005040</span>    fio            <span class="token number">46743</span>   vdb       R <span class="token number">64</span>         <span class="token number">28672</span>     <span class="token number">0.25</span>
+
+<span class="token number">0.009920</span>    fio            <span class="token number">46743</span>   vdb       R <span class="token number">128</span>        <span class="token number">28672</span>     <span class="token number">0.13</span>
+<span class="token number">0.010024</span>    fio            <span class="token number">46743</span>   vdb       R <span class="token number">184</span>        <span class="token number">4096</span>      <span class="token number">0.23</span>
+<span class="token comment">#...</span>
+<span class="token comment"># 下面是64K的情况</span>
+<span class="token number">197.473052</span>  fio            <span class="token number">48670</span>   vdb       R <span class="token number">0</span>          <span class="token number">28672</span>     <span class="token number">0.25</span>
+<span class="token number">197.473153</span>  fio            <span class="token number">48670</span>   vdb       R <span class="token number">56</span>         <span class="token number">28672</span>     <span class="token number">0.35</span>
+<span class="token number">197.473157</span>  fio            <span class="token number">48670</span>   vdb       R <span class="token number">112</span>        <span class="token number">8192</span>      <span class="token number">0.35</span>
+
+<span class="token number">197.477947</span>  fio            <span class="token number">48670</span>   vdb       R <span class="token number">128</span>        <span class="token number">28672</span>     <span class="token number">0.17</span>
+<span class="token number">197.478051</span>  fio            <span class="token number">48670</span>   vdb       R <span class="token number">240</span>        <span class="token number">8192</span>      <span class="token number">0.28</span>
+<span class="token number">197.478053</span>  fio            <span class="token number">48670</span>   vdb       R <span class="token number">184</span>        <span class="token number">28672</span>     <span class="token number">0.28</span>
+
+<span class="token number">197.482997</span>  fio            <span class="token number">48670</span>   vdb       R <span class="token number">256</span>        <span class="token number">28672</span>     <span class="token number">0.22</span>
+<span class="token number">197.483098</span>  fio            <span class="token number">48670</span>   vdb       R <span class="token number">312</span>        <span class="token number">28672</span>     <span class="token number">0.33</span>
+<span class="token number">197.483100</span>  fio            <span class="token number">48670</span>   vdb       R <span class="token number">368</span>        <span class="token number">8192</span>      <span class="token number">0.33</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到一个32K的请求，被拆分成了<code>28K</code>+<code>4K</code>。虽然在<code>iostat</code>里看到的平均IO大小是16K，但实际上可以发现，真正到设备的IO并不是2个16K，换了其他的IO大小继续压测，发现提交到设备的IO始终无法突破28K这个“坎”。</p>
+<h3 id="设备的限制"><a href="#设备的限制" class="headerlink" title="设备的限制"></a>设备的限制</h3><p>在Linux的块设备中，有几个重要的参数决定了设备能够接受的最大IO大小，他们分别是<code>max_segments</code>，<code>max_segment_size</code>和<code>max_sectors_kb</code>，以NVMe为例：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># cat /sys/class/block/nvme0n1/queue/max_segments</span>
+<span class="token number">33</span>
+<span class="token comment"># cat /sys/class/block/nvme0n1/queue/max_segment_size</span>
+<span class="token number">4294967295</span>
+<span class="token comment"># cat /sys/class/block/nvme0n1/queue/max_sectors_kb</span>
+<span class="token number">128</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>怎么理解这几个数值呢，咱们可以结合<code>struct bio</code>的定义看：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">bio_vec</span> <span class="token punctuation">&#123;</span>
+       <span class="token keyword">struct</span> <span class="token class-name">page</span>     <span class="token operator">*</span>bv_page<span class="token punctuation">;</span>
+       <span class="token keyword">unsigned</span> <span class="token keyword">short</span>  bv_len<span class="token punctuation">;</span>
+       <span class="token keyword">unsigned</span> <span class="token keyword">short</span>  bv_offset<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token comment">/*
+ * main unit of I/O for the block layer and lower layers (ie drivers)
+ */</span>
+<span class="token keyword">struct</span> <span class="token class-name">bio</span> <span class="token punctuation">&#123;</span>
+       <span class="token keyword">struct</span> <span class="token class-name">bio</span>          <span class="token operator">*</span>bi_next<span class="token punctuation">;</span>    <span class="token comment">/* request queue link */</span>
+       <span class="token keyword">struct</span> <span class="token class-name">block_device</span> <span class="token operator">*</span>bi_bdev<span class="token punctuation">;</span>	<span class="token comment">/* target device */</span>
+       <span class="token keyword">unsigned</span> <span class="token keyword">long</span>       bi_flags<span class="token punctuation">;</span>    <span class="token comment">/* status, command, etc */</span>
+       <span class="token keyword">unsigned</span> <span class="token keyword">long</span>       bi_opf<span class="token punctuation">;</span>       <span class="token comment">/* low bits: r/w, high: priority */</span>
+
+       <span class="token keyword">unsigned</span> <span class="token keyword">int</span>	bi_vcnt<span class="token punctuation">;</span>     <span class="token comment">/* how may bio_vec's */</span>
+       <span class="token keyword">struct</span> <span class="token class-name">bvec_iter</span>	bi_iter<span class="token punctuation">;</span>	<span class="token comment">/* current index into bio_vec array */</span>
+
+       <span class="token keyword">unsigned</span> <span class="token keyword">int</span>	bi_size<span class="token punctuation">;</span>     <span class="token comment">/* total size in bytes */</span>
+       <span class="token keyword">unsigned</span> <span class="token keyword">short</span> 	bi_phys_segments<span class="token punctuation">;</span> <span class="token comment">/* segments after physaddr coalesce*/</span>
+       <span class="token keyword">unsigned</span> <span class="token keyword">short</span>	bi_hw_segments<span class="token punctuation">;</span> <span class="token comment">/* segments after DMA remapping */</span>
+       <span class="token keyword">unsigned</span> <span class="token keyword">int</span>	bi_max<span class="token punctuation">;</span>	     <span class="token comment">/* max bio_vecs we can hold
+                                        used as index into pool */</span>
+       <span class="token keyword">struct</span> <span class="token class-name">bio_vec</span>   <span class="token operator">*</span>bi_io_vec<span class="token punctuation">;</span>  <span class="token comment">/* the actual vec list */</span>
+       <span class="token class-name">bio_end_io_t</span>	<span class="token operator">*</span>bi_end_io<span class="token punctuation">;</span>  <span class="token comment">/* bi_end_io (bio) */</span>
+       <span class="token class-name">atomic_t</span>		bi_cnt<span class="token punctuation">;</span>	     <span class="token comment">/* pin count: free when it hits zero */</span>
+       <span class="token keyword">void</span>             <span class="token operator">*</span>bi_private<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>每个块层IO可以通过一个<code>struct bio</code>表示，而IO数据存放在<code>struct bio_vec</code>中，于是就有了一个<code>bio</code>最多包含<code>max_segments</code>个<code>bio_vec</code>，每个<code>bio_vec</code>最多包含<code>max_segment_size</code>的数据，同时，每个<code>bio</code>最大不超过<code>max_sectors_kb</code>。</p>
+<p>基于上面NVMe设备的这几个参数，不难发现，因为NVMe设备的<code>max_segments*max_segment_size</code>远大于<code>max_sectors_kb</code>，但由于IO不能超过<code>max_sectors_kb</code>的值，因此，对于NVMe而言，最大IO大小也就被限制在了<code>128KB</code>了。</p>
+<p>那<code>virtio-blk</code>设备呢？</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># cat /sys/class/block/vdb/queue/max_segments</span>
+<span class="token number">7</span>
+<span class="token comment"># cat /sys/class/block/vdb/queue/max_segment_size</span>
+<span class="token number">65536</span>
+<span class="token comment"># cat /sys/class/block/vdb/queue/max_sectors_kb</span>
+<span class="token number">1280</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到当前的这个设备，最大IO受限于<code>max_segments*max_segment_size</code>，理论上最大IO是<code>512K</code>，但这里有个问题，<code>512K</code>也远大于刚刚<code>biosnoop</code>里看到的<code>28K</code>啊，这又是为什么？</p>
+<p>其实看到<code>struct bio_vec</code>定义的瞬间，就应该能猜到原因了，因为一般情况下，<code>bio_vec</code>都会指向一个<code>page页</code>，那正常情况下，page大小就是<code>4K</code>，因此就不能仅仅看max_segment_size所代表的最大值，还要考虑具体的页大小，所以按上面的计算方法，就变成了<code>max_segments*4K</code>，也就是28K了，到这里那一切都说的通了。</p>
+<h3 id="参数优化"><a href="#参数优化" class="headerlink" title="参数优化"></a>参数优化</h3><p>既然知道了出问题的原因，那解决问题也就很简单了，只需要调整一下<code>max_segments</code>的大小就可以了，由于实际我们的设备驱动是<code>virtio-blk</code>，因此这个值最终取决于<code>VIRTIO_BLK_F_SEG_MAX</code>，<code>VIRTIO_BLK_F_SIZE_MAX</code>这俩个feature以及对于的配置空间参数，这些是需要在virtio backend侧进行设置的，最终，我们把<code>max_segments</code>设置到了64，把<code>max_segment_size</code>设置到了8K，在这样的参数配置下，当页大小为4K时，最大可支持256K的IO大小，可以更好的满足用户的需求了。</p>
+<p>再测试一下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># fio -filename=/dev/vdb -direct=1 -iodepth 1 -thread -rw=read -ioengine=libaio -rate_iops=200 -bs=256K -size=200G -numjobs=1 -runtime=5 -group_reporting -name=test</span>
+<span class="token comment"># iostat -x 1</span>
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz
+vdb            <span class="token number">200.00</span>  <span class="token number">51200.00</span>     <span class="token number">0.00</span>   <span class="token number">0.00</span>    <span class="token number">0.17</span>   <span class="token number">256.00</span>
+
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz
+vdb            <span class="token number">200.00</span>  <span class="token number">51200.00</span>     <span class="token number">0.00</span>   <span class="token number">0.00</span>    <span class="token number">0.17</span>   <span class="token number">256.00</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>嗯，可以看到已经可以处理最大256K的IO了。</p>
+<h3 id="OneMoreThing"><a href="#OneMoreThing" class="headerlink" title="OneMoreThing"></a>OneMoreThing</h3><p>最后的最后，还有一个事情没有解决，就是有什么场景下，可以利用更大的<code>segment_size</code>从而在<code>segments</code>不增加的情况下，提升最大IO大小的？<br>理论上，如果IO数据的物理地址连续，那一个page其实是可以大于4K的，在这种情况下，自然就可以实现更大的IO，那怎么造出一个这样的IO呢？说到物理地址连续，很自然的想到了大页内存，大页内存可以保证单个大页使用的物理地址联系，那fio可以使用大页内存么？<br>答案是肯定的，fio提供了一个<code>-iomem</code>参数用于制定io的内存来源：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># sysctl vm.nr_hugepages=20</span>
+<span class="token comment"># fio -filename=/dev/vdb -direct=1 -iodepth 1 -thread -rw=read -ioengine=libaio -rate_iops=200 -bs=256K -iomem=shmhuge -size=200G -numjobs=1 -runtime=100 -group_reporting -name=test </span>
+<span class="token comment"># iostat -x 1</span>
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz
+vdb            <span class="token number">200.00</span>  <span class="token number">51200.00</span>     <span class="token number">0.00</span>   <span class="token number">0.00</span>    <span class="token number">0.30</span>   <span class="token number">256.00</span>
+
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz
+vdb            <span class="token number">200.00</span>  <span class="token number">51200.00</span>     <span class="token number">0.00</span>   <span class="token number">0.00</span>    <span class="token number">0.32</span>   <span class="token number">256.00</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>嘿，真的可以！如果bs改成512K呢？用<code>biosnoop</code>看下：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">/usr/share/bcc/tools/biosnoop <span class="token parameter variable">-d</span> /dev/vdb
+TIME<span class="token punctuation">(</span>s<span class="token punctuation">)</span>     COMM           PID     DISK      T SECTOR     BYTES  LAT<span class="token punctuation">(</span>ms<span class="token punctuation">)</span>
+<span class="token number">0.000000</span>    fio            <span class="token number">53658</span>   vdb       R <span class="token number">2115456</span>    <span class="token number">65536</span>     <span class="token number">0.30</span>
+<span class="token number">0.000128</span>    fio            <span class="token number">53658</span>   vdb       R <span class="token number">2114560</span>    <span class="token number">458752</span>    <span class="token number">0.43</span>
+
+<span class="token number">0.005046</span>    fio            <span class="token number">53658</span>   vdb       R <span class="token number">2115584</span>    <span class="token number">458752</span>    <span class="token number">0.35</span>
+<span class="token number">0.005152</span>    fio            <span class="token number">53658</span>   vdb       R <span class="token number">2116480</span>    <span class="token number">65536</span>     <span class="token number">0.45</span>
+
+<span class="token number">0.009991</span>    fio            <span class="token number">53658</span>   vdb       R <span class="token number">2117504</span>    <span class="token number">65536</span>     <span class="token number">0.29</span>
+<span class="token number">0.010124</span>    fio            <span class="token number">53658</span>   vdb       R <span class="token number">2116608</span>    <span class="token number">458752</span>    <span class="token number">0.42</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>没问题，458752刚好就是7*64K的值。</p>
+<p>不难发现，使用大页内存，对于IO来说，还是有些正向提升的，只是大多数场景下，业务很难做到这么细致的优化，也许Memory folios的普及可以改变这个现状吧。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat-qrcode.jpg" alt="陈孚 wechat" style="width: 200px; max-width: 100%;">
+  <div>新注册了公众号，同步更新，长按关注，可以第一时间收到推送</div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Linux/" rel="tag"># Linux</a>
+              <a href="/tags/Virtio/" rel="tag"># Virtio</a>
+              <a href="/tags/VirtioBlk/" rel="tag"># VirtioBlk</a>
+              <a href="/tags/NVMe/" rel="tag"># NVMe</a>
+              <a href="/tags/max-sectors-kb/" rel="tag"># max_sectors_kb</a>
+              <a href="/tags/max-segments/" rel="tag"># max_segments</a>
+              <a href="/tags/max-segment-size/" rel="tag"># max_segment_size</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/09/08/use-one-big-server/" rel="prev" title="使用单台高配服务器（部署你的业务）">
+                  <i class="fa fa-angle-left"></i> 使用单台高配服务器（部署你的业务）
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/09/08/rip-sina-app-engine/" rel="next" title="怀念 SinaAppEngine">
+                  怀念 SinaAppEngine <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">陈孚</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"C0reFast/c0refast.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js" defer></script>
+
+</body>
+</html>
